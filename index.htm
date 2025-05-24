@@ -362,11 +362,6 @@ function cacheDOMElements() {
     dom.statModificados = document.getElementById('stat-modificados');
     // Sales stats wrapper
     dom.salesStatsWrapper = document.getElementById('sales-stats-wrapper');
-    // New: For products display in modal (these will be null until modal is opened)
-    // Re-cache these elements when the modal is opened, as they are dynamically added
-    // dom.productosDisplayTable = document.getElementById('productos-display-table'); // No longer cached here
-    // dom.productosEditArea = document.getElementById('modal-productos'); // No longer cached here
-    // dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn'); // No longer cached here
 }
 
 
@@ -379,9 +374,6 @@ const USERS = {
   ventas:   { pass: "ventas2024", rol: "ventas",   nombre: "Ventas" },
   deposito: { pass: "deposito321",rol: "deposito", nombre: "Depósito" }
 };
-// MUY IMPORTANTE: El sistema de login actual es INSEGURO.
-// Las contraseñas están en el código cliente. Esto es solo para demostración.
-// En una aplicación real, la autenticación DEBE ser manejada por el backend.
 
 const OPCIONES_EMPAQUE = {
   "DAC": ["", "20x20", "30x30", "40x40", "50x50", "60x60"],
@@ -395,34 +387,25 @@ const WOOCOMMERCE_TRANSLATE = {
 };
 let usuario = null;
 let pedidos = [];
-let pedidoActualIdx = null; // Store index instead of full object
-let printCount = {}; // Tracks if a ticket has been printed { pedidoId: true }
+let pedidoActualIdx = null;
+let printCount = {}; 
 
-// Global variable to store the original state of the pedido when modal opens
 let originalPedidoState = null;
-let notiTimeoutId = null; // To store the timeout ID for notifications
+let notiTimeoutId = null; 
 
-// Fields to track for changes in sales modal
 const FIELDS_TO_TRACK_VENTAS = [
   'CLIENTE', 'DIRECCION', 'TELEFONO', 'EMAIL', 'NOTAS', 'METODO_ENVIO',
   'ESTADO_PAGO', 'ENTREGADO', 'FACTURADO', 'AVISO_CLIENTE', 'FASE',
   'TICKET_IMPRESO', 'FECHA_INGRESO_SISTEMA', 'BARRIO_LOCALIDAD', 'DEPARTAMENTO',
-  'ETIQUETA_EMITIDA', 'PRODUCTS' // Added PRODUCTS for tracking
+  'ETIQUETA_EMITIDA', 'PRODUCTS'
 ];
-// Fields to track for changes in deposit modal (completarPedido)
 const FIELDS_TO_TRACK_DEPOSITO = ['FASE', 'EMPAQUE'];
 
 
 // ===================== UTILITIES ============================
-/**
- * Shows a notification badge.
- * @param {string} msg - The message to display.
- * @param {boolean|null} isSuccess - True for success (green), false for error (red), null for info (blue).
- */
 function showNoti(msg, isSuccess = true) {
   if (!dom.notiBadge || !dom.notiMessage || !dom.notiCloseBtn || !dom.notiOkBtn) return;
 
-  // Clear any existing timeout to prevent conflicts
   if (notiTimeoutId) {
     clearTimeout(notiTimeoutId);
     notiTimeoutId = null;
@@ -431,18 +414,18 @@ function showNoti(msg, isSuccess = true) {
   dom.notiMessage.textContent = msg;
   dom.notiBadge.classList.remove('hidden', 'bg-blue-600', 'bg-red-600', 'bg-green-600');
 
-  if (isSuccess === null) { // Neutral / Info
+  if (isSuccess === null) { 
     dom.notiBadge.classList.add('bg-blue-600');
   } else if (isSuccess) {
     dom.notiBadge.classList.add('bg-green-600');
   } else {
     dom.notiBadge.classList.add('bg-red-600');
   }
-  dom.notiBadge.style.display = 'flex'; // Ensure it's visible
+  dom.notiBadge.style.display = 'flex'; 
 
-  dom.notiOkBtn.classList.add('hidden'); // Hide OK button for standard notifications
-  dom.notiCloseBtn.onclick = hideNoti; // Ensure 'x' button still works
-  notiTimeoutId = setTimeout(hideNoti, 3000); // Auto-hide after 3 seconds
+  dom.notiOkBtn.classList.add('hidden'); 
+  dom.notiCloseBtn.onclick = hideNoti; 
+  notiTimeoutId = setTimeout(hideNoti, 3000); 
 }
 
 function hideNoti() {
@@ -450,7 +433,6 @@ function hideNoti() {
     dom.notiBadge.classList.add('hidden');
     dom.notiBadge.style.display = 'none';
   }
-  // Clean up event listeners if they were manually attached
   if (dom.notiOkBtn) dom.notiOkBtn.onclick = null;
   if (dom.notiCloseBtn) dom.notiCloseBtn.onclick = null;
   if (notiTimeoutId) {
@@ -459,11 +441,6 @@ function hideNoti() {
   }
 }
 
-/**
- * Shows a blocking attention modal with a message and an OK button.
- * @param {string} message - The message to display.
- * @returns {Promise<boolean>} Resolves true when OK is clicked.
- */
 function showAttentionModal(message) {
   return new Promise(resolve => {
     if (!dom.attentionModalBg || !dom.attentionModalMessage || !dom.attentionModalOk) {
@@ -501,12 +478,11 @@ function mostrarSyncLog(text, ok) {
   }
 }
 
-// Custom Confirmation Modal function
 function showConfirmationModal(message) {
   return new Promise(resolve => {
     if (!dom.confirmModalBg || !dom.confirmModalMessage || !dom.confirmModalOk || !dom.confirmModalCancel) {
       console.error("Confirmation modal DOM elements not found.");
-      resolve(false); // Resolve false if elements are missing
+      resolve(false); 
       return;
     }
 
@@ -559,12 +535,11 @@ function logout() {
   printCount = {};
   if(dom.mainApp) dom.mainApp.style.display = 'none';
   if(dom.loginPanel) dom.loginPanel.style.display = 'block';
-  if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0]; // Reset to first user
-  if(dom.loginPass) dom.loginPass.value = ''; // Clear password
-  // Clear tables and stats
+  if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0]; 
+  if(dom.loginPass) dom.loginPass.value = ''; 
   if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
   if(dom.tablaDepositoBody) dom.tablaDepositoBody.innerHTML = '';
-  updateStats([]); // Pass empty array to reset stats
+  updateStats([]); 
   mostrarSyncLog('Sesión cerrada.', null);
 }
 
@@ -583,7 +558,7 @@ async function cargarPedidos() {
     pedidos = (Array.isArray(data) ? data : []).map(p => ({
       ...p,
       FASE: p.FASE || "EN ESPERA",
-      ID: String(p.ID || p.Id || p.id || Date.now()), // Ensure ID is a string
+      ID: String(p.ID || p.Id || p.id || Date.now()), 
       CLIENTE: ((p.NOMBRE||"") + " " + (p.APELLIDO||"")).toUpperCase().trim(),
       MONTO: p.MONTO || p.Total || p.TOTAL || p.total || "",
       ESTADO_WOO: p.ESTADO || p.Estado || p.estado || "",
@@ -594,20 +569,19 @@ async function cargarPedidos() {
       NOTAS: p.NOTAS || "",
       EMAIL: p.EMAIL || "",
       DIRECCION: p.DIRECCION || "",
-      BARRIO_LOCALIDAD: p.BARRIO_LOCALIDAD || p.Barrio || p.Localidad || "", // Added new field
-      DEPARTAMENTO: p.DEPARTAMENTO || p.Departamento || "", // Added new field
-      PRODUCTS: p.PRODUCTS || p.PRODUCTOS || "", // Corrected: Use PRODUCTS, fallback to PRODUCTOS
+      BARRIO_LOCALIDAD: p.BARRIO_LOCALIDAD || p.Barrio || p.Localidad || "", 
+      DEPARTAMENTO: p.DEPARTAMENTO || p.Departamento || "", 
+      PRODUCTS: p.PRODUCTS || p.PRODUCTOS || "", 
       FACTURADO: p.FACTURADO === true || String(p.FACTURADO).toLowerCase() === "true",
       ENTREGADO: p.ENTREGADO === true || String(p.ENTREGADO).toLowerCase() === "true",
       AVISO_CLIENTE: p.AVISO_CLIENTE === true || String(p.AVISO_CLIENTE).toLowerCase() === "true",
       EMPAQUE: p.EMPAQUE || "",
-      HISTORIAL: Array.isArray(p.HISTORIAL) ? p.HISTORIAL : [], // Ensure HISTORIAL is an array
-      TICKET_IMPRESO: p.TICKET_IMPRESO === true || String(p.TICKET_IMPRESO).toLowerCase() === "true", // Ensure TICKET_IMPRESO is boolean
-      FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA || "", // Ensure FECHA_INGRESO_SISTEMA is string
-      ETIQUETA_EMITIDA: p.ETIQUETA_EMITIDA === true || String(p.ETIQUETA_EMITIDA).toLowerCase() === "true" // New: ensure ETIQUETA_EMITIDA is boolean
+      HISTORIAL: Array.isArray(p.HISTORIAL) ? p.HISTORIAL : [], 
+      TICKET_IMPRESO: p.TICKET_IMPRESO === true || String(p.TICKET_IMPRESO).toLowerCase() === "true", 
+      FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA || "", 
+      ETIQUETA_EMITIDA: p.ETIQUETA_EMITIDA === true || String(p.ETIQUETA_EMITIDA).toLowerCase() === "true" 
     }));
     renderizarTodo();
-    // Get current date and time for synchronization log
     const now = new Date();
     const formattedDateTime = now.toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -626,8 +600,8 @@ async function cargarPedidos() {
 
 // ==================== RENDERIZADO GENERAL =====================
 function updateStats(filteredPedidos) {
-    const currentPedidos = filteredPedidos || pedidos; // Use filtered if provided, else all
-    if (!dom.statTotal) return; // Ensure DOM is ready
+    const currentPedidos = filteredPedidos || pedidos; 
+    if (!dom.statTotal) return; 
 
     const stats = {
         total: currentPedidos.length,
@@ -641,7 +615,6 @@ function updateStats(filteredPedidos) {
         modificados: currentPedidos.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length
     };
 
-    // Update and toggle visibility for sales stats
     const salesStatElements = {
         'stat-total': stats.total,
         'stat-espera': stats.espera,
@@ -665,7 +638,6 @@ function updateStats(filteredPedidos) {
         }
     }
 
-    // Update and toggle visibility for deposit stats
     const depositStatElements = {
         'stat-dac': stats.dac,
         'stat-gp': stats.gp,
@@ -693,44 +665,34 @@ function updateStats(filteredPedidos) {
 function renderizarTodo() {
   if (!usuario || !dom.moduloVentas) return;
 
-  updateStats(pedidos); // Update global stats with all pedidos
+  updateStats(pedidos); 
 
-  // Mostrar módulos y estadísticas según rol
   const isAdmin = usuario.rol === "admin";
   const isVentas = usuario.rol === "ventas";
   const isDeposito = usuario.rol === "deposito";
 
-  // Controlar la visibilidad de las estadísticas de ventas
   if (dom.salesStatsWrapper) {
       dom.salesStatsWrapper.style.display = (isAdmin || isVentas) ? "grid" : "none";
   }
 
   dom.moduloVentas.style.display = (isAdmin || isVentas) ? "" : "none";
-  dom.filtrosVentas.style.display = (isAdmin || isVentas) ? "flex" : "none"; // Also hide filters
+  dom.filtrosVentas.style.display = (isAdmin || isVentas) ? "flex" : "none"; 
   dom.moduloDeposito.style.display = (isAdmin || isVentas || isDeposito) ? "" : "none";
 
   if (isAdmin || isVentas) renderVentas();
   if (isAdmin || isVentas || isDeposito) renderDeposito();
 }
 
-/**
- * Formats a date string into "Hace X horas/minutos" or "D/M/A".
- * @param {string} dateString - The date string from the backend (e.g., "DD/MM/YYYY HH:MM").
- * @returns {string} Formatted time ago or date.
- */
 function formatTimeAgoOrDate(dateString) {
     if (!dateString) return '';
 
-    // Parse DD/MM/YYYY HH:MM format
     const parts = dateString.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
     if (!parts) {
-        // Fallback if parsing fails, just return the original string or a simple date
         try {
             const d = new Date(dateString);
             if (!isNaN(d.getTime())) {
-                return d.toLocaleDateString('es-ES'); // D/M/A
+                return d.toLocaleDateString('es-ES'); 
             }
-            // If it's a valid date string but not in DD/MM/YYYY HH:MM, try to parse it
             const parsedDate = new Date(dateString);
             if (!isNaN(parsedDate.getTime())) {
                 const diffHours = (new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60);
@@ -743,17 +705,17 @@ function formatTimeAgoOrDate(dateString) {
                         return `Hace ${roundedHours} hora${roundedHours === 1 ? '' : 's'}`;
                     }
                 } else {
-                    return parsedDate.toLocaleDateString('es-ES'); // D/M/A
+                    return parsedDate.toLocaleDateString('es-ES'); 
                 }
             }
         } catch (e) {
             // ignore
         }
-        return dateString; // Return original if cannot parse
+        return dateString; 
     }
 
     const day = parseInt(parts[1], 10);
-    const month = parseInt(parts[2], 10) - 1; // Month is 0-indexed
+    const month = parseInt(parts[2], 10) - 1; 
     const year = parseInt(parts[3], 10);
     const hours = parseInt(parts[4], 10);
     const minutes = parseInt(parts[5], 10);
@@ -772,32 +734,24 @@ function formatTimeAgoOrDate(dateString) {
             return `Hace ${roundedHours} hora${roundedHours === 1 ? '' : 's'}`;
         }
     } else {
-        return `${day}/${month + 1}/${year}`; // D/M/A
+        return `${day}/${month + 1}/${year}`; 
     }
 }
 
-/**
- * Generates an HTML table row (<tr>) for a single product line.
- * Assumes product line format "SKU - DESCRIPTION - QUANTITY".
- * @param {string} line - A single line from the PRODUCTS field.
- * @returns {string} HTML string for a table row, or empty string if not a product line.
- */
 function formatProductLineToHtmlRow(line) {
     if (!line || typeof line !== 'string') return '';
     const trimmedLine = line.trim();
 
-    // Skip header and separator lines that might be present if the textarea was edited
-    // Also skip lines that look like empty rows or just dashes
     if (trimmedLine.toLowerCase().startsWith('sku') && trimmedLine.toLowerCase().includes('descripción') && trimmedLine.toLowerCase().includes('cant.')) {
-        return ''; // This is a header line
+        return ''; 
     }
     if (trimmedLine.startsWith('---') && trimmedLine.includes('|')) {
-        return ''; // This is a separator line
+        return ''; 
     }
     if (trimmedLine === '') {
-        return ''; // Skip empty lines
+        return ''; 
     }
-    if (trimmedLine.match(/^-+$/)) { // Line with only dashes
+    if (trimmedLine.match(/^-+$/)) { 
         return '';
     }
 
@@ -819,16 +773,14 @@ function formatProductLineToHtmlRow(line) {
             description = parts[0].trim();
             quantity = lastPart;
         } else {
-            // Fallback for unclear format, treat whole line as description
             description = trimmedLine;
         }
     } else if (parts.length === 1 && trimmedLine !== '') {
         description = trimmedLine;
     } else {
-        return ''; // If line cannot be parsed into any meaningful parts, skip it
+        return ''; 
     }
     
-    // Add border-b to the row for visual separation, except for the last one (handled by CSS last:border-b-0)
     return `<tr class="border-b border-slate-200 last:border-b-0"><td class="px-2 py-1 align-top">${sku}</td><td class="px-2 py-1 align-top">${description}</td><td class="px-2 py-1 align-top text-right">${quantity}</td></tr>`;
 }
 
@@ -841,37 +793,28 @@ function aplicarFiltrosVentas(p) {
   const buscar = dom.filtroBuscar.value.toLowerCase().trim();
 
 
-  // New phase filtering logic
   if (fase === "ACTIVE_ONLY") {
-      // If the phase is completed or completed modified, check specific conditions to keep it visible
       if (p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") {
-          // An order is hidden from "Active Only" if ALL relevant checkboxes are TRUE.
-          // So, if ANY relevant checkbox is FALSE, it should be visible.
           if (p.METODO_ENVIO === "DAC" || p.METODO_ENVIO === "GESTIÓN POST") {
               if (!p.ETIQUETA_EMITIDA || !p.FACTURADO || !p.AVISO_CLIENTE) {
-                  // Keep visible if any of these are FALSE
                   return true;
               } else {
-                  return false; // Exclude if ALL are TRUE
+                  return false; 
               }
           } else if (p.METODO_ENVIO === "PICK UP") {
               if (!p.ENTREGADO || !p.FACTURADO || !p.AVISO_CLIENTE) {
-                  // Keep visible if any of these are FALSE
                   return true;
               } else {
-                  return false; // Exclude if ALL are TRUE
+                  return false; 
               }
           } else {
-              // For completed orders with other/no method_envio, exclude them from "Active Only"
-              // unless specifically defined to be kept visible based on other criteria.
-              // Assuming if no specific method_envio rule applies, it's fully completed and should be hidden.
               return false;
           }
       }
   } else if (fase === "ALL_PHASES") {
-      // No phase filtering, show all
+      // No phase filtering
   } else if (fase && p.FASE !== fase) {
-      return false; // Filter by specific phase
+      return false; 
   }
 
   if (pago && (p.ESTADO_PAGO !== pago)) return false;
@@ -914,12 +857,12 @@ function getBadgeClassForFase(fase) {
 function renderVentas() {
   if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return;
 
-  dom.tablaVentasBody.innerHTML = ""; // Clear existing rows
+  dom.tablaVentasBody.innerHTML = ""; 
   const pedidosFiltrados = pedidos.filter(aplicarFiltrosVentas);
 
   pedidosFiltrados.forEach(p => {
-    const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); // Get original index
-    if (pedidoIdx === -1) return; // Should not happen if p is from pedidos
+    const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); 
+    if (pedidoIdx === -1) return; 
 
     const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase();
     const tr = document.createElement('tr');
@@ -947,21 +890,16 @@ function aplicarFiltrosDeposito(p) {
   const envio = dom.filtroEnvioDep.value;
   const buscar = dom.filtroBuscarDep.value.toLowerCase();
 
-  // New phase filtering logic for deposit module
   if (fase === "DEFAULT_DEPOSIT_FILTER") {
-      // Only show PREPARANDO, PREPARANDO MODIFICADO, COMPLETADO MODIFICADO by default
       if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) {
           return false;
       }
   } else if (fase === "MODIFICADOS_AGRUPADOS") {
-    // Corrected: Now includes both PREPARANDO MODIFICADO and COMPLETADO MODIFICADO
     return p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO";
   } else if (fase && p.FASE !== fase) {
-      return false; // Filter by specific phase
+      return false; 
   }
-  // Ensure that if no specific filter is set (e.g., the select has no value, or an unhandled value like ALL_PHASES which was removed)
-  // it correctly defaults to the behavior of DEFAULT_DEPOSIT_FILTER
-  else if (!fase) { // This handles empty value like default
+  else if (!fase) { 
       if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) {
           return false;
       }
@@ -991,7 +929,6 @@ function renderDeposito() {
     if (pedidoIdx === -1) return;
 
     const tr = document.createElement('tr');
-    // Add conditional class for COMPLETADO MODIFICADO and PREPARANDO MODIFICADO phase row background
     let rowBgClass = '';
     if (p.FASE === 'COMPLETADO MODIFICADO') {
         rowBgClass = 'bg-red-100';
@@ -1023,34 +960,28 @@ function openModal(idx, modulo) {
     showNoti("Error: Pedido no encontrado.", false);
     return;
   }
-  // Log the raw product data for debugging
   console.log("Raw PRODUCTS data for pedido:", pedido.ID, ":", pedido.PRODUCTS);
 
 
-  // Store a deep copy of the original state for change tracking
   originalPedidoState = JSON.parse(JSON.stringify(pedido));
 
   let content = "";
-  // Conditionally set modal title based on module
   if (modulo === 'ventas') {
     dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b> - <b>$${pedido.MONTO || ""}</b>`;
-  } else { // DEPÓSITO
-    dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>`; // No monto for deposit module
+  } else { 
+    dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>`; 
   }
 
-  // Generate HTML table for products display in read-only mode for both sales and deposit modals
   let productsTableHtml = '';
-  const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); // Filter out empty lines
+  const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); 
 
   if (productLines.length > 0) {
       productsTableHtml += `<table class="min-w-full text-left text-sm text-slate-700 border-collapse">`;
-      // Ensure headers are correctly formatted and aligned
       productsTableHtml += `<thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead>`;
       productsTableHtml += `<tbody>`;
       productLines.forEach(line => {
-          // Only add if formatProductLineToHtmlRow returns a non-empty string (i.e., it's a valid product line)
           const formattedRow = formatProductLineToHtmlRow(line);
-          if (formattedRow) { // Ensure the row is not empty after formatting
+          if (formattedRow) { 
               productsTableHtml += formattedRow;
           }
       });
@@ -1144,7 +1075,7 @@ function openModal(idx, modulo) {
           </div>
       </div>
     `;
-  } else { // DEPÓSITO
+  } else { 
     content = `
       <div class="mb-2">
         <strong class="text-slate-700">Productos:</strong>
@@ -1189,12 +1120,10 @@ function openModal(idx, modulo) {
   dom.modalBg.classList.remove('hidden');
   dom.modalBg.classList.add('flex');
 
-  // Add event listeners for modal elements
   if (modulo === 'ventas') {
     document.getElementById('modal-save-venta')?.addEventListener('click', () => guardarVenta(pedidoActualIdx));
-    document.getElementById('modal-modificar-pedido')?.addEventListener('click', () => modificarPedidoVentas(pedidoActualIdx)); // New event listener for "Modificar Pedido"
+    document.getElementById('modal-modificar-pedido')?.addEventListener('click', () => modificarPedidoVentas(pedidoActualIdx)); 
 
-    // Logic for "Entregado" and "Etiqueta Emitida" checkbox visibility
     const metodoEnvioSelect = document.getElementById('modal-metodo-envio');
     const entregadoCheckboxWrapper = document.getElementById('entregado-checkbox-wrapper');
     const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper');
@@ -1202,7 +1131,6 @@ function openModal(idx, modulo) {
     const toggleCheckboxesVisibility = () => {
       const currentMetodoEnvio = metodoEnvioSelect.value;
 
-      // Toggle "Entregado" checkbox
       if (currentMetodoEnvio === 'PICK UP') {
         entregadoCheckboxWrapper?.classList.remove('hidden');
       } else {
@@ -1211,7 +1139,6 @@ function openModal(idx, modulo) {
         if (entregadoCheckbox) entregadoCheckbox.checked = false;
       }
 
-      // Toggle "Etiqueta Emitida" checkbox
       if (currentMetodoEnvio === 'DAC' || currentMetodoEnvio === 'GESTIÓN POST') {
         etiquetaEmitidaCheckboxWrapper?.classList.remove('hidden');
       } else {
@@ -1223,24 +1150,21 @@ function openModal(idx, modulo) {
 
     if (metodoEnvioSelect) {
       metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility);
-      // Call initially to set correct state when modal opens
       toggleCheckboxesVisibility();
     }
 
-    // Logic for "Editar Productos" button
     dom.productosDisplayTable = document.getElementById('productos-display-table');
     dom.productosEditArea = document.getElementById('modal-productos');
     dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn');
 
     if (dom.productosDisplayTable && dom.productosEditArea && dom.modalEditProductosBtn) {
         dom.modalEditProductosBtn.addEventListener('click', () => {
-            dom.productosDisplayTable.classList.add('hidden'); // Hide table display
-            dom.productosEditArea.classList.remove('hidden'); // Show textarea
-            dom.productosEditArea.removeAttribute('readonly'); // Make textarea editable
+            dom.productosDisplayTable.classList.add('hidden'); 
+            dom.productosEditArea.classList.remove('hidden'); 
+            dom.productosEditArea.removeAttribute('readonly'); 
             dom.productosEditArea.focus();
-            dom.modalEditProductosBtn.classList.add('hidden'); // Hide "Editar" button
+            dom.modalEditProductosBtn.classList.add('hidden'); 
         });
-        // Ensure initial state: table visible, textarea hidden
         dom.productosDisplayTable.classList.remove('hidden');
         dom.productosEditArea.classList.add('hidden');
         dom.productosEditArea.setAttribute('readonly', 'true');
@@ -1255,14 +1179,12 @@ function openModal(idx, modulo) {
     if (tipoEmpaqueSelect) {
         tipoEmpaqueSelect.addEventListener('change', function() {
             const currentPedido = pedidos[pedidoActualIdx];
-            if (currentPedido) currentPedido.EMPAQUE = this.value; // Store empaque choice directly on the pedido object
+            if (currentPedido) currentPedido.EMPAQUE = this.value; 
             const btnCompletar = document.getElementById('modal-complete-pedido');
             if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTIÓN POST"].includes(currentPedido.METODO_ENVIO);
         });
-        // Initial state for complete button is handled by the disabled attribute in the template string
     }
   }
-  // Style modal inputs (could be done with a shared class in <style> with @apply)
   document.querySelectorAll('#modal-box .modal-input').forEach(el => {
     el.classList.add('w-full', 'p-2', 'border', 'border-slate-300', 'rounded-md', 'focus:ring-blue-500', 'focus:border-blue-500', 'text-sm');
   });
@@ -1271,22 +1193,14 @@ function openModal(idx, modulo) {
 function closeModal() {
   dom.modalBg.classList.add('hidden');
   dom.modalBg.classList.remove('flex');
-  dom.modalContent.innerHTML = ""; // Clear content
+  dom.modalContent.innerHTML = ""; 
   pedidoActualIdx = null;
-  originalPedidoState = null; // Clear original state when modal closes
+  originalPedidoState = null; 
 }
 
-/**
- * Compares two objects and returns an array of changes.
- * @param {Object} oldObj - The original object.
- * @param {Object} newObj - The new object.
- * @param {Array<string>} fieldsToTrack - An array of field names to compare.
- * @returns {Array<Object>} An array of change objects ({ field, old, new }).
- */
 function getChanges(oldObj, newObj, fieldsToTrack) {
     const changes = [];
     fieldsToTrack.forEach(field => {
-        // Handle boolean values explicitly for consistent comparison
         const oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : (oldObj[field] || '');
         const newValue = typeof newObj[field] === 'boolean' ? newObj[field] : (newObj[field] || '');
 
@@ -1297,11 +1211,6 @@ function getChanges(oldObj, newObj, fieldsToTrack) {
     return changes;
 }
 
-/**
- * Formats a single change entry into a human-readable string.
- * @param {Object} change - The change object { field, old, new }.
- * @returns {string} A descriptive string of the change.
- */
 function formatChangeEntry(change) {
     const fieldNameMap = {
         'CLIENTE': 'el cliente',
@@ -1321,10 +1230,9 @@ function formatChangeEntry(change) {
         'BARRIO_LOCALIDAD': 'el barrio/localidad',
         'DEPARTAMENTO': 'el departamento',
         'ETIQUETA_EMITIDA': 'el estado de "Etiqueta Emitida"',
-        'PRODUCTS': 'los productos' // Added for PRODUCTS
+        'PRODUCTS': 'los productos' 
     };
 
-    // Helper to format boolean values
     const formatBoolean = (val) => val ? 'Sí' : 'No';
 
     const oldValFormatted = typeof change.old === 'boolean' ? formatBoolean(change.old) : (change.old === '' ? '(vacío)' : change.old);
@@ -1332,7 +1240,6 @@ function formatChangeEntry(change) {
 
     const fieldDescription = fieldNameMap[change.field] || change.field;
 
-    // Special handling for boolean fields
     if (typeof change.old === 'boolean' || typeof change.new === 'boolean') {
         if (change.new === true) {
             return `Se marcó como "${fieldDescription.replace('el estado de "', '').replace('"', '')}".`;
@@ -1341,11 +1248,9 @@ function formatChangeEntry(change) {
         }
     }
 
-    // Special handling for changes from empty to a value
     if (change.old === '' && change.new !== '') {
         return `Se estableció ${fieldDescription} a "<span class="text-green-500">${newValFormatted}</span>".`;
     }
-    // Special handling for changes from a value to empty
     if (change.old !== '' && change.new === '') {
         return `Se eliminó el valor de ${fieldDescription}: de "<span class="text-red-500">${oldValFormatted}</span>" a "(vacío)".`;
     }
@@ -1357,9 +1262,7 @@ function formatChangeEntry(change) {
 
 // ================== ACTIONS ================================
 async function guardarFaseYDatos(pedido) {
-  // Envía al backend los datos
   try {
-    // Los campos que se enviarán al backend para actualizar
     const updatedFields = {
       CLIENTE: pedido.CLIENTE,
       DIRECCION: pedido.DIRECCION,
@@ -1372,20 +1275,20 @@ async function guardarFaseYDatos(pedido) {
       FACTURADO: pedido.FACTURADO,
       AVISO_CLIENTE: pedido.AVISO_CLIENTE,
       FASE: pedido.FASE,
-      TICKET_IMPRESO: pedido.TICKET_IMPRESO, // Incluir TICKET_IMPRESO
-      FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, // Incluir FECHA_INGRESO_SISTEMA
-      BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, // Incluir BARRIO_LOCALIDAD
-      DEPARTAMENTO: pedido.DEPARTAMENTO, // Incluir DEPARTAMENTO
-      ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, // New: Include ETIQUETA_EMITIDA
-      PRODUCTS: pedido.PRODUCTS // Include PRODUCTS
+      TICKET_IMPRESO: pedido.TICKET_IMPRESO, 
+      FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, 
+      BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, 
+      DEPARTAMENTO: pedido.DEPARTAMENTO, 
+      ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, 
+      PRODUCTS: pedido.PRODUCTS 
     };
 
     const response = await fetch(`${BACKEND_URL}/set-fase/${pedido.ID}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        updatedFields: updatedFields, // Envía los campos a actualizar
-        historial: pedido.HISTORIAL // Envía el array de historial completo
+        updatedFields: updatedFields, 
+        historial: pedido.HISTORIAL 
       })
     });
     if (!response.ok) {
@@ -1406,10 +1309,8 @@ async function guardarVenta(idx) {
   const p = pedidos[idx];
   if (!p) return;
 
-  // Store old phase for comparison (only for existing phase logic)
   const oldFase = p.FASE;
 
-  // Capture current values from modal before updating the pedido object
   const currentModalValues = {
     CLIENTE: document.getElementById('modal-cliente')?.value || '',
     DIRECCION: document.getElementById('modal-direccion')?.value || '',
@@ -1426,10 +1327,9 @@ async function guardarVenta(idx) {
     AVISO_CLIENTE: document.getElementById('modal-aviso-cliente')?.checked || false,
     TICKET_IMPRESO: p.TICKET_IMPRESO,
     FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA,
-    PRODUCTS: document.getElementById('modal-productos')?.value || '' // Capture PRODUCTS value
+    PRODUCTS: document.getElementById('modal-productos')?.value || '' 
   };
 
-  // Apply updates to the pedido object
   p.CLIENTE = currentModalValues.CLIENTE;
   p.DIRECCION = currentModalValues.DIRECCION;
   p.TELEFONO = currentModalValues.TELEFONO;
@@ -1443,9 +1343,8 @@ async function guardarVenta(idx) {
   p.ETIQUETA_EMITIDA = currentModalValues.ETIQUETA_EMITIDA;
   p.FACTURADO = currentModalValues.FACTURADO;
   p.AVISO_CLIENTE = currentModalValues.AVISO_CLIENTE;
-  p.PRODUCTS = currentModalValues.PRODUCTS; // Update PRODUCTS on the pedido object
+  p.PRODUCTS = currentModalValues.PRODUCTS; 
 
-  // Only apply phase change logic if not already 'COMPLETADO', 'COMPLETADO MODIFICADO' or 'PREPARANDO MODIFICADO'
   if (oldFase !== "COMPLETADO" && oldFase !== "COMPLETADO MODIFICADO" && oldFase !== "PREPARANDO MODIFICADO") {
       let newFase = oldFase;
       if (newFase === "EN ESPERA") newFase = "PROCESANDO";
@@ -1455,7 +1354,6 @@ async function guardarVenta(idx) {
       p.FASE = newFase;
   }
 
-  // Get changes by comparing original state with the updated pedido object
   const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_VENTAS.filter(field => field !== 'FASE' && field !== 'EMPAQUE'));
 
   if (changes.length > 0) {
@@ -1497,7 +1395,6 @@ async function modificarPedidoVentas(idx) {
   const oldFase = p.FASE;
   const oldEmpaque = p.EMPAQUE;
 
-  // Determine new phase based on current phase
   if (oldFase === "COMPLETADO") {
       p.FASE = "COMPLETADO MODIFICADO";
   } else if (oldFase === "PREPARANDO") {
@@ -1506,9 +1403,8 @@ async function modificarPedidoVentas(idx) {
       showNoti("No se puede modificar un pedido en esta fase.", false);
       return;
   }
-  p.EMPAQUE = ''; // Clear empaque
+  p.EMPAQUE = ''; 
 
-  // Track changes specifically for this action
   const changes = [];
   if (oldFase !== p.FASE) {
       changes.push({ field: 'FASE', old: oldFase, new: p.FASE });
@@ -1541,7 +1437,6 @@ async function completarPedido(idx) {
   const p = pedidos[idx];
   if (!p) return;
 
-  // Capture current values before updating p
   const oldFase = p.FASE;
   const oldEmpaque = p.EMPAQUE;
 
@@ -1556,7 +1451,6 @@ async function completarPedido(idx) {
   }
   p.FASE = "COMPLETADO";
 
-  // Get changes by comparing original state with the updated pedido object for deposit specific fields
   const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_DEPOSITO);
 
   if (changes.length > 0) {
@@ -1579,7 +1473,6 @@ async function completarPedido(idx) {
   closeModal();
 }
 
-// Impresión de ticket
 function imprimirTicket(idx) {
   const p = pedidos[idx];
   if (!p) return;
@@ -1587,9 +1480,7 @@ function imprimirTicket(idx) {
   let prodsHtml = "";
   if (p.PRODUCTS) {
       const productLines = (p.PRODUCTS || "").split('\n').filter(line => line.trim() !== '');
-      // Generate the table body using the HTML row formatter
       productLines.forEach(line => {
-          // Only add if formatProductLineToHtmlRow returns a non-empty string (i.e., it's a valid product line)
           const formattedRow = formatProductLineToHtmlRow(line);
           if (formattedRow) {
               prodsHtml += formattedRow;
@@ -1620,23 +1511,19 @@ function imprimirTicket(idx) {
 
   setTimeout(() => {
     window.print();
-    printCount[p.ID] = true; // Mark as printed
+    printCount[p.ID] = true; 
     const btnPrintInModal = document.getElementById('modal-print-ticket');
     if (btnPrintInModal) {
       btnPrintInModal.textContent = "Reimprimir Ticket";
-      // Update classes directly instead of relying on custom CSS classes
       btnPrintInModal.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'focus:ring-blue-500');
       btnPrintInModal.classList.add('bg-custom-orange', 'hover:bg-orange-700', 'focus:ring-custom-orange');
     }
 
-    // AÑADIR ESTO: Actualizar TICKET_IMPRESO en el pedido y enviarlo al backend
-    if (p.TICKET_IMPRESO !== true) { // Solo si no estaba ya marcado
+    if (p.TICKET_IMPRESO !== true) { 
         p.TICKET_IMPRESO = true;
-        // Llama a guardarFaseYDatos para persistir el cambio de TICKET_IMPRESO
-        // No cerramos el modal aquí, solo actualizamos el estado.
         guardarFaseYDatos(p);
     }
-  }, 250); // Small delay to ensure content is rendered for printing
+  }, 250); 
 }
 
 // ===================== EVENT LISTENERS ====================
@@ -1645,26 +1532,20 @@ function setupEventListeners() {
   dom.logoutBtn.addEventListener('click', logout);
   dom.refreshButton.addEventListener('click', cargarPedidos);
 
-  // Filters Ventas
   [dom.filtroFase, dom.filtroPago, dom.filtroWoo].forEach(el => {
     if (el) el.addEventListener('change', renderizarTodo);
   });
   if (dom.filtroBuscar) dom.filtroBuscar.addEventListener('input', renderizarTodo);
 
-  // Filters Deposito
   if (dom.filtroFaseDep) dom.filtroFaseDep.addEventListener('change', renderizarTodo);
   if (dom.filtroEnvioDep) dom.filtroEnvioDep.addEventListener('change', renderizarTodo);
   if (dom.filtroBuscarDep) dom.filtroBuscarDep.addEventListener('input', renderizarTodo);
 
-  // Modal close
   dom.modalClose.addEventListener('click', closeModal);
   dom.modalBg.addEventListener('click', (e) => {
-    // Only close modal if the click target is the modal background itself, not its children
     if (e.target === dom.modalBg) closeModal();
   });
 
-  // Notification close button and OK button
-  // These are set dynamically in showNoti and showAttentionModal, but ensure default listeners are clean
   if (dom.notiCloseBtn) {
       dom.notiCloseBtn.addEventListener('click', hideNoti);
   }
@@ -1672,23 +1553,18 @@ function setupEventListeners() {
       dom.notiOkBtn.addEventListener('click', hideNoti);
   }
 
-  // Prevent clicks on the notification badge from bubbling up to elements underneath (like modal-bg)
-  // This is now less critical for the standard noti-badge since attention-modal handles blocking
   if (dom.notiBadge) {
       dom.notiBadge.addEventListener('click', (e) => {
           e.stopPropagation();
       });
   }
 
-  // Prevent clicks on the attention modal background from bubbling up to elements underneath
   if (dom.attentionModalBg) {
       dom.attentionModalBg.addEventListener('click', (e) => {
-          // Only close if the click is directly on the background, not the content box
           if (e.target === dom.attentionModalBg) {
-              e.stopPropagation(); // Prevent propagation to elements below
+              e.stopPropagation(); 
           }
       });
-      // Also prevent clicks on the attention modal box itself from bubbling up
       const attentionModalBox = document.getElementById('attention-modal-box');
       if (attentionModalBox) {
           attentionModalBox.addEventListener('click', (e) => {
@@ -1698,16 +1574,15 @@ function setupEventListeners() {
   }
 
 
-  // Event delegation for action buttons in tables
   dom.tablaVentasBody.addEventListener('click', (e) => {
-    if (e.target.matches('button[data-idx]')) { // Simplified selector as class is now direct
+    if (e.target.matches('button[data-idx]')) { 
       const idx = parseInt(e.target.dataset.idx);
       const modulo = e.target.dataset.module;
       openModal(idx, modulo);
     }
   });
   dom.tablaDepositoBody.addEventListener('click', (e) => {
-     if (e.target.matches('button[data-idx]')) { // Simplified selector as class is now direct
+     if (e.target.matches('button[data-idx]')) { 
       const idx = parseInt(e.target.dataset.idx);
       const modulo = e.target.dataset.module;
       openModal(idx, modulo);
@@ -1719,8 +1594,8 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
   cacheDOMElements();
   setupEventListeners();
-  logout(); // Start in logged-out state
-  setInterval(() => { if (usuario) cargarPedidos(); }, 10000); // Auto-refresh every 10 seconds
+  logout(); 
+  setInterval(() => { if (usuario) cargarPedidos(); }, 60000); // Auto-refresh every 60 seconds
 });
 
 </script>
