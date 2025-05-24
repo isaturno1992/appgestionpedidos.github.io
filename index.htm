@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión Centralizada de Pedidos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Custom base styles */
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom animation for pop effect on elements like modal and stat boxes */
+    @keyframes pop {
+      0% {transform: scale(0.94);}
+      80% {transform: scale(1.06);}
+      100% {transform: scale(1);}
+    }
+    .animate-pop {
+      animation: pop 0.35s cubic-bezier(.53,1.77,.51,.95);
+    }
+    .stat-box-animate-pop {
+        animation: pop 0.45s cubic-bezier(.53,1.77,.51,.95);
+    }
+
+    /* Custom print styles for ticket */
+    @media print {
+      body > *:not(#ticket-print-wrapper) {
+        display: none !important;
+      }
+      #ticket-print-wrapper {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+      #ticket-print {
+        visibility: visible !important;
+        width: 79mm !important;
+        min-width: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        font-family: monospace;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+      }
+      #ticket-print * {
+        visibility: visible !important;
+        font-family: monospace !important;
+      }
+      .ticket-table {
+        width: 100%;
+        font-size: 10pt;
+        border-collapse: collapse;
+        margin-bottom: 10px;
+      }
+      .ticket-table th, .ticket-table td {
+        border: 1px solid #222;
+        padding: 2px 4px;
+        font-weight: normal;
+        text-align: left;
+      }
+       /* Hide buttons or other non-printable elements within the ticket if any */
+      #ticket-print button {
+        display: none !important;
+      }
+    }
+  </style>
+  <script>
+    // Tailwind CSS configuration (optional, for custom colors if needed)
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'custom-blue': '#2563eb', // Corresponds to blue-600
+            'custom-green': '#16a34a', // Corresponds to green-600
+            'custom-yellow': '#facc15', // Corresponds to yellow-400
+            'custom-red': '#dc2626',   // Corresponds to red-600
+            'custom-orange': '#ea580c', // Corresponds to orange-600
+            'custom-purple': '#a259f7',
+            'text-dark': '#22223b',
+          },
+          borderRadius: {
+            'custom': '18px',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 text-base min-h-screen">
+
+<div id="noti-badge" class="fixed top-4 right-4 bg-blue-600 text-white rounded-xl py-2 px-6 z-[2000] font-bold shadow-lg hidden flex items-center justify-between">
+  <span id="noti-message"></span>
+  <div class="flex items-center">
+    <button id="noti-ok-btn" class="ml-4 bg-white text-blue-600 px-3 py-1 rounded-md text-sm font-semibold hidden">OK</button>
+    <button id="noti-close-btn" class="ml-2 text-white text-xl leading-none hover:text-slate-200">&times;</button>
+  </div>
+</div>
+
+<div id="login-panel" class="bg-white rounded-custom shadow-lg p-9 max-w-sm mx-auto mt-16 sm:mt-32">
+  <h2 class="text-2xl font-bold mb-6 text-center text-custom-blue">Iniciar sesión</h2>
+  <form id="login-form">
+    <div class="mb-4">
+      <label for="login-user" class="block mb-1.5 font-medium text-slate-700">Usuario</label>
+      <select id="login-user" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+        <option value="admin">Admin</option>
+        <option value="ventas">Ventas</option>
+        <option value="deposito">Depósito</option>
+      </select>
+    </div>
+    <div class="mb-6">
+      <label for="login-pass" class="block mb-1.5 font-medium text-slate-700">Contraseña</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="Contraseña" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+    </div>
+    <button type="submit" class="w-full bg-custom-green text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Entrar</button>
+  </form>
+</div>
+
+<div id="main-app" class="container max-w-6xl mx-auto my-10 bg-white rounded-custom shadow-lg p-6 sm:p-9 hidden">
+  <button id="logout-btn" title="Cerrar sesión" class="float-right -mt-2 mb-2 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Salir</button>
+  <h2 class="text-3xl font-bold mb-4 text-custom-blue">Gestión Centralizada de Pedidos</h2>
+  <div id="sync-log" class="text-sm mb-5 text-slate-500">Sincronizando...</div>
+
+  <div id="sales-stats-wrapper" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
+    <div class="stat-box-animate-pop bg-custom-blue text-white p-5 rounded-custom shadow-md flex flex-col items-start min-h-[120px]">
+      <div class="text-lg text-white">Total</div><div class="stat-number text-3xl font-bold text-white" id="stat-total">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-purple text-white p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">En Espera</div><div class="stat-number text-3xl font-bold text-white" id="stat-espera">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-orange text-white p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">Procesando</div><div class="stat-number text-3xl font-bold text-white" id="stat-procesando">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-yellow p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">Preparando</div><div class="stat-number text-3xl font-bold text-white" id="stat-preparando">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-green text-white p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">Completado</div><div class="stat-number text-3xl font-bold text-white" id="stat-completado">0</div>
+    </div>
+  </div>
+
+  <div id="filtros-ventas" class="flex flex-wrap gap-3 mb-6 items-center">
+    <select id="filtro-fase" class="filter-input">
+      <option value="ACTIVE_ONLY" selected>Fases Activas</option>
+      <option value="EN ESPERA">En Espera</option>
+      <option value="PROCESANDO">Procesando</option>
+      <option value="PREPARANDO">Preparando</option>
+      <option value="PREPARANDO MODIFICADO">Preparando Modificado</option>
+      <option value="ALL_PHASES">Todas las fases (incluir completados)</option>
+    </select>
+    <select id="filtro-pago" class="filter-input">
+      <option value="">Pago (Todos)</option>
+      <option value="pendiente">Pendiente</option>
+      <option value="confirmado">Confirmar</option>
+    </select>
+    <select id="filtro-woo" class="filter-input">
+      <option value="">Estado Woo (Todos)</option>
+      <option value="pending">Pendiente de pago</option>
+      <option value="on-hold">En espera</option>
+      <option value="processing">Procesando</option>
+      <option value="completed">Completado</option>
+    </select>
+    <input type="search" id="filtro-buscar" placeholder="Buscar..." class="filter-input flex-grow">
+    <button id="refresh-button" class="bg-custom-green text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Refrescar</button>
+  </div>
+
+  <div id="modulo-ventas" class="mb-8">
+    <h3 class="text-2xl font-semibold mb-4 text-slate-700">Módulo de Ventas</h3>
+    <div class="overflow-x-auto bg-white rounded-custom shadow-md">
+      <table id="tabla-ventas" class="w-full text-sm text-left text-slate-600">
+        <thead class="text-xs text-white uppercase bg-custom-blue">
+          <tr>
+            <th scope="col" class="px-4 py-3">ID</th>
+            <th scope="col" class="px-4 py-3">Cliente</th>
+            <th scope="col" class="px-4 py-3">Método de Envío</th>
+            <th scope="col" class="px-4 py-3">Monto $</th>
+            <th scope="col" class="px-4 py-3">Estado de Pago</th>
+            <th scope="col" class="px-4 py-3">Estado WooCommerce</th>
+            <th scope="col" class="px-4 py-3">Fase</th>
+            <th scope="col" class="px-4 py-3">Fecha</th>
+            <th scope="col" class="px-4 py-3">Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="modulo-deposito" class="mb-8" style="display:none;">
+    <h3 class="text-2xl font-semibold mb-4 text-slate-700">Módulo de Depósito</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
+        <div class="stat-box-animate-pop bg-custom-blue text-white p-6 rounded-2xl shadow-lg flex flex-col items-start min-h-[120px]">
+            <div class="text-lg text-white">DAC</div><div class="stat-number text-3xl font-bold text-white" id="stat-dac">0</div>
+        </div>
+        <div class="stat-box-animate-pop bg-custom-yellow p-6 rounded-2xl shadow-lg flex flex-col items-start">
+            <div class="text-lg text-white">GESTIÓN POST</div><div class="stat-number text-3xl font-bold text-white" id="stat-gp">0</div>
+        </div>
+        <div class="stat-box-animate-pop bg-custom-red text-white p-6 rounded-2xl shadow-lg flex flex-col items-start">
+            <div class="text-lg text-white">PICK UP</div><div class="stat-number text-3xl font-bold text-white" id="stat-pickup">0</div>
+        </div>
+        <div class="stat-box-animate-pop bg-purple-600 text-white p-6 rounded-2xl shadow-lg flex flex-col items-start">
+            <div class="text-lg text-white">Modificados</div><div class="stat-number text-3xl font-bold text-white" id="stat-modificados">0</div>
+        </div>
+    </div>
+    <div class="flex flex-wrap gap-3 mb-6 items-center">
+      <select id="filtro-fase-dep" class="filter-input">
+        <option value="DEFAULT_DEPOSIT_FILTER" selected>Fases de Depósito (Activas)</option>
+        <option value="PREPARANDO">Preparando</option>
+        <option value="PREPARANDO MODIFICADO">Preparando Modificado</option>
+        <option value="MODIFICADOS_AGRUPADOS">Pedidos Modificados (Agrupados)</option>
+      </select>
+      <select id="filtro-envio-dep" class="filter-input">
+        <option value="">Método Envío (Todos)</option>
+        <option value="DAC">DAC</option>
+        <option value="GESTIÓN POST">GESTIÓN POST</option>
+        <option value="PICK UP">PICK UP</option>
+      </select>
+      <input type="search" id="filtro-buscar-dep" placeholder="Buscar..." class="filter-input flex-grow">
+    </div>
+    <div class="overflow-x-auto bg-white rounded-custom shadow-md">
+      <table id="tabla-deposito" class="w-full text-sm text-left text-slate-600">
+        <thead class="text-xs text-white uppercase bg-custom-blue">
+          <tr>
+            <th scope="col" class="px-4 py-3">ID</th>
+            <th scope="col" class="px-4 py-3">Cliente</th>
+            <th scope="col" class="px-4 py-3">Método Envío</th>
+            <th scope="col" class="px-4 py-3">Fase</th>
+            <th scope="col" class="px-4 py-3">Fecha</th>
+            <th scope="col" class="px-4 py-3 text-center">Ticket</th>
+            <th scope="col" class="px-4 py-3">Acción</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="modal-bg" class="fixed inset-0 z-10 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div id="modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-lg w-full p-7 relative max-h-[90vh] overflow-y-auto">
+    <button id="modal-close" title="Cerrar" class="absolute top-4 right-5 text-slate-400 hover:text-custom-red text-3xl leading-none">&times;</button>
+    <div id="modal-title" class="text-xl font-bold mb-5 text-custom-blue"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div id="confirm-modal-bg" class="fixed inset-0 z-[2000] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div id="confirm-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+    <div id="confirm-modal-message" class="text-lg font-semibold mb-5 text-slate-700 text-center"></div>
+    <div class="flex justify-center gap-4">
+      <button id="confirm-modal-cancel" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-red-500 text-white hover:bg-red-700 focus:ring-red-500">Cancelar</button>
+      <button id="confirm-modal-ok" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-custom-green text-white hover:bg-green-700 focus:ring-custom-green">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="attention-modal-bg" class="fixed inset-0 z-[2000] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div id="attention-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+    <div id="attention-modal-message" class="text-lg font-semibold mb-5 text-slate-700 text-center"></div>
+    <div class="flex justify-center">
+      <button id="attention-modal-ok" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-custom-green text-white hover:bg-green-700 focus:ring-custom-green">OK</button>
+    </div>
+  </div>
+</div>
+<div id="ticket-print-wrapper" class="hidden print:block">
+  <div id="ticket-print" class="hidden print:block"></div>
+</div>
+
+<script>
+'use strict';
+
+// ===================== DOM Elements Cache ====================
+const dom = {
+    notiBadge: null,
+    notiMessage: null,
+    notiCloseBtn: null,
+    notiOkBtn: null,
+    loginPanel: null,
+    loginForm: null,
+    loginUser: null,
+    loginPass: null,
+    mainApp: null,
+    logoutBtn: null,
+    syncLog: null,
+    statTotal: null,
+    statEspera: null,
+    statProcesando: null,
+    statPreparando: null,
+    statCompletado: null,
+    statDac: null,
+    statGp: null,
+    statPickup: null,
+    statModificados: null, // For the modified stats
+    filtrosVentas: null,
+    filtroFase: null,
+    filtroPago: null,
+    filtroWoo: null,
+    filtroBuscar: null,
+    refreshButton: null,
+    moduloVentas: null,
+    tablaVentasBody: null,
+    moduloDeposito: null,
+    filtroFaseDep: null,
+    filtroEnvioDep: null,
+    filtroBuscarDep: null,
+    tablaDepositoBody: null,
+    modalBg: null,
+    modalBox: null,
+    modalClose: null,
+    modalTitle: null,
+    modalContent: null,
+    ticketPrint: null,
+    ticketPrintWrapper: null,
+    // Confirmation modal elements
+    confirmModalBg: null,
+    confirmModalBox: null,
+    confirmModalMessage: null,
+    confirmModalCancel: null,
+    confirmModalOk: null,
+    // Attention modal elements
+    attentionModalBg: null,
+    attentionModalMessage: null,
+    attentionModalOk: null,
+    // Wrapper for sales stats (to hide/show for deposit user)
+    salesStatsWrapper: null,
+    // New: For products display in modal
+    productosDisplayTable: null,
+    productosEditArea: null,
+    modalEditProductosBtn: null,
+};
+
+function cacheDOMElements() {
+    for (const key in dom) {
+        const id = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        dom[key] = document.getElementById(id);
+    }
+    // Specific selectors
+    dom.tablaVentasBody = document.querySelector('#tabla-ventas tbody');
+    dom.tablaDepositoBody = document.querySelector('#tabla-deposito tbody');
+    // Notification elements
+    dom.notiMessage = document.getElementById('noti-message');
+    dom.notiCloseBtn = document.getElementById('noti-close-btn');
+    dom.notiOkBtn = document.getElementById('noti-ok-btn');
+    // Confirmation modal elements
+    dom.confirmModalBg = document.getElementById('confirm-modal-bg');
+    dom.confirmModalMessage = document.getElementById('confirm-modal-message');
+    dom.confirmModalCancel = document.getElementById('confirm-modal-cancel');
+    dom.confirmModalOk = document.getElementById('confirm-modal-ok');
+    // Attention modal elements
+    dom.attentionModalBg = document.getElementById('attention-modal-bg');
+    dom.attentionModalMessage = document.getElementById('attention-modal-message');
+    dom.attentionModalOk = document.getElementById('attention-modal-ok');
+    // New stat element
+    dom.statModificados = document.getElementById('stat-modificados');
+    // Sales stats wrapper
+    dom.salesStatsWrapper = document.getElementById('sales-stats-wrapper');
+    // New: For products display in modal (these will be null until modal is opened)
+    // Re-cache these elements when the modal is opened, as they are dynamically added
+    // dom.productosDisplayTable = document.getElementById('productos-display-table'); // No longer cached here
+    // dom.productosEditArea = document.getElementById('modal-productos'); // No longer cached here
+    // dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn'); // No longer cached here
+}
+
+
+// ===================== CONFIGURACIÓN ====================
+// ACTUALIZA ESTA URL CON LA URL DE TU BACKEND DESPLEGADO EN RENDER.COM
+const BACKEND_URL = 'https://gestor-pedidos-api-online.onrender.com';
+
+const USERS = {
+  admin:    { pass: "admin123",   rol: "admin",    nombre: "Admin" },
+  ventas:   { pass: "ventas2024", rol: "ventas",   nombre: "Ventas" },
+  deposito: { pass: "deposito321",rol: "deposito", nombre: "Depósito" }
+};
+// MUY IMPORTANTE: El sistema de login actual es INSEGURO.
+// Las contraseñas están en el código cliente. Esto es solo para demostración.
+// En una aplicación real, la autenticación DEBE ser manejada por el backend.
+
+const OPCIONES_EMPAQUE = {
+  "DAC": ["", "20x20", "30x30", "40x40", "50x50", "60x60"],
+  "GESTIÓN POST": ["", "S", "M", "L"]
+};
+const WOOCOMMERCE_TRANSLATE = {
+  "pending": "Pendiente de pago",
+  "on-hold": "En espera",
+  "processing": "Procesando",
+  "completed": "Completado"
+};
+let usuario = null;
+let pedidos = [];
+let pedidoActualIdx = null; // Store index instead of full object
+let printCount = {}; // Tracks if a ticket has been printed { pedidoId: true }
+
+// Global variable to store the original state of the pedido when modal opens
+let originalPedidoState = null;
+let notiTimeoutId = null; // To store the timeout ID for notifications
+
+// Fields to track for changes in sales modal
+const FIELDS_TO_TRACK_VENTAS = [
+  'CLIENTE', 'DIRECCION', 'TELEFONO', 'EMAIL', 'NOTAS', 'METODO_ENVIO',
+  'ESTADO_PAGO', 'ENTREGADO', 'FACTURADO', 'AVISO_CLIENTE', 'FASE',
+  'TICKET_IMPRESO', 'FECHA_INGRESO_SISTEMA', 'BARRIO_LOCALIDAD', 'DEPARTAMENTO',
+  'ETIQUETA_EMITIDA', 'PRODUCTS' // Added PRODUCTS for tracking
+];
+// Fields to track for changes in deposit modal (completarPedido)
+const FIELDS_TO_TRACK_DEPOSITO = ['FASE', 'EMPAQUE'];
+
+
+// ===================== UTILITIES ============================
+/**
+ * Shows a notification badge.
+ * @param {string} msg - The message to display.
+ * @param {boolean|null} isSuccess - True for success (green), false for error (red), null for info (blue).
+ */
+function showNoti(msg, isSuccess = true) {
+  if (!dom.notiBadge || !dom.notiMessage || !dom.notiCloseBtn || !dom.notiOkBtn) return;
+
+  // Clear any existing timeout to prevent conflicts
+  if (notiTimeoutId) {
+    clearTimeout(notiTimeoutId);
+    notiTimeoutId = null;
+  }
+
+  dom.notiMessage.textContent = msg;
+  dom.notiBadge.classList.remove('hidden', 'bg-blue-600', 'bg-red-600', 'bg-green-600');
+
+  if (isSuccess === null) { // Neutral / Info
+    dom.notiBadge.classList.add('bg-blue-600');
+  } else if (isSuccess) {
+    dom.notiBadge.classList.add('bg-green-600');
+  } else {
+    dom.notiBadge.classList.add('bg-red-600');
+  }
+  dom.notiBadge.style.display = 'flex'; // Ensure it's visible
+
+  dom.notiOkBtn.classList.add('hidden'); // Hide OK button for standard notifications
+  dom.notiCloseBtn.onclick = hideNoti; // Ensure 'x' button still works
+  notiTimeoutId = setTimeout(hideNoti, 3000); // Auto-hide after 3 seconds
+}
+
+function hideNoti() {
+  if (dom.notiBadge) {
+    dom.notiBadge.classList.add('hidden');
+    dom.notiBadge.style.display = 'none';
+  }
+  // Clean up event listeners if they were manually attached
+  if (dom.notiOkBtn) dom.notiOkBtn.onclick = null;
+  if (dom.notiCloseBtn) dom.notiCloseBtn.onclick = null;
+  if (notiTimeoutId) {
+    clearTimeout(notiTimeoutId);
+    notiTimeoutId = null;
+  }
+}
+
+/**
+ * Shows a blocking attention modal with a message and an OK button.
+ * @param {string} message - The message to display.
+ * @returns {Promise<boolean>} Resolves true when OK is clicked.
+ */
+function showAttentionModal(message) {
+  return new Promise(resolve => {
+    if (!dom.attentionModalBg || !dom.attentionModalMessage || !dom.attentionModalOk) {
+      console.error("Attention modal DOM elements not found.");
+      resolve(false);
+      return;
+    }
+
+    dom.attentionModalMessage.textContent = message;
+    dom.attentionModalBg.classList.remove('hidden');
+    dom.attentionModalBg.classList.add('flex');
+
+    const handleOk = () => {
+      dom.attentionModalBg.classList.add('hidden');
+      dom.attentionModalBg.classList.remove('flex');
+      dom.attentionModalOk.removeEventListener('click', handleOk);
+      resolve(true);
+    };
+
+    dom.attentionModalOk.addEventListener('click', handleOk);
+  });
+}
+
+
+function mostrarSyncLog(text, ok) {
+  if (!dom.syncLog) return;
+  dom.syncLog.textContent = text;
+  dom.syncLog.classList.remove('text-green-600', 'text-red-600', 'text-slate-500');
+  if (ok === true) {
+    dom.syncLog.classList.add('text-green-600');
+  } else if (ok === false) {
+    dom.syncLog.classList.add('text-red-600');
+  } else {
+    dom.syncLog.classList.add('text-slate-500');
+  }
+}
+
+// Custom Confirmation Modal function
+function showConfirmationModal(message) {
+  return new Promise(resolve => {
+    if (!dom.confirmModalBg || !dom.confirmModalMessage || !dom.confirmModalOk || !dom.confirmModalCancel) {
+      console.error("Confirmation modal DOM elements not found.");
+      resolve(false); // Resolve false if elements are missing
+      return;
+    }
+
+    dom.confirmModalMessage.textContent = message;
+    dom.confirmModalBg.classList.remove('hidden');
+    dom.confirmModalBg.classList.add('flex');
+
+    const handleConfirm = () => {
+      dom.confirmModalBg.classList.add('hidden');
+      dom.confirmModalBg.classList.remove('flex');
+      dom.confirmModalOk.removeEventListener('click', handleConfirm);
+      dom.confirmModalCancel.removeEventListener('click', handleCancel);
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      dom.confirmModalBg.classList.add('hidden');
+      dom.confirmModalBg.classList.remove('flex');
+      dom.confirmModalOk.removeEventListener('click', handleConfirm);
+      dom.confirmModalCancel.removeEventListener('click', handleCancel);
+      resolve(false);
+    };
+
+    dom.confirmModalOk.addEventListener('click', handleConfirm);
+    dom.confirmModalCancel.addEventListener('click', handleCancel);
+  });
+}
+
+
+// ===================== LOGIN ============================
+function handleLogin(event) {
+  event.preventDefault();
+  const u = dom.loginUser.value;
+  const p = dom.loginPass.value;
+  if (USERS[u] && USERS[u].pass === p) {
+    usuario = USERS[u];
+    dom.mainApp.style.display = 'block';
+    dom.loginPanel.style.display = 'none';
+    cargarPedidos();
+    showNoti(`Bienvenido ${usuario.nombre}!`, true);
+  } else {
+    showNoti("Usuario o contraseña incorrectos", false);
+  }
+}
+
+function logout() {
+  usuario = null;
+  pedidos = [];
+  pedidoActualIdx = null;
+  printCount = {};
+  if(dom.mainApp) dom.mainApp.style.display = 'none';
+  if(dom.loginPanel) dom.loginPanel.style.display = 'block';
+  if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0]; // Reset to first user
+  if(dom.loginPass) dom.loginPass.value = ''; // Clear password
+  // Clear tables and stats
+  if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
+  if(dom.tablaDepositoBody) dom.tablaDepositoBody.innerHTML = '';
+  updateStats([]); // Pass empty array to reset stats
+  mostrarSyncLog('Sesión cerrada.', null);
+}
+
+
+// ==================== SINCRONIZACIÓN ====================
+async function cargarPedidos() {
+  if (!usuario) return;
+  mostrarSyncLog('Sincronizando...', null);
+  try {
+    const response = await fetch(BACKEND_URL + '/pedidos', { cache: "no-store" });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Error HTTP: ${response.status} - ${errorData.error}`);
+    }
+    const data = await response.json();
+    pedidos = (Array.isArray(data) ? data : []).map(p => ({
+      ...p,
+      FASE: p.FASE || "EN ESPERA",
+      ID: String(p.ID || p.Id || p.id || Date.now()), // Ensure ID is a string
+      CLIENTE: ((p.NOMBRE||"") + " " + (p.APELLIDO||"")).toUpperCase().trim(),
+      MONTO: p.MONTO || p.Total || p.TOTAL || p.total || "",
+      ESTADO_WOO: p.ESTADO || p.Estado || p.estado || "",
+      METODO_ENVIO: p.METODO_ENVIO || p.Metodo_Envio || p["Método de Envío"] || "",
+      FECHA: p.FECHA || "",
+      TELEFONO: p.TELEFONO ? (String(p.TELEFONO).startsWith("0") ? String(p.TELEFONO) : "0" + String(p.TELEFONO)).replace(/^00+/, "0") : "",
+      ESTADO_PAGO: p.ESTADO_PAGO || p.Estado_Pago || p["Estado de Pago"] || p.estado_pago || "",
+      NOTAS: p.NOTAS || "",
+      EMAIL: p.EMAIL || "",
+      DIRECCION: p.DIRECCION || "",
+      BARRIO_LOCALIDAD: p.BARRIO_LOCALIDAD || p.Barrio || p.Localidad || "", // Added new field
+      DEPARTAMENTO: p.DEPARTAMENTO || p.Departamento || "", // Added new field
+      PRODUCTS: p.PRODUCTS || p.PRODUCTOS || p.Products || "", // Corrected: Check multiple possible backend keys for PRODUCTS
+      FACTURADO: p.FACTURADO === true || String(p.FACTURADO).toLowerCase() === "true",
+      ENTREGADO: p.ENTREGADO === true || String(p.ENTREGADO).toLowerCase() === "true",
+      AVISO_CLIENTE: p.AVISO_CLIENTE === true || String(p.AVISO_CLIENTE).toLowerCase() === "true",
+      EMPAQUE: p.EMPAQUE || "",
+      HISTORIAL: Array.isArray(p.HISTORIAL) ? p.HISTORIAL : [], // Ensure HISTORIAL is an array
+      TICKET_IMPRESO: p.TICKET_IMPRESO === true || String(p.TICKET_IMPRESO).toLowerCase() === "true", // Ensure TICKET_IMPRESO is boolean
+      FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA === true || String(p.FECHA_INGRESO_SISTEMA).toLowerCase() === "true" || p.FECHA_INGRESO_SISTEMA || "", // Ensure FECHA_INGRESO_SISTEMA is string
+      ETIQUETA_EMITIDA: p.ETIQUETA_EMITIDA === true || String(p.ETIQUETA_EMITIDA).toLowerCase() === "true" // New: ensure ETIQUETA_EMITIDA is boolean
+    }));
+    renderizarTodo();
+    // Get current date and time for synchronization log
+    const now = new Date();
+    const formattedDateTime = now.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    mostrarSyncLog(`¡Datos sincronizados! Última actualización: ${formattedDateTime}`, true);
+  } catch (err) {
+    mostrarSyncLog('Error al cargar pedidos: ' + err.message, false);
+    console.error("Error en cargarPedidos:", err);
+  }
+}
+
+// ==================== RENDERIZADO GENERAL =====================
+function updateStats(filteredPedidos) {
+    const currentPedidos = filteredPedidos || pedidos; // Use filtered if provided, else all
+    if (!dom.statTotal) return; // Ensure DOM is ready
+
+    const stats = {
+        total: currentPedidos.length,
+        espera: currentPedidos.filter(p => p.FASE === "EN ESPERA").length,
+        procesando: currentPedidos.filter(p => p.FASE === "PROCESANDO").length,
+        preparando: currentPedidos.filter(p => p.FASE === "PREPARANDO").length,
+        completado: currentPedidos.filter(p => p.FASE === "COMPLETADO").length,
+        dac: currentPedidos.filter(p => p.METODO_ENVIO === "DAC").length,
+        gp: currentPedidos.filter(p => p.METODO_ENVIO === "GESTIÓN POST").length,
+        pickup: currentPedidos.filter(p => p.METODO_ENVIO === "PICK UP").length,
+        modificados: currentPedidos.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length
+    };
+
+    // Update and toggle visibility for sales stats
+    const salesStatElements = {
+        'stat-total': stats.total,
+        'stat-espera': stats.espera,
+        'stat-procesando': stats.procesando,
+        'stat-preparando': stats.preparando,
+        'stat-completado': stats.completado
+    };
+    for (const id in salesStatElements) {
+        const element = document.getElementById(id);
+        const value = salesStatElements[id];
+        if (element) {
+            element.textContent = value;
+            const parentBox = element.closest('.stat-box-animate-pop');
+            if (parentBox) {
+                if (value === 0) {
+                    parentBox.classList.add('hidden');
+                } else {
+                    parentBox.classList.remove('hidden');
+                }
+            }
+        }
+    }
+
+    // Update and toggle visibility for deposit stats
+    const depositStatElements = {
+        'stat-dac': stats.dac,
+        'stat-gp': stats.gp,
+        'stat-pickup': stats.pickup,
+        'stat-modificados': stats.modificados
+    };
+    for (const id in depositStatElements) {
+        const element = document.getElementById(id);
+        const value = depositStatElements[id];
+        if (element) {
+            element.textContent = value;
+            const parentBox = element.closest('.stat-box-animate-pop');
+            if (parentBox) {
+                if (value === 0) {
+                    parentBox.classList.add('hidden');
+                } else {
+                    parentBox.classList.remove('hidden');
+                }
+            }
+        }
+    }
+}
+
+
+function renderizarTodo() {
+  if (!usuario || !dom.moduloVentas) return;
+
+  updateStats(pedidos); // Update global stats with all pedidos
+
+  // Mostrar módulos y estadísticas según rol
+  const isAdmin = usuario.rol === "admin";
+  const isVentas = usuario.rol === "ventas";
+  const isDeposito = usuario.rol === "deposito";
+
+  // Controlar la visibilidad de las estadísticas de ventas
+  if (dom.salesStatsWrapper) {
+      dom.salesStatsWrapper.style.display = (isAdmin || isVentas) ? "grid" : "none";
+  }
+
+  dom.moduloVentas.style.display = (isAdmin || isVentas) ? "" : "none";
+  dom.filtrosVentas.style.display = (isAdmin || isVentas) ? "flex" : "none"; // Also hide filters
+  dom.moduloDeposito.style.display = (isAdmin || isVentas || isDeposito) ? "" : "none";
+
+  if (isAdmin || isVentas) renderVentas();
+  if (isAdmin || isVentas || isDeposito) renderDeposito();
+}
+
+/**
+ * Formats a date string into "Hace X horas/minutos" or "D/M/A".
+ * @param {string} dateString - The date string from the backend (e.g., "DD/MM/YYYY HH:MM").
+ * @returns {string} Formatted time ago or date.
+ */
+function formatTimeAgoOrDate(dateString) {
+    if (!dateString) return '';
+
+    // Parse DD/MM/YYYY HH:MM format
+    const parts = dateString.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
+    if (!parts) {
+        // Fallback if parsing fails, just return the original string or a simple date
+        try {
+            const d = new Date(dateString);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString('es-ES'); // D/M/A
+            }
+            // If it's a valid date string but not in DD/MM/YYYY HH:MM, try to parse it
+            const parsedDate = new Date(dateString);
+            if (!isNaN(parsedDate.getTime())) {
+                const diffHours = (new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60);
+                if (diffHours < 24) {
+                    const diffMinutes = Math.round((new Date().getTime() - parsedDate.getTime()) / (1000 * 60));
+                    if (diffMinutes < 60) {
+                        return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`;
+                    } else {
+                        const roundedHours = Math.round(diffHours);
+                        return `Hace ${roundedHours} hora${roundedHours === 1 ? '' : 's'}`;
+                    }
+                } else {
+                    return parsedDate.toLocaleDateString('es-ES'); // D/M/A
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+        return dateString; // Return original if cannot parse
+    }
+
+    const day = parseInt(parts[1], 10);
+    const month = parseInt(parts[2], 10) - 1; // Month is 0-indexed
+    const year = parseInt(parts[3], 10);
+    const hours = parseInt(parts[4], 10);
+    const minutes = parseInt(parts[5], 10);
+
+    const date = new Date(year, month, day, hours, minutes);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours < 24) {
+        const diffMinutes = Math.round(diffMs / (1000 * 60));
+        if (diffMinutes < 60) {
+            return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`;
+        } else {
+            const roundedHours = Math.round(diffHours);
+            return `Hace ${roundedHours} hora${roundedHours === 1 ? '' : 's'}`;
+        }
+    } else {
+        return `${day}/${month + 1}/${year}`; // D/M/A
+    }
+}
+
+/**
+ * Generates an HTML table row (<tr>) for a single product line.
+ * Assumes product line format "SKU - DESCRIPTION - QUANTITY".
+ * @param {string} line - A single line from the PRODUCTS field.
+ * @returns {string} HTML string for a table row, or empty string if not a product line.
+ */
+function formatProductLineToHtmlRow(line) {
+    if (!line || typeof line !== 'string') return '';
+    const trimmedLine = line.trim();
+
+    // Skip header and separator lines that might be present if the textarea was edited
+    // Also skip lines that look like empty rows or just dashes
+    if (trimmedLine.toLowerCase().startsWith('sku') && trimmedLine.toLowerCase().includes('descripción') && trimmedLine.toLowerCase().includes('cant.')) {
+        return ''; // This is a header line
+    }
+    if (trimmedLine.startsWith('---') && trimmedLine.includes('|')) {
+        return ''; // This is a separator line
+    }
+    if (trimmedLine === '') {
+        return ''; // Skip empty lines
+    }
+    if (trimmedLine.match(/^-+$/)) { // Line with only dashes
+        return '';
+    }
+
+
+    const parts = trimmedLine.split(' - ');
+    
+    let sku = '';
+    let description = '';
+    let quantity = '';
+
+    if (parts.length >= 3) {
+        sku = parts[0].trim();
+        quantity = parts[parts.length - 1].trim();
+        const descriptionParts = parts.slice(1, parts.length - 1);
+        description = descriptionParts.join(' - ').trim(); 
+    } else if (parts.length === 2) {
+        const lastPart = parts[1].trim();
+        if (!isNaN(parseInt(lastPart)) && String(parseInt(lastPart)) === lastPart) {
+            description = parts[0].trim();
+            quantity = lastPart;
+        } else {
+            // Fallback for unclear format, treat whole line as description
+            description = trimmedLine;
+        }
+    } else if (parts.length === 1 && trimmedLine !== '') {
+        description = trimmedLine;
+    } else {
+        return ''; // If line cannot be parsed into any meaningful parts, skip it
+    }
+    
+    // Add border-b to the row for visual separation, except for the last one (handled by CSS last:border-b-0)
+    return `<tr class="border-b border-slate-200 last:border-b-0"><td class="px-2 py-1 align-top">${sku}</td><td class="px-2 py-1 align-top">${description}</td><td class="px-2 py-1 align-top text-right">${quantity}</td></tr>`;
+}
+
+
+// ===================== VENTAS ==============================
+function aplicarFiltrosVentas(p) {
+  const fase = dom.filtroFase.value;
+  const pago = dom.filtroPago.value;
+  const woo = dom.filtroWoo.value;
+  const buscar = dom.filtroBuscar.value.toLowerCase().trim();
+
+
+  // New phase filtering logic
+  if (fase === "ACTIVE_ONLY") {
+      // If the phase is completed or completed modified, check specific conditions to keep it visible
+      if (p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") {
+          // An order is hidden from "Active Only" if ALL relevant checkboxes are TRUE.
+          // So, if ANY relevant checkbox is FALSE, it should be visible.
+          if (p.METODO_ENVIO === "DAC" || p.METODO_ENVIO === "GESTIÓN POST") {
+              if (!p.ETIQUETA_EMITIDA || !p.FACTURADO || !p.AVISO_CLIENTE) {
+                  // Keep visible if any of these are FALSE
+                  return true;
+              } else {
+                  return false; // Exclude if ALL are TRUE
+              }
+          } else if (p.METODO_ENVIO === "PICK UP") {
+              if (!p.ENTREGADO || !p.FACTURADO || !p.AVISO_CLIENTE) {
+                  // Keep visible if any of these are FALSE
+                  return true;
+              } else {
+                  return false; // Exclude if ALL are TRUE
+              }
+          } else {
+              // For completed orders with other/no method_envio, exclude them from "Active Only"
+              // unless specifically defined to be kept visible based on other criteria.
+              // Assuming if no specific method_envio rule applies, it's fully completed and should be hidden.
+              return false;
+          }
+      }
+  } else if (fase === "ALL_PHASES") {
+      // No phase filtering, show all
+  } else if (fase && p.FASE !== fase) {
+      return false; // Filter by specific phase
+  }
+
+  if (pago && (p.ESTADO_PAGO !== pago)) return false;
+  if (woo && (p.ESTADO_WOO !== woo)) return false;
+
+  if (buscar) { 
+    let encontrado = false;
+    if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) {
+      encontrado = true;
+    } else { 
+      if (
+        (p.CLIENTE || "").toLowerCase().includes(buscar) ||
+        (String(p.ID) || "").toLowerCase().includes(buscar) || 
+        (p.TELEFONO || "").toLowerCase().includes(buscar) ||
+        (p.NOTAS || "").toLowerCase().includes(buscar) ||
+        (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
+        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar)
+      ) {
+        encontrado = true;
+      }
+    }
+    if (!encontrado) return false;
+  }
+  return true;
+}
+
+function getBadgeClassForFase(fase) {
+    switch(fase) {
+        case "EN ESPERA": return "bg-blue-500 text-white";
+        case "PROCESANDO": return "bg-orange-500 text-white";
+        case "PREPARANDO": return "bg-yellow-400 text-white";
+        case "PREPARANDO MODIFICADO": return "bg-purple-400 text-white";
+        case "COMPLETADO": return "bg-green-500 text-white";
+        case "COMPLETADO MODIFICADO": return "bg-red-500 text-white";
+        case "URGENTE": return "bg-red-600 text-white";
+        default: return "bg-slate-300 text-slate-700";
+    }
+}
+
+function renderVentas() {
+  if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return;
+
+  dom.tablaVentasBody.innerHTML = ""; // Clear existing rows
+  const pedidosFiltrados = pedidos.filter(aplicarFiltrosVentas);
+
+  pedidosFiltrados.forEach(p => {
+    const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); // Get original index
+    if (pedidoIdx === -1) return; // Should not happen if p is from pedidos
+
+    const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase();
+    const tr = document.createElement('tr');
+    tr.className = "bg-white border-b hover:bg-slate-50 transition";
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td>
+      <td class="px-4 py-2">${p.CLIENTE || ""}</td>
+      <td class="px-4 py-2">${p.METODO_ENVIO || ""}</td>
+      <td class="px-4 py-2">${p.MONTO || ""}</td>
+      <td class="px-4 py-2">${(p.ESTADO_PAGO || "").charAt(0).toUpperCase() + (p.ESTADO_PAGO || "").slice(1)}</td>
+      <td class="px-4 py-2"><span class="text-slate-700">${wooTxt}</span></td>
+      <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td>
+      <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td>
+      <td class="px-4 py-2">
+        <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="ventas">Ver/Editar</button>
+      </td>
+    `;
+    dom.tablaVentasBody.appendChild(tr);
+  });
+}
+
+// ================== DEPÓSITO ===============================
+function aplicarFiltrosDeposito(p) {
+  const fase = dom.filtroFaseDep.value;
+  const envio = dom.filtroEnvioDep.value;
+  const buscar = dom.filtroBuscarDep.value.toLowerCase();
+
+  // New phase filtering logic for deposit module
+  if (fase === "DEFAULT_DEPOSIT_FILTER") {
+      // Only show PREPARANDO, PREPARANDO MODIFICADO, COMPLETADO MODIFICADO by default
+      if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) {
+          return false;
+      }
+  } else if (fase === "MODIFICADOS_AGRUPADOS") {
+    // Corrected: Now includes both PREPARANDO MODIFICADO and COMPLETADO MODIFICADO
+    return p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO";
+  } else if (fase && p.FASE !== fase) {
+      return false; // Filter by specific phase
+  }
+  // Ensure that if no specific filter is set (e.g., the select has no value, or an unhandled value like ALL_PHASES which was removed)
+  // it correctly defaults to the behavior of DEFAULT_DEPOSIT_FILTER
+  else if (!fase) { // This handles empty value like default
+      if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) {
+          return false;
+      }
+  }
+
+
+  if (envio && p.METODO_ENVIO !== envio) return false;
+  if (buscar && !(
+    (p.CLIENTE || "").toLowerCase().includes(buscar) ||
+    (String(p.ID)||"").toLowerCase().includes(buscar) ||
+    (p.TELEFONO || "").toLowerCase().includes(buscar) ||
+    (p.DIRECCION || "").toLowerCase().includes(buscar) ||
+    (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
+    (p.DEPARTAMENTO || "").toLowerCase().includes(buscar)
+  )) return false;
+  return true;
+}
+
+function renderDeposito() {
+  if (!usuario || !(usuario.rol === "admin" || usuario.rol === "ventas" || usuario.rol === "deposito") || !dom.tablaDepositoBody) return;
+
+  dom.tablaDepositoBody.innerHTML = "";
+  const pedidosFiltrados = pedidos.filter(aplicarFiltrosDeposito);
+
+  pedidosFiltrados.forEach(p => {
+    const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID);
+    if (pedidoIdx === -1) return;
+
+    const tr = document.createElement('tr');
+    // Add conditional class for COMPLETADO MODIFICADO and PREPARANDO MODIFICADO phase row background
+    let rowBgClass = '';
+    if (p.FASE === 'COMPLETADO MODIFICADO') {
+        rowBgClass = 'bg-red-100';
+    } else if (p.FASE === 'PREPARANDO MODIFICADO') {
+        rowBgClass = 'bg-purple-50';
+    }
+    tr.className = `bg-white border-b hover:bg-slate-50 transition ${rowBgClass}`;
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td>
+      <td class="px-4 py-2">${p.CLIENTE || ""}</td>
+      <td class="px-4 py-2">${p.METODO_ENVIO || ""}</td>
+      <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td>
+      <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td>
+      <td class="px-4 py-2 text-center">${p.TICKET_IMPRESO ? '🖨️' : ''}</td>
+      <td class="px-4 py-2">
+        <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="deposito">Ver/Completar</button>
+      </td>
+    `;
+    dom.tablaDepositoBody.appendChild(tr);
+  });
+}
+
+// ================== MODAL HANDLING =======================
+function openModal(idx, modulo) {
+  pedidoActualIdx = idx;
+  const pedido = pedidos[pedidoActualIdx];
+  if (!pedido) {
+    console.error("Pedido no encontrado para el índice:", idx);
+    showNoti("Error: Pedido no encontrado.", false);
+    return;
+  }
+  // Log the raw product data for debugging
+  console.log("Raw PRODUCTS data for pedido:", pedido.PRODUCTS);
+
+
+  // Store a deep copy of the original state for change tracking
+  originalPedidoState = JSON.parse(JSON.stringify(pedido));
+
+  let content = "";
+  // Conditionally set modal title based on module
+  if (modulo === 'ventas') {
+    dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b> - <b>$${pedido.MONTO || ""}</b>`;
+  } else { // DEPÓSITO
+    dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>`; // No monto for deposit module
+  }
+
+  // Generate HTML table for products display in read-only mode for both sales and deposit modals
+  let productsTableHtml = '';
+  const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); // Filter out empty lines
+
+  if (productLines.length > 0) {
+      productsTableHtml += `<table class="min-w-full text-left text-sm text-slate-700 border-collapse">`;
+      // Ensure headers are correctly formatted and aligned
+      productsTableHtml += `<thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead>`;
+      productsTableHtml += `<tbody>`;
+      productLines.forEach(line => {
+          // Only add if formatProductLineToHtmlRow returns a non-empty string (i.e., it's a valid product line)
+          const formattedRow = formatProductLineToHtmlRow(line);
+          if (formattedRow) { // Ensure the row is not empty after formatting
+              productsTableHtml += formattedRow;
+          }
+      });
+      productsTableHtml += `</tbody></table>`;
+  } else {
+      productsTableHtml = `<p class="text-slate-500 text-sm italic">No hay productos registrados.</p>`;
+  }
+
+
+  if (modulo === 'ventas') {
+    content = `
+      <div class="mb-3">
+        <label for="modal-productos" class="block text-sm font-medium text-slate-600 mb-1">Productos:</label>
+        <div class="flex items-start gap-2">
+          <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 flex-grow max-h-48 overflow-y-auto w-full">${productsTableHtml}</div>
+          <textarea class="modal-input flex-grow hidden" id="modal-productos" rows="8" style="font-family: monospace;">${pedido.PRODUCTS || ""}</textarea>
+          <button id="modal-edit-productos-btn" class="bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-semibold hover:bg-blue-600 transition-colors flex-shrink-0">Editar</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+        <div><label for="modal-cliente" class="block text-sm font-medium text-slate-600 mb-1">Cliente:</label><input class="modal-input" id="modal-cliente" value="${pedido.CLIENTE || ""}"></div>
+        <div><label for="modal-direccion" class="block text-sm font-medium text-slate-600 mb-1">Dirección:</label><input class="modal-input" id="modal-direccion" value="${pedido.DIRECCION || ""}"></div>
+        <div><label for="modal-telefono" class="block text-sm font-medium text-slate-600 mb-1">Teléfono:</label><input class="modal-input" id="modal-telefono" value="${(pedido.TELEFONO || "")}"></div>
+        <div><label for="modal-email" class="block text-sm font-medium text-slate-600 mb-1">Email:</label><input type="email" class="modal-input" id="modal-email" value="${pedido.EMAIL || ""}"></div>
+        <div><label for="modal-barrio-localidad" class="block text-sm font-medium text-slate-600 mb-1">Barrio/Localidad:</label><input class="modal-input" id="modal-barrio-localidad" value="${pedido.BARRIO_LOCALIDAD || ""}"></div>
+        <div><label for="modal-departamento" class="block text-sm font-medium text-slate-600 mb-1">Departamento:</label><input class="modal-input" id="modal-departamento" value="${pedido.DEPARTAMENTO || ""}"></div>
+      </div>
+      <div class="mb-3"><label for="modal-notas" class="block text-sm font-medium text-slate-600 mb-1">Notas:</label><textarea class="modal-input" id="modal-notas" rows="2">${pedido.NOTAS || ""}</textarea></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div><label for="modal-metodo-envio" class="block text-sm font-medium text-slate-600 mb-1">Método de Envío:</label>
+          <select id="modal-metodo-envio" class="modal-input">
+            <option value="">Seleccionar</option>
+            <option value="DAC" ${pedido.METODO_ENVIO === "DAC" ? " selected" : ""}>DAC</option>
+            <option value="GESTIÓN POST" ${pedido.METODO_ENVIO === "GESTIÓN POST" ? " selected" : ""}>GESTIÓN POST</option>
+            <option value="PICK UP" ${pedido.METODO_ENVIO === "PICK UP" ? " selected" : ""}>PICK UP</option>
+          </select>
+        </div>
+        <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label>
+          <select id="modal-estado-pago" class="modal-input">
+            <option value="">Seleccionar</option>
+            <option value="pendiente" ${pedido.ESTADO_PAGO === "pendiente" ? " selected" : ""}>Pendiente</option>
+            <option value="confirmado" ${pedido.ESTADO_PAGO === "confirmado" ? " selected" : ""}>Confirmado</option>
+          </select>
+        </div>
+      </div>
+      <div class="mb-4 space-y-2">
+        <div id="entregado-checkbox-wrapper" class="${pedido.METODO_ENVIO === 'PICK UP' ? '' : 'hidden'}">
+          <div class="flex items-center">
+            <input type="checkbox" id="modal-entregado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ENTREGADO ? "checked" : ""}>
+            <label for="modal-entregado" class="cursor-pointer">Entregado</label>
+          </div>
+        </div>
+        <div id="etiqueta-emitida-checkbox-wrapper" class="${(pedido.METODO_ENVIO === 'DAC' || pedido.METODO_ENVIO === 'GESTIÓN POST') ? '' : 'hidden'}">
+          <div class="flex items-center">
+            <input type="checkbox" id="modal-etiqueta-emitida" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ETIQUETA_EMITIDA ? "checked" : ""}>
+            <label for="modal-etiqueta-emitida" class="cursor-pointer">Etiqueta Emitida</label>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <input type="checkbox" id="modal-facturado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.FACTURADO ? "checked" : ""}>
+          <label for="modal-facturado" class="cursor-pointer">Facturado</label>
+        </div>
+        <div class="flex items-center">
+          <input type="checkbox" id="modal-aviso-cliente" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.AVISO_CLIENTE ? "checked" : ""}>
+          <label for="modal-aviso-cliente" class="cursor-pointer">Aviso al cliente</label>
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3 mt-4">
+        <button id="modal-save-venta" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-blue hover:bg-blue-700 focus:ring-custom-blue">Guardar Cambios</button>
+        ${(pedido.FASE === 'COMPLETADO' || pedido.FASE === 'PREPARANDO') ? `
+          <button id="modal-modificar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange">Modificar Pedido</button>
+        ` : ''}
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-200">
+          <h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4>
+          <div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm">
+              ${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ?
+                  pedido.HISTORIAL.map(entry => `
+                      <div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0">
+                          <div class="font-medium text-slate-800">${entry.user} - ${new Date(entry.timestamp).toLocaleString('es-ES')}</div>
+                          <ul class="list-disc list-inside text-slate-600 ml-4">
+                              ${entry.changes.map(change => `
+                                  <li>${formatChangeEntry(change)}</li>
+                              `).join('')}
+                          </ul>
+                      </div>
+                  `).join('')
+                  : '<p class="text-slate-500">No hay historial de actividad para este pedido.</p>'
+              }
+          </div>
+      </div>
+    `;
+  } else { // DEPÓSITO
+    content = `
+      <div class="mb-2">
+        <strong class="text-slate-700">Productos:</strong>
+        <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">
+          ${productsTableHtml}
+        </div>
+      </div>
+      <div class="space-y-1 text-sm mb-3">
+        <div><strong class="text-slate-600">Cliente:</strong> ${pedido.CLIENTE || ""}</div>
+        <div><strong class="text-slate-600">Dirección:</strong> ${pedido.DIRECCION || ""}</div>
+        <div><strong class="text-slate-600">Barrio/Localidad:</strong> ${pedido.BARRIO_LOCALIDAD || ""}</div>
+        <div><strong class="text-slate-600">Departamento:</strong> ${pedido.DEPARTAMENTO || ""}</div>
+        <div><strong class="text-slate-600">Teléfono:</strong> ${pedido.TELEFONO || ""}</div>
+        <div><strong class="text-slate-600">Email:</strong> ${pedido.EMAIL || ""}</div>
+        <div><strong class="text-slate-600">Notas:</strong> ${pedido.NOTAS || ""}</div>
+        <div><strong class="text-slate-600">Método de Envío:</strong> ${pedido.METODO_ENVIO || ""}</div>
+      </div>
+    `;
+    if (["DAC","GESTIÓN POST"].includes(pedido.METODO_ENVIO)) {
+      let opcionesEmpaque = (OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op =>
+        `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op ? op : "Seleccionar"}</option>`
+      ).join("");
+      content += `
+      <div class="mb-4">
+        <label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label>
+        <select id="modal-tipo-empaque" class="modal-input">${opcionesEmpaque}</select>
+      </div>
+      `;
+    }
+    const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
+    const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
+    const isCompleteButtonDisabled = (["DAC","GESTIÓN POST"].includes(pedido.METODO_ENVIO) && !pedido.EMPAQUE);
+
+    content += `
+      <div class="flex flex-col sm:flex-row gap-3 mt-4">
+        <button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button>
+        <button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button>
+      </div>
+    `;
+  }
+  dom.modalContent.innerHTML = content;
+  dom.modalBg.classList.remove('hidden');
+  dom.modalBg.classList.add('flex');
+
+  // Add event listeners for modal elements
+  if (modulo === 'ventas') {
+    document.getElementById('modal-save-venta')?.addEventListener('click', () => guardarVenta(pedidoActualIdx));
+    document.getElementById('modal-modificar-pedido')?.addEventListener('click', () => modificarPedidoVentas(pedidoActualIdx)); // New event listener for "Modificar Pedido"
+
+    // Logic for "Entregado" and "Etiqueta Emitida" checkbox visibility
+    const metodoEnvioSelect = document.getElementById('modal-metodo-envio');
+    const entregadoCheckboxWrapper = document.getElementById('entregado-checkbox-wrapper');
+    const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper');
+
+    const toggleCheckboxesVisibility = () => {
+      const currentMetodoEnvio = metodoEnvioSelect.value;
+
+      // Toggle "Entregado" checkbox
+      if (currentMetodoEnvio === 'PICK UP') {
+        entregadoCheckboxWrapper?.classList.remove('hidden');
+      } else {
+        entregadoCheckboxWrapper?.classList.add('hidden');
+        const entregadoCheckbox = document.getElementById('modal-entregado');
+        if (entregadoCheckbox) entregadoCheckbox.checked = false;
+      }
+
+      // Toggle "Etiqueta Emitida" checkbox
+      if (currentMetodoEnvio === 'DAC' || currentMetodoEnvio === 'GESTIÓN POST') {
+        etiquetaEmitidaCheckboxWrapper?.classList.remove('hidden');
+      } else {
+        etiquetaEmitidaCheckboxWrapper?.classList.add('hidden');
+        const etiquetaEmitidaCheckbox = document.getElementById('modal-etiqueta-emitida');
+        if (etiquetaEmitidaCheckbox) etiquetaEmitidaCheckbox.checked = false;
+      }
+    };
+
+    if (metodoEnvioSelect) {
+      metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility);
+      // Call initially to set correct state when modal opens
+      toggleCheckboxesVisibility();
+    }
+
+    // Logic for "Editar Productos" button
+    dom.productosDisplayTable = document.getElementById('productos-display-table');
+    dom.productosEditArea = document.getElementById('modal-productos');
+    dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn');
+
+    if (dom.productosDisplayTable && dom.productosEditArea && dom.modalEditProductosBtn) {
+        dom.modalEditProductosBtn.addEventListener('click', () => {
+            dom.productosDisplayTable.classList.add('hidden'); // Hide table display
+            dom.productosEditArea.classList.remove('hidden'); // Show textarea
+            dom.productosEditArea.removeAttribute('readonly'); // Make textarea editable
+            dom.productosEditArea.focus();
+            dom.modalEditProductosBtn.classList.add('hidden'); // Hide "Editar" button
+        });
+        // Ensure initial state: table visible, textarea hidden
+        dom.productosDisplayTable.classList.remove('hidden');
+        dom.productosEditArea.classList.add('hidden');
+        dom.productosEditArea.setAttribute('readonly', 'true');
+        dom.modalEditProductosBtn.classList.remove('hidden');
+    }
+
+
+  } else {
+    document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx));
+    document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx));
+    const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque');
+    if (tipoEmpaqueSelect) {
+        tipoEmpaqueSelect.addEventListener('change', function() {
+            const currentPedido = pedidos[pedidoActualIdx];
+            if (currentPedido) currentPedido.EMPAQUE = this.value; // Store empaque choice directly on the pedido object
+            const btnCompletar = document.getElementById('modal-complete-pedido');
+            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTIÓN POST"].includes(currentPedido.METODO_ENVIO);
+        });
+        // Initial state for complete button is handled by the disabled attribute in the template string
+    }
+  }
+  // Style modal inputs (could be done with a shared class in <style> with @apply)
+  document.querySelectorAll('#modal-box .modal-input').forEach(el => {
+    el.classList.add('w-full', 'p-2', 'border', 'border-slate-300', 'rounded-md', 'focus:ring-blue-500', 'focus:border-blue-500', 'text-sm');
+  });
+}
+
+function closeModal() {
+  dom.modalBg.classList.add('hidden');
+  dom.modalBg.classList.remove('flex');
+  dom.modalContent.innerHTML = ""; // Clear content
+  pedidoActualIdx = null;
+  originalPedidoState = null; // Clear original state when modal closes
+}
+
+/**
+ * Compares two objects and returns an array of changes.
+ * @param {Object} oldObj - The original object.
+ * @param {Object} newObj - The new object.
+ * @param {Array<string>} fieldsToTrack - An array of field names to compare.
+ * @returns {Array<Object>} An array of change objects ({ field, old, new }).
+ */
+function getChanges(oldObj, newObj, fieldsToTrack) {
+    const changes = [];
+    fieldsToTrack.forEach(field => {
+        // Handle boolean values explicitly for consistent comparison
+        const oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : (oldObj[field] || '');
+        const newValue = typeof newObj[field] === 'boolean' ? newObj[field] : (newObj[field] || '');
+
+        if (oldValue !== newValue) {
+            changes.push({ field: field, old: oldValue, new: newValue });
+        }
+    });
+    return changes;
+}
+
+/**
+ * Formats a single change entry into a human-readable string.
+ * @param {Object} change - The change object { field, old, new }.
+ * @returns {string} A descriptive string of the change.
+ */
+function formatChangeEntry(change) {
+    const fieldNameMap = {
+        'CLIENTE': 'el cliente',
+        'DIRECCION': 'la dirección',
+        'TELEFONO': 'el teléfono',
+        'EMAIL': 'el email',
+        'NOTAS': 'las notas',
+        'METODO_ENVIO': 'el método de envío',
+        'ESTADO_PAGO': 'el estado de pago',
+        'ENTREGADO': 'el estado de "Entregado"',
+        'FACTURADO': 'el estado de "Facturado"',
+        'AVISO_CLIENTE': 'el estado de "Aviso al Cliente"',
+        'FASE': 'la fase del pedido',
+        'EMPAQUE': 'el tipo de empaque',
+        'TICKET_IMPRESO': 'el estado de "Ticket Impreso"',
+        'FECHA_INGRESO_SISTEMA': 'la fecha de ingreso al sistema',
+        'BARRIO_LOCALIDAD': 'el barrio/localidad',
+        'DEPARTAMENTO': 'el departamento',
+        'ETIQUETA_EMITIDA': 'el estado de "Etiqueta Emitida"',
+        'PRODUCTS': 'los productos' // Added for PRODUCTS
+    };
+
+    // Helper to format boolean values
+    const formatBoolean = (val) => val ? 'Sí' : 'No';
+
+    const oldValFormatted = typeof change.old === 'boolean' ? formatBoolean(change.old) : (change.old === '' ? '(vacío)' : change.old);
+    const newValFormatted = typeof change.new === 'boolean' ? formatBoolean(change.new) : (change.new === '' ? '(vacío)' : change.new);
+
+    const fieldDescription = fieldNameMap[change.field] || change.field;
+
+    // Special handling for boolean fields
+    if (typeof change.old === 'boolean' || typeof change.new === 'boolean') {
+        if (change.new === true) {
+            return `Se marcó como "${fieldDescription.replace('el estado de "', '').replace('"', '')}".`;
+        } else if (change.new === false) {
+            return `Se desmarcó como "${fieldDescription.replace('el estado de "', '').replace('"', '')}".`;
+        }
+    }
+
+    // Special handling for changes from empty to a value
+    if (change.old === '' && change.new !== '') {
+        return `Se estableció ${fieldDescription} a "<span class="text-green-500">${newValFormatted}</span>".`;
+    }
+    // Special handling for changes from a value to empty
+    if (change.old !== '' && change.new === '') {
+        return `Se eliminó el valor de ${fieldDescription}: de "<span class="text-red-500">${oldValFormatted}</span>" a "(vacío)".`;
+    }
+
+
+    return `El ${fieldDescription} cambió de "<span class="text-red-500">${oldValFormatted}</span>" a "<span class="text-green-500">${newValFormatted}</span>".`;
+}
+
+
+// ================== ACTIONS ================================
+async function guardarFaseYDatos(pedido) {
+  // Envía al backend los datos
+  try {
+    // Los campos que se enviarán al backend para actualizar
+    const updatedFields = {
+      CLIENTE: pedido.CLIENTE,
+      DIRECCION: pedido.DIRECCION,
+      TELEFONO: pedido.TELEFONO,
+      EMAIL: pedido.EMAIL,
+      NOTAS: pedido.NOTAS,
+      METODO_ENVIO: pedido.METODO_ENVIO,
+      ESTADO_PAGO: pedido.ESTADO_PAGO,
+      ENTREGADO: pedido.ENTREGADO,
+      FACTURADO: pedido.FACTURADO,
+      AVISO_CLIENTE: pedido.AVISO_CLIENTE,
+      FASE: pedido.FASE,
+      TICKET_IMPRESO: pedido.TICKET_IMPRESO, // Incluir TICKET_IMPRESO
+      FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, // Incluir FECHA_INGRESO_SISTEMA
+      BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, // Incluir BARRIO_LOCALIDAD
+      DEPARTAMENTO: pedido.DEPARTAMENTO, // Incluir DEPARTAMENTO
+      ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, // New: Include ETIQUETA_EMITIDA
+      PRODUCTS: pedido.PRODUCTS // Include PRODUCTS
+    };
+
+    const response = await fetch(`${BACKEND_URL}/set-fase/${pedido.ID}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        updatedFields: updatedFields, // Envía los campos a actualizar
+        historial: pedido.HISTORIAL // Envía el array de historial completo
+      })
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Error del servidor: ${response.status} - ${errorData.error}`);
+    }
+    const result = await response.json();
+    console.log("Respuesta del backend Node.js:", result);
+    return true;
+  } catch (err) {
+    console.error("Error guardando datos:", err);
+    showNoti(`Error al guardar: ${err.message}`, false);
+    return false;
+  }
+}
+
+async function guardarVenta(idx) {
+  const p = pedidos[idx];
+  if (!p) return;
+
+  // Store old phase for comparison (only for existing phase logic)
+  const oldFase = p.FASE;
+
+  // Capture current values from modal before updating the pedido object
+  const currentModalValues = {
+    CLIENTE: document.getElementById('modal-cliente')?.value || '',
+    DIRECCION: document.getElementById('modal-direccion')?.value || '',
+    TELEFONO: document.getElementById('modal-telefono')?.value || '',
+    EMAIL: document.getElementById('modal-email')?.value || '',
+    BARRIO_LOCALIDAD: document.getElementById('modal-barrio-localidad')?.value || '',
+    DEPARTAMENTO: document.getElementById('modal-departamento')?.value || '',
+    NOTAS: document.getElementById('modal-notas')?.value || '',
+    METODO_ENVIO: document.getElementById('modal-metodo-envio')?.value || '',
+    ESTADO_PAGO: document.getElementById('modal-estado-pago')?.value || '',
+    ENTREGADO: document.getElementById('entregado-checkbox-wrapper')?.classList.contains('hidden') ? false : (document.getElementById('modal-entregado')?.checked || false),
+    ETIQUETA_EMITIDA: document.getElementById('etiqueta-emitida-checkbox-wrapper')?.classList.contains('hidden') ? false : (document.getElementById('modal-etiqueta-emitida')?.checked || false),
+    FACTURADO: document.getElementById('modal-facturado')?.checked || false,
+    AVISO_CLIENTE: document.getElementById('modal-aviso-cliente')?.checked || false,
+    TICKET_IMPRESO: p.TICKET_IMPRESO,
+    FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA,
+    PRODUCTS: document.getElementById('modal-productos')?.value || '' // Capture PRODUCTS value
+  };
+
+  // Apply updates to the pedido object
+  p.CLIENTE = currentModalValues.CLIENTE;
+  p.DIRECCION = currentModalValues.DIRECCION;
+  p.TELEFONO = currentModalValues.TELEFONO;
+  p.EMAIL = currentModalValues.EMAIL;
+  p.BARRIO_LOCALIDAD = currentModalValues.BARRIO_LOCALIDAD;
+  p.DEPARTAMENTO = currentModalValues.DEPARTAMENTO;
+  p.NOTAS = currentModalValues.NOTAS;
+  p.METODO_ENVIO = currentModalValues.METODO_ENVIO;
+  p.ESTADO_PAGO = currentModalValues.ESTADO_PAGO;
+  p.ENTREGADO = currentModalValues.ENTREGADO;
+  p.ETIQUETA_EMITIDA = currentModalValues.ETIQUETA_EMITIDA;
+  p.FACTURADO = currentModalValues.FACTURADO;
+  p.AVISO_CLIENTE = currentModalValues.AVISO_CLIENTE;
+  p.PRODUCTS = currentModalValues.PRODUCTS; // Update PRODUCTS on the pedido object
+
+  // Only apply phase change logic if not already 'COMPLETADO', 'COMPLETADO MODIFICADO' or 'PREPARANDO MODIFICADO'
+  if (oldFase !== "COMPLETADO" && oldFase !== "COMPLETADO MODIFICADO" && oldFase !== "PREPARANDO MODIFICADO") {
+      let newFase = oldFase;
+      if (newFase === "EN ESPERA") newFase = "PROCESANDO";
+      if (p.METODO_ENVIO && p.ESTADO_PAGO === "confirmado" && newFase !== "COMPLETADO") {
+          newFase = "PREPARANDO";
+      }
+      p.FASE = newFase;
+  }
+
+  // Get changes by comparing original state with the updated pedido object
+  const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_VENTAS.filter(field => field !== 'FASE' && field !== 'EMPAQUE'));
+
+  if (changes.length > 0) {
+    const historyEntry = {
+      timestamp: new Date().toISOString(),
+      user: usuario.nombre,
+      changes: changes
+    };
+    if (!Array.isArray(p.HISTORIAL)) {
+        p.HISTORIAL = [];
+    }
+    p.HISTORIAL.push(historyEntry);
+
+    if (oldFase === "PREPARANDO" || oldFase === "COMPLETADO") {
+        showAttentionModal("¡Atención! Has guardado cambios en un pedido que Depósito está gestionando. Para que vean las modificaciones, usa el botón 'Modificar Pedido'.");
+    }
+
+  }
+
+  const success = await guardarFaseYDatos(p);
+  if (success) {
+    showNoti("Pedido guardado con éxito!", true);
+    renderizarTodo();
+  }
+}
+
+async function modificarPedidoVentas(idx) {
+  const p = pedidos[idx];
+  if (!p) return;
+
+  const confirmMessage = `¿Estás seguro de que quieres modificar este pedido? Esto lo marcará como '${p.FASE === 'COMPLETADO' ? 'COMPLETADO MODIFICADO' : 'PREPARANDO MODIFICADO'}' y limpiará el empaque.`;
+  const userConfirmed = await showConfirmationModal(confirmMessage);
+
+  if (!userConfirmed) {
+    showNoti("Modificación cancelada.", null);
+    return;
+  }
+
+  const oldFase = p.FASE;
+  const oldEmpaque = p.EMPAQUE;
+
+  // Determine new phase based on current phase
+  if (oldFase === "COMPLETADO") {
+      p.FASE = "COMPLETADO MODIFICADO";
+  } else if (oldFase === "PREPARANDO") {
+      p.FASE = "PREPARANDO MODIFICADO";
+  } else {
+      showNoti("No se puede modificar un pedido en esta fase.", false);
+      return;
+  }
+  p.EMPAQUE = ''; // Clear empaque
+
+  // Track changes specifically for this action
+  const changes = [];
+  if (oldFase !== p.FASE) {
+      changes.push({ field: 'FASE', old: oldFase, new: p.FASE });
+  }
+  if (oldEmpaque !== p.EMPAQUE) {
+      changes.push({ field: 'EMPAQUE', old: oldEmpaque, new: p.EMPAQUE });
+  }
+
+  if (changes.length > 0) {
+    const historyEntry = {
+      timestamp: new Date().toISOString(),
+      user: usuario.nombre,
+      changes: changes
+    };
+    if (!Array.isArray(p.HISTORIAL)) {
+        p.HISTORIAL = [];
+    }
+    p.HISTORIAL.push(historyEntry);
+  }
+
+  const success = await guardarFaseYDatos(p);
+  if (success) {
+    showNoti("Pedido modificado y marcado!", true);
+    renderizarTodo();
+  }
+}
+
+
+async function completarPedido(idx) {
+  const p = pedidos[idx];
+  if (!p) return;
+
+  // Capture current values before updating p
+  const oldFase = p.FASE;
+  const oldEmpaque = p.EMPAQUE;
+
+  if (["DAC","GESTIÓN POST"].includes(p.METODO_ENVIO)) {
+    const empaqueSelect = document.getElementById('modal-tipo-empaque');
+    const val = empaqueSelect ? empaqueSelect.value : p.EMPAQUE;
+    if (!val) {
+        showNoti("Debe seleccionar un tipo de empaque.", false);
+        return;
+    }
+    p.EMPAQUE = val;
+  }
+  p.FASE = "COMPLETADO";
+
+  // Get changes by comparing original state with the updated pedido object for deposit specific fields
+  const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_DEPOSITO);
+
+  if (changes.length > 0) {
+    const historyEntry = {
+      timestamp: new Date().toISOString(),
+      user: usuario.nombre,
+      changes: changes
+    };
+    if (!Array.isArray(p.HISTORIAL)) {
+        p.HISTORIAL = [];
+    }
+    p.HISTORIAL.push(historyEntry);
+  }
+
+  const success = await guardarFaseYDatos(p);
+  if (success) {
+    showNoti("Pedido marcado como completado!", true);
+    renderizarTodo();
+  }
+  closeModal();
+}
+
+// Impresión de ticket
+function imprimirTicket(idx) {
+  const p = pedidos[idx];
+  if (!p) return;
+
+  let prodsHtml = "";
+  if (p.PRODUCTS) {
+      const productLines = (p.PRODUCTS || "").split('\n').filter(line => line.trim() !== '');
+      // Generate the table body using the HTML row formatter
+      productLines.forEach(line => {
+          // Only add if formatProductLineToHtmlRow returns a non-empty string (i.e., it's a valid product line)
+          const formattedRow = formatProductLineToHtmlRow(line);
+          if (formattedRow) {
+              prodsHtml += formattedRow;
+          }
+      });
+  }
+
+  dom.ticketPrint.innerHTML = `
+    <div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;">
+      <div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div>
+      <div style="font-size:10pt;"><b>Pedido #${p.ID || ""}</b></div>
+      <div style="font-size:10pt;"><b>Cliente:</b> ${p.CLIENTE || ""}</div>
+      <div style="font-size:10pt;"><b>Dirección:</b> ${p.DIRECCION || ""}</div>
+      <div style="font-size:10pt;"><b>Barrio/Localidad:</b> ${p.BARRIO_LOCALIDAD || ""}</div>
+      <div style="font-size:10pt;"><b>Departamento:</b> ${p.DEPARTAMENTO || ""}</div>
+      <div style="font-size:10pt;"><b>Tel:</b> ${p.TELEFONO || ""}</div>
+      <div style="font-10pt;"><b>Método de Envío:</b> ${p.METODO_ENVIO || ""}</div>
+      <div style="font-size:10pt;"><b>Fecha:</b> ${p.FECHA || ""}</div>
+      ${prodsHtml ? `
+      <table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;">
+        <thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead>
+        <tbody>${prodsHtml}</tbody>
+      </table>` : '<div style="font-size:9pt; margin:8px 0;">No hay detalle de productos.</div>'}
+      <div style="font-size:10pt;"><b>Notas:</b> ${p.NOTAS || "Ninguna"}</div>
+      <div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias por su compra</div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    window.print();
+    printCount[p.ID] = true; // Mark as printed
+    const btnPrintInModal = document.getElementById('modal-print-ticket');
+    if (btnPrintInModal) {
+      btnPrintInModal.textContent = "Reimprimir Ticket";
+      // Update classes directly instead of relying on custom CSS classes
+      btnPrintInModal.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'focus:ring-blue-500');
+      btnPrintInModal.classList.add('bg-custom-orange', 'hover:bg-orange-700', 'focus:ring-custom-orange');
+    }
+
+    // AÑADIR ESTO: Actualizar TICKET_IMPRESO en el pedido y enviarlo al backend
+    if (p.TICKET_IMPRESO !== true) { // Solo si no estaba ya marcado
+        p.TICKET_IMPRESO = true;
+        // Llama a guardarFaseYDatos para persistir el cambio de TICKET_IMPRESO
+        // No cerramos el modal aquí, solo actualizamos el estado.
+        guardarFaseYDatos(p);
+    }
+  }, 250); // Small delay to ensure content is rendered for printing
+}
+
+// ===================== EVENT LISTENERS ====================
+function setupEventListeners() {
+  dom.loginForm.addEventListener('submit', handleLogin);
+  dom.logoutBtn.addEventListener('click', logout);
+  dom.refreshButton.addEventListener('click', cargarPedidos);
+
+  // Filters Ventas
+  [dom.filtroFase, dom.filtroPago, dom.filtroWoo].forEach(el => {
+    if (el) el.addEventListener('change', renderizarTodo);
+  });
+  if (dom.filtroBuscar) dom.filtroBuscar.addEventListener('input', renderizarTodo);
+
+  // Filters Deposito
+  if (dom.filtroFaseDep) dom.filtroFaseDep.addEventListener('change', renderizarTodo);
+  if (dom.filtroEnvioDep) dom.filtroEnvioDep.addEventListener('change', renderizarTodo);
+  if (dom.filtroBuscarDep) dom.filtroBuscarDep.addEventListener('input', renderizarTodo);
+
+  // Modal close
+  dom.modalClose.addEventListener('click', closeModal);
+  dom.modalBg.addEventListener('click', (e) => {
+    // Only close modal if the click target is the modal background itself, not its children
+    if (e.target === dom.modalBg) closeModal();
+  });
+
+  // Notification close button and OK button
+  // These are set dynamically in showNoti and showAttentionModal, but ensure default listeners are clean
+  if (dom.notiCloseBtn) {
+      dom.notiCloseBtn.addEventListener('click', hideNoti);
+  }
+  if (dom.notiOkBtn) {
+      dom.notiOkBtn.addEventListener('click', hideNoti);
+  }
+
+  // Prevent clicks on the notification badge from bubbling up to elements underneath (like modal-bg)
+  // This is now less critical for the standard noti-badge since attention-modal handles blocking
+  if (dom.notiBadge) {
+      dom.notiBadge.addEventListener('click', (e) => {
+          e.stopPropagation();
+      });
+  }
+
+  // Prevent clicks on the attention modal background from bubbling up to elements underneath
+  if (dom.attentionModalBg) {
+      dom.attentionModalBg.addEventListener('click', (e) => {
+          // Only close if the click is directly on the background, not the content box
+          if (e.target === dom.attentionModalBg) {
+              e.stopPropagation(); // Prevent propagation to elements below
+          }
+      });
+      // Also prevent clicks on the attention modal box itself from bubbling up
+      const attentionModalBox = document.getElementById('attention-modal-box');
+      if (attentionModalBox) {
+          attentionModalBox.addEventListener('click', (e) => {
+              e.stopPropagation();
+          });
+      }
+  }
+
+
+  // Event delegation for action buttons in tables
+  dom.tablaVentasBody.addEventListener('click', (e) => {
+    if (e.target.matches('button[data-idx]')) { // Simplified selector as class is now direct
+      const idx = parseInt(e.target.dataset.idx);
+      const modulo = e.target.dataset.module;
+      openModal(idx, modulo);
+    }
+  });
+  dom.tablaDepositoBody.addEventListener('click', (e) => {
+     if (e.target.matches('button[data-idx]')) { // Simplified selector as class is now direct
+      const idx = parseInt(e.target.dataset.idx);
+      const modulo = e.target.dataset.module;
+      openModal(idx, modulo);
+    }
+  });
+}
+
+// ===================== INITIALIZATION ===================
+document.addEventListener('DOMContentLoaded', () => {
+  cacheDOMElements();
+  setupEventListeners();
+  logout(); // Start in logged-out state
+  setInterval(() => { if (usuario) cargarPedidos(); }, 60000); // Auto-refresh every 60 seconds
+});
+
+</script>
+</body>
+</html>
