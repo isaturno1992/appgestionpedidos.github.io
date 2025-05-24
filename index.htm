@@ -596,14 +596,14 @@ async function cargarPedidos() {
       DIRECCION: p.DIRECCION || "",
       BARRIO_LOCALIDAD: p.BARRIO_LOCALIDAD || p.Barrio || p.Localidad || "", // Added new field
       DEPARTAMENTO: p.DEPARTAMENTO || p.Departamento || "", // Added new field
-      PRODUCTS: p.PRODUCTS || p.PRODUCTOS || p.Products || "", // Corrected: Check multiple possible backend keys for PRODUCTS
+      PRODUCTS: p.PRODUCTS || p.PRODUCTOS || "", // Corrected: Use PRODUCTS, fallback to PRODUCTOS
       FACTURADO: p.FACTURADO === true || String(p.FACTURADO).toLowerCase() === "true",
       ENTREGADO: p.ENTREGADO === true || String(p.ENTREGADO).toLowerCase() === "true",
       AVISO_CLIENTE: p.AVISO_CLIENTE === true || String(p.AVISO_CLIENTE).toLowerCase() === "true",
       EMPAQUE: p.EMPAQUE || "",
       HISTORIAL: Array.isArray(p.HISTORIAL) ? p.HISTORIAL : [], // Ensure HISTORIAL is an array
       TICKET_IMPRESO: p.TICKET_IMPRESO === true || String(p.TICKET_IMPRESO).toLowerCase() === "true", // Ensure TICKET_IMPRESO is boolean
-      FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA === true || String(p.FECHA_INGRESO_SISTEMA).toLowerCase() === "true" || p.FECHA_INGRESO_SISTEMA || "", // Ensure FECHA_INGRESO_SISTEMA is string
+      FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA || "", // Ensure FECHA_INGRESO_SISTEMA is string
       ETIQUETA_EMITIDA: p.ETIQUETA_EMITIDA === true || String(p.ETIQUETA_EMITIDA).toLowerCase() === "true" // New: ensure ETIQUETA_EMITIDA is boolean
     }));
     renderizarTodo();
@@ -1024,7 +1024,7 @@ function openModal(idx, modulo) {
     return;
   }
   // Log the raw product data for debugging
-  console.log("Raw PRODUCTS data for pedido:", pedido.PRODUCTS);
+  console.log("Raw PRODUCTS data for pedido:", pedido.ID, ":", pedido.PRODUCTS);
 
 
   // Store a deep copy of the original state for change tracking
@@ -1720,7 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cacheDOMElements();
   setupEventListeners();
   logout(); // Start in logged-out state
-  setInterval(() => { if (usuario) cargarPedidos(); }, 60000); // Auto-refresh every 60 seconds
+  setInterval(() => { if (usuario) cargarPedidos(); }, 10000); // Auto-refresh every 10 seconds
 });
 
 </script>
