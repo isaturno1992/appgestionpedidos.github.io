@@ -220,7 +220,7 @@
       <select id="filtro-envio-dep" class="filter-input">
         <option value="">Método Envío (Todos)</option>
         <option value="DAC">DAC</option>
-        <option value="GESTIÓN POST">GESTIÓN POST</option>
+        <option value="GESTION POST">GESTIÓN POST</option>
         <option value="PICK UP">PICK UP</option>
       </select>
       <input type="search" id="filtro-buscar-dep" placeholder="Buscar..." class="filter-input flex-grow">
@@ -875,7 +875,7 @@ function aplicarFiltrosVentas(p) {
 
   if (buscar) { 
     let encontrado = false;
-    const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); // Get full name for search
+    const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
 
     if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) {
       encontrado = true;
@@ -886,8 +886,8 @@ function aplicarFiltrosVentas(p) {
         (p.TELEFONO || "").toLowerCase().includes(buscar) ||
         (p.NOTAS || "").toLowerCase().includes(buscar) ||
         (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
-        deptoFullName.includes(buscar) || // Search by full name
-        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) // Keep search by code too
+        deptoFullName.includes(buscar) || 
+        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) 
       ) {
         encontrado = true;
       }
@@ -965,15 +965,15 @@ function aplicarFiltrosDeposito(p) {
   if (envio && p.METODO_ENVIO !== envio) return false;
   
   if (buscar) {
-      const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); // Get full name for search
+      const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
       if (!(
           (p.CLIENTE || "").toLowerCase().includes(buscar) ||
           (String(p.ID)||"").toLowerCase().includes(buscar) ||
           (p.TELEFONO || "").toLowerCase().includes(buscar) ||
           (p.DIRECCION || "").toLowerCase().includes(buscar) ||
           (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
-          deptoFullName.includes(buscar) || // Search by full name
-          (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) // Keep search by code too
+          deptoFullName.includes(buscar) || 
+          (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) 
       )) return false;
   }
   return true;
@@ -1051,7 +1051,8 @@ function openModal(idx, modulo) {
       productsTableHtml = `<p class="text-slate-500 text-sm italic">No hay productos registrados.</p>`;
   }
 
-  const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); // Translate department name
+  const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); 
+  const metodoEnvioActual = (pedido.METODO_ENVIO || "").trim().toUpperCase(); // Normalize for comparison
 
   if (modulo === 'ventas') {
     content = `
@@ -1076,9 +1077,9 @@ function openModal(idx, modulo) {
         <div><label for="modal-metodo-envio" class="block text-sm font-medium text-slate-600 mb-1">Método de Envío:</label>
           <select id="modal-metodo-envio" class="modal-input">
             <option value="">Seleccionar</option>
-            <option value="DAC" ${pedido.METODO_ENVIO === "DAC" ? " selected" : ""}>DAC</option>
-            <option value="GESTIÓN POST" ${pedido.METODO_ENVIO === "GESTIÓN POST" ? " selected" : ""}>GESTIÓN POST</option>
-            <option value="PICK UP" ${pedido.METODO_ENVIO === "PICK UP" ? " selected" : ""}>PICK UP</option>
+            <option value="DAC" ${metodoEnvioActual === "DAC" ? " selected" : ""}>DAC</option>
+            <option value="GESTION POST" ${metodoEnvioActual === "GESTION POST" ? " selected" : ""}>GESTIÓN POST</option> {/* VALUE corrected */}
+            <option value="PICK UP" ${metodoEnvioActual === "PICK UP" ? " selected" : ""}>PICK UP</option>
           </select>
         </div>
         <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label>
@@ -1090,13 +1091,13 @@ function openModal(idx, modulo) {
         </div>
       </div>
       <div class="mb-4 space-y-2">
-        <div id="entregado-checkbox-wrapper" class="${pedido.METODO_ENVIO === 'PICK UP' ? '' : 'hidden'}">
+        <div id="entregado-checkbox-wrapper" class="${metodoEnvioActual === 'PICK UP' ? '' : 'hidden'}">
           <div class="flex items-center">
             <input type="checkbox" id="modal-entregado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ENTREGADO ? "checked" : ""}>
             <label for="modal-entregado" class="cursor-pointer">Entregado</label>
           </div>
         </div>
-        <div id="etiqueta-emitida-checkbox-wrapper" class="${(pedido.METODO_ENVIO === 'DAC' || pedido.METODO_ENVIO === 'GESTIÓN POST') ? '' : 'hidden'}">
+        <div id="etiqueta-emitida-checkbox-wrapper" class="${(metodoEnvioActual === 'DAC' || metodoEnvioActual === 'GESTION POST') ? '' : 'hidden'}">
           <div class="flex items-center">
             <input type="checkbox" id="modal-etiqueta-emitida" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ETIQUETA_EMITIDA ? "checked" : ""}>
             <label for="modal-etiqueta-emitida" class="cursor-pointer">Etiqueta Emitida</label>
@@ -1156,8 +1157,8 @@ function openModal(idx, modulo) {
         <div><strong class="text-slate-600">Método de Envío:</strong> ${pedido.METODO_ENVIO || ""}</div>
       </div>
     `;
-    if (["DAC","GESTIÓN POST"].includes(pedido.METODO_ENVIO)) {
-      let opcionesEmpaque = (OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op =>
+    if (["DAC","GESTION POST"].includes(metodoEnvioActual)) { // Use normalized value for condition
+      let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActual] || []).map(op => // Use normalized value for key
         `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op ? op : "Seleccionar"}</option>`
       ).join("");
       content += `
@@ -1169,7 +1170,7 @@ function openModal(idx, modulo) {
     }
     const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
     const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
-    const isCompleteButtonDisabled = (["DAC","GESTIÓN POST"].includes(pedido.METODO_ENVIO) && !pedido.EMPAQUE);
+    const isCompleteButtonDisabled = (["DAC","GESTION POST"].includes(metodoEnvioActual) && !pedido.EMPAQUE); // Use normalized value
 
     content += `
       <div class="flex flex-col sm:flex-row gap-3 mt-4">
@@ -1191,7 +1192,7 @@ function openModal(idx, modulo) {
     const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper');
 
     const toggleCheckboxesVisibility = () => {
-      const currentMetodoEnvio = metodoEnvioSelect.value;
+      const currentMetodoEnvio = (metodoEnvioSelect.value || "").trim().toUpperCase(); // Normalize
 
       if (currentMetodoEnvio === 'PICK UP') {
         entregadoCheckboxWrapper?.classList.remove('hidden');
@@ -1201,7 +1202,7 @@ function openModal(idx, modulo) {
         if (entregadoCheckbox) entregadoCheckbox.checked = false;
       }
 
-      if (currentMetodoEnvio === 'DAC' || currentMetodoEnvio === 'GESTIÓN POST') {
+      if (currentMetodoEnvio === 'DAC' || currentMetodoEnvio === 'GESTION POST') {
         etiquetaEmitidaCheckboxWrapper?.classList.remove('hidden');
       } else {
         etiquetaEmitidaCheckboxWrapper?.classList.add('hidden');
@@ -1212,7 +1213,8 @@ function openModal(idx, modulo) {
 
     if (metodoEnvioSelect) {
       metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility);
-      toggleCheckboxesVisibility();
+      // Call initially to set correct state when modal opens, using the normalized value
+      toggleCheckboxesVisibility(); 
     }
 
     dom.productosDisplayTable = document.getElementById('productos-display-table');
@@ -1234,7 +1236,7 @@ function openModal(idx, modulo) {
     }
 
 
-  } else {
+  } else { // Deposito
     document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx));
     document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx));
     const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque');
@@ -1243,7 +1245,8 @@ function openModal(idx, modulo) {
             const currentPedido = pedidos[pedidoActualIdx];
             if (currentPedido) currentPedido.EMPAQUE = this.value; 
             const btnCompletar = document.getElementById('modal-complete-pedido');
-            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTIÓN POST"].includes(currentPedido.METODO_ENVIO);
+            // Use normalized metodoEnvioActual for this check as well
+            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POST"].includes(metodoEnvioActual);
         });
     }
   }
@@ -1384,11 +1387,6 @@ async function guardarVenta(idx) {
 
   const oldFase = p.FASE;
 
-  // IMPORTANT: We need a way to potentially get the code back if the user
-  // enters a full name. For now, we save what's in the input. If the user
-  // doesn't change it, it will save the full name. If they type a code,
-  // it will save the code. This might need refinement later if strict
-  // code saving is needed. For now, it saves the input's value.
   const deptoValue = document.getElementById('modal-departamento')?.value || '';
 
   const currentModalValues = {
@@ -1397,7 +1395,7 @@ async function guardarVenta(idx) {
     TELEFONO: document.getElementById('modal-telefono')?.value || '',
     EMAIL: document.getElementById('modal-email')?.value || '',
     BARRIO_LOCALIDAD: document.getElementById('modal-barrio-localidad')?.value || '',
-    DEPARTAMENTO: deptoValue, // Save the value from the input
+    DEPARTAMENTO: deptoValue, 
     NOTAS: document.getElementById('modal-notas')?.value || '',
     METODO_ENVIO: document.getElementById('modal-metodo-envio')?.value || '',
     ESTADO_PAGO: document.getElementById('modal-estado-pago')?.value || '',
@@ -1520,7 +1518,7 @@ async function completarPedido(idx) {
   const oldFase = p.FASE;
   const oldEmpaque = p.EMPAQUE;
 
-  if (["DAC","GESTIÓN POST"].includes(p.METODO_ENVIO)) {
+  if (["DAC","GESTION POST"].includes((p.METODO_ENVIO || "").trim().toUpperCase())) { // Normalize for check
     const empaqueSelect = document.getElementById('modal-tipo-empaque');
     const val = empaqueSelect ? empaqueSelect.value : p.EMPAQUE;
     if (!val) {
