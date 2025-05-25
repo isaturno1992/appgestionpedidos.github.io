@@ -334,7 +334,7 @@ const dom = {
     filtroPago: null,
     filtroWoo: null,
     filtroBuscar: null,
-    filtroEnvioVentas: null, // Nuevo filtro
+    filtroEnvioVentas: null, 
     refreshButton: null,
     moduloVentas: null,
     tablaVentasBody: null,
@@ -797,11 +797,10 @@ function formatProductLineToHtmlRow(line) {
 function aplicarFiltrosVentas(p) {
   const faseFiltro = dom.filtroFase.value;
   const pago = dom.filtroPago.value;
-  const envioVentas = dom.filtroEnvioVentas.value; // Nuevo filtro
+  const envioVentas = dom.filtroEnvioVentas.value; 
   const woo = dom.filtroWoo.value;
   const buscar = dom.filtroBuscar.value.toLowerCase().trim();
 
-  // Lógica de filtro por fase
   if (faseFiltro === "ACTIVE_ONLY") {
       if (!isOrderActive(p)) { 
           return false;
@@ -816,10 +815,9 @@ function aplicarFiltrosVentas(p) {
       return false; 
   }
 
-  // Resto de los filtros
   if (pago && (p.ESTADO_PAGO !== pago)) return false;
   if (woo && (p.ESTADO_WOO !== woo)) return false;
-  if (envioVentas && (p.METODO_ENVIO || "").trim().toUpperCase() !== envioVentas) return false; // Aplicar filtro de envío
+  if (envioVentas && (p.METODO_ENVIO || "").trim().toUpperCase() !== envioVentas) return false; 
 
   if (buscar) { 
     const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
@@ -1016,7 +1014,7 @@ function openModal(idx, modulo) {
       content += `<div class="mb-4"><label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label><select id="modal-tipo-empaque" class="modal-input" ${isVentasUser ? 'disabled' : ''}>${opcionesEmpaque}</select></div>`;
     }
     
-    if (!isVentasUser) { // Solo mostrar botones de acción si no es usuario de ventas
+    if (!isVentasUser) { 
         const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
         const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
         const isCompleteButtonDisabled = (["DAC","GESTION POS"].includes(metodoEnvioActualNorm) && !pedido.EMPAQUE); 
@@ -1055,7 +1053,7 @@ function openModal(idx, modulo) {
         dom.productosEditArea.setAttribute('readonly', 'true'); dom.modalEditProductosBtn.classList.remove('hidden');
     }
   } else { // DEPÓSITO
-    if (!(usuario && usuario.rol === 'ventas')) { // Solo añadir listeners si no es usuario de ventas
+    if (!(usuario && usuario.rol === 'ventas')) { 
         document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx));
         document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx));
         const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque');
@@ -1227,11 +1225,9 @@ function setupEventListeners() {
   [dom.filtroFaseDep, dom.filtroEnvioDep].forEach(el => el?.addEventListener('change', renderizarTodo));
   dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
   
-  // Modal close buttons
   dom.modalClose?.addEventListener('click', closeModal);
   dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
   
-  // Confirmation and Attention modal buttons
   dom.confirmModalCancel?.addEventListener('click', () => {
     dom.confirmModalBg.classList.add('hidden');
     dom.confirmModalBg.classList.remove('flex');
@@ -1244,7 +1240,6 @@ function setupEventListeners() {
   });
 
 
-  // Notification close button and OK button
   dom.notiCloseBtn?.addEventListener('click', hideNoti);
   dom.notiOkBtn?.addEventListener('click', hideNoti);
   dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
