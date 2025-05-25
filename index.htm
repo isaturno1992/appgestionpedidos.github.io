@@ -1057,12 +1057,14 @@ function openModal(idx, modulo) {
   if (modulo === 'ventas') {
     content = `
       <div class="mb-3">
-        <label for="modal-productos" class="block text-sm font-medium text-slate-600 mb-1">Productos:</label>
-        <div class="flex items-start gap-2">
-          <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 flex-grow max-h-48 overflow-y-auto w-full">${productsTableHtml}</div>
-          <textarea class="modal-input flex-grow hidden" id="modal-productos" rows="8" style="font-family: monospace;">${pedido.PRODUCTS || ""}</textarea>
-          <button id="modal-edit-productos-btn" class="bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-semibold hover:bg-blue-600 transition-colors flex-shrink-0">Editar</button>
+        <div class="flex justify-between items-center mb-1">
+          <label for="modal-productos" class="block text-sm font-medium text-slate-600">Productos:</label>
+          <button id="modal-edit-productos-btn" class="bg-blue-500 text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 transition-colors flex-shrink-0">Editar</button>
         </div>
+        <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">
+          ${productsTableHtml}
+        </div>
+        <textarea class="modal-input w-full hidden" id="modal-productos" rows="8" style="font-family: monospace;">${pedido.PRODUCTS || ""}</textarea>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
         <div><label for="modal-cliente" class="block text-sm font-medium text-slate-600 mb-1">Cliente:</label><input class="modal-input" id="modal-cliente" value="${pedido.CLIENTE || ""}"></div>
@@ -1078,7 +1080,7 @@ function openModal(idx, modulo) {
           <select id="modal-metodo-envio" class="modal-input">
             <option value="">Seleccionar</option>
             <option value="DAC" ${metodoEnvioActual === "DAC" ? " selected" : ""}>DAC</option>
-            <option value="GESTION POST" ${metodoEnvioActual === "GESTION POST" ? " selected" : ""}>GESTIÓN POST</option> {/* VALUE corrected */}
+            <option value="GESTION POST" ${metodoEnvioActual === "GESTION POST" ? " selected" : ""}>GESTIÓN POST</option>
             <option value="PICK UP" ${metodoEnvioActual === "PICK UP" ? " selected" : ""}>PICK UP</option>
           </select>
         </div>
@@ -1157,8 +1159,8 @@ function openModal(idx, modulo) {
         <div><strong class="text-slate-600">Método de Envío:</strong> ${pedido.METODO_ENVIO || ""}</div>
       </div>
     `;
-    if (["DAC","GESTION POST"].includes(metodoEnvioActual)) { // Use normalized value for condition
-      let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActual] || []).map(op => // Use normalized value for key
+    if (["DAC","GESTION POST"].includes(metodoEnvioActual)) { 
+      let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActual] || OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op => // Fallback to original if needed
         `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op ? op : "Seleccionar"}</option>`
       ).join("");
       content += `
@@ -1170,7 +1172,7 @@ function openModal(idx, modulo) {
     }
     const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
     const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
-    const isCompleteButtonDisabled = (["DAC","GESTION POST"].includes(metodoEnvioActual) && !pedido.EMPAQUE); // Use normalized value
+    const isCompleteButtonDisabled = (["DAC","GESTION POST"].includes(metodoEnvioActual) && !pedido.EMPAQUE); 
 
     content += `
       <div class="flex flex-col sm:flex-row gap-3 mt-4">
@@ -1192,9 +1194,9 @@ function openModal(idx, modulo) {
     const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper');
 
     const toggleCheckboxesVisibility = () => {
-      const currentMetodoEnvio = (metodoEnvioSelect.value || "").trim().toUpperCase(); // Normalize
+      const currentMetodoEnvioSelected = (metodoEnvioSelect.value || "").trim().toUpperCase(); 
 
-      if (currentMetodoEnvio === 'PICK UP') {
+      if (currentMetodoEnvioSelected === 'PICK UP') {
         entregadoCheckboxWrapper?.classList.remove('hidden');
       } else {
         entregadoCheckboxWrapper?.classList.add('hidden');
@@ -1202,7 +1204,7 @@ function openModal(idx, modulo) {
         if (entregadoCheckbox) entregadoCheckbox.checked = false;
       }
 
-      if (currentMetodoEnvio === 'DAC' || currentMetodoEnvio === 'GESTION POST') {
+      if (currentMetodoEnvioSelected === 'DAC' || currentMetodoEnvioSelected === 'GESTION POST') {
         etiquetaEmitidaCheckboxWrapper?.classList.remove('hidden');
       } else {
         etiquetaEmitidaCheckboxWrapper?.classList.add('hidden');
@@ -1213,7 +1215,6 @@ function openModal(idx, modulo) {
 
     if (metodoEnvioSelect) {
       metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility);
-      // Call initially to set correct state when modal opens, using the normalized value
       toggleCheckboxesVisibility(); 
     }
 
@@ -1245,8 +1246,7 @@ function openModal(idx, modulo) {
             const currentPedido = pedidos[pedidoActualIdx];
             if (currentPedido) currentPedido.EMPAQUE = this.value; 
             const btnCompletar = document.getElementById('modal-complete-pedido');
-            // Use normalized metodoEnvioActual for this check as well
-            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POST"].includes(metodoEnvioActual);
+            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POST"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase());
         });
     }
   }
@@ -1269,13 +1269,11 @@ function getChanges(oldObj, newObj, fieldsToTrack) {
         let oldValue = oldObj[field] || '';
         let newValue = newObj[field] || '';
 
-        // If the field is DEPARTAMENTO, compare using full names
         if (field === 'DEPARTAMENTO') {
             oldValue = getDepartamentoFullName(oldValue);
             newValue = getDepartamentoFullName(newValue);
         }
 
-        // Handle boolean values explicitly for consistent comparison
         oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : oldValue;
         newValue = typeof newObj[field] === 'boolean' ? newObj[field] : newValue;
 
@@ -1354,7 +1352,7 @@ async function guardarFaseYDatos(pedido) {
       TICKET_IMPRESO: pedido.TICKET_IMPRESO, 
       FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, 
       BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, 
-      DEPARTAMENTO: pedido.DEPARTAMENTO, // Send original/edited value
+      DEPARTAMENTO: pedido.DEPARTAMENTO, 
       ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, 
       PRODUCTS: pedido.PRODUCTS 
     };
