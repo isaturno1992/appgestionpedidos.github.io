@@ -163,11 +163,11 @@
   <div id="filtros-ventas" class="flex flex-wrap gap-3 mb-6 items-center">
     <select id="filtro-fase" class="filter-input">
       <option value="ACTIVE_ONLY" selected>Fases Activas</option>
-      <option value="COMPLETADOS_ACTIVOS">Completados Activos</option>
       <option value="EN ESPERA">En Espera</option>
       <option value="PROCESANDO">Procesando</option>
       <option value="PREPARANDO">Preparando</option>
       <option value="PREPARANDO MODIFICADO">Preparando Modificado</option>
+      <option value="COMPLETADOS_ACTIVOS">Completados Activos</option> {/* Movido aquí */}
       <option value="ALL_PHASES">Todas las fases (incluir completados)</option>
     </select>
     <select id="filtro-pago" class="filter-input">
@@ -798,7 +798,7 @@ function aplicarFiltrosVentas(p) {
 
   // Lógica de filtro por fase
   if (faseFiltro === "ACTIVE_ONLY") {
-      if (!isOrderActive(p)) { // Usa la función helper
+      if (!isOrderActive(p)) { 
           return false;
       }
   } else if (faseFiltro === "COMPLETADOS_ACTIVOS") {
@@ -1213,15 +1213,37 @@ function setupEventListeners() {
   dom.filtroBuscar?.addEventListener('input', renderizarTodo);
   [dom.filtroFaseDep, dom.filtroEnvioDep].forEach(el => el?.addEventListener('change', renderizarTodo));
   dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
+  
+  // Modal close buttons
   dom.modalClose?.addEventListener('click', closeModal);
   dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
+  
+  // Confirmation and Attention modal buttons
+  dom.confirmModalCancel?.addEventListener('click', () => {
+    dom.confirmModalBg.classList.add('hidden');
+    dom.confirmModalBg.classList.remove('flex');
+    // Resolve the promise if it was set up by showConfirmationModal
+    if (dom.confirmModalOk._promiseResolve) dom.confirmModalOk._promiseResolve(false);
+  });
+  dom.attentionModalOk?.addEventListener('click', () => {
+    dom.attentionModalBg.classList.add('hidden');
+    dom.attentionModalBg.classList.remove('flex');
+     if (dom.attentionModalOk._promiseResolve) dom.attentionModalOk._promiseResolve(true);
+  });
+
+
+  // Notification close button and OK button
   dom.notiCloseBtn?.addEventListener('click', hideNoti);
   dom.notiOkBtn?.addEventListener('click', hideNoti);
   dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
+
+  // Prevent clicks on the attention modal background from bubbling up
   if (dom.attentionModalBg) {
       dom.attentionModalBg.addEventListener('click', (e) => { if (e.target === dom.attentionModalBg) e.stopPropagation(); });
       dom.attentionModalBox?.addEventListener('click', (e) => e.stopPropagation());
   }
+
+  // Event delegation for action buttons in tables
   dom.tablaVentasBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
   dom.tablaDepositoBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
   
@@ -1231,6 +1253,19 @@ function setupEventListeners() {
         applyAppWidth(event.target.value);
     });
   }
+
+  // Global ESC key listener for modals
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      if (dom.modalBg && !dom.modalBg.classList.contains('hidden')) {
+        closeModal();
+      } else if (dom.confirmModalBg && !dom.confirmModalBg.classList.contains('hidden')) {
+        dom.confirmModalCancel.click(); // Simulate click on cancel
+      } else if (dom.attentionModalBg && !dom.attentionModalBg.classList.contains('hidden')) {
+        dom.attentionModalOk.click(); // Simulate click on OK
+      }
+    }
+  });
 }
 
 // ===================== INITIALIZATION ===================
