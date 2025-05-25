@@ -29,7 +29,7 @@
 
     /* Custom print styles for ticket */
     @media print {
-      body > *:not(#ticket-print-wrapper) {
+      body > *:not(#ticket-print-wrapper):not(#app-width-selector-wrapper) { 
         display: none !important;
       }
       #ticket-print-wrapper {
@@ -67,23 +67,21 @@
         font-weight: normal;
         text-align: left;
       }
-       /* Hide buttons or other non-printable elements within the ticket if any */
       #ticket-print button {
         display: none !important;
       }
     }
   </style>
   <script>
-    // Tailwind CSS configuration (optional, for custom colors if needed)
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            'custom-blue': '#2563eb', // Corresponds to blue-600
-            'custom-green': '#16a34a', // Corresponds to green-600
-            'custom-yellow': '#facc15', // Corresponds to yellow-400
-            'custom-red': '#dc2626',   // Corresponds to red-600
-            'custom-orange': '#ea580c', // Corresponds to orange-600
+            'custom-blue': '#2563eb', 
+            'custom-green': '#16a34a', 
+            'custom-yellow': '#facc15', 
+            'custom-red': '#dc2626',   
+            'custom-orange': '#ea580c', 
             'custom-purple': '#a259f7',
             'text-dark': '#22223b',
           },
@@ -125,9 +123,24 @@
 </div>
 
 <div id="main-app" class="container max-w-6xl mx-auto my-10 bg-white rounded-custom shadow-lg p-6 sm:p-9 hidden">
-  <button id="logout-btn" title="Cerrar sesión" class="float-right -mt-2 mb-2 bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Salir</button>
-  <h2 class="text-3xl font-bold mb-4 text-custom-blue">Gestión Centralizada de Pedidos</h2>
-  <div id="sync-log" class="text-sm mb-5 text-slate-500">Sincronizando...</div>
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+    <div>
+      <h2 class="text-3xl font-bold text-custom-blue">Gestión Centralizada de Pedidos</h2>
+      <div id="sync-log" class="text-sm mt-1 text-slate-500">Sincronizando...</div>
+    </div>
+    <div class="flex flex-col items-end gap-2 mt-4 sm:mt-0"> 
+      <div id="app-width-selector-wrapper" class="flex items-center gap-1">
+        <label for="app-width-selector" class="text-xs font-medium text-slate-500 whitespace-nowrap">Resolución:</label>
+        <select id="app-width-selector" class="text-xs p-1 rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+          <option value="max-w-6xl">Normal</option>
+          <option value="max-w-7xl">Medio</option>
+          <option value="max-w-screen-2xl">Ancho</option>
+          <option value="max-w-full">Total</option>
+        </select>
+      </div>
+      <button id="logout-btn" title="Cerrar sesión" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Salir</button>
+    </div>
+  </div>
 
   <div id="sales-stats-wrapper" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
     <div class="stat-box-animate-pop bg-custom-blue text-white p-5 rounded-custom shadow-md flex flex-col items-start min-h-[120px]">
@@ -201,7 +214,7 @@
             <div class="text-lg text-white">DAC</div><div class="stat-number text-3xl font-bold text-white" id="stat-dac">0</div>
         </div>
         <div class="stat-box-animate-pop bg-custom-yellow p-6 rounded-2xl shadow-lg flex flex-col items-start">
-            <div class="text-lg text-white">GESTIÓN POST</div><div class="stat-number text-3xl font-bold text-white" id="stat-gp">0</div>
+            <div class="text-lg text-white">GESTION POS</div><div class="stat-number text-3xl font-bold text-white" id="stat-gp">0</div>
         </div>
         <div class="stat-box-animate-pop bg-custom-red text-white p-6 rounded-2xl shadow-lg flex flex-col items-start">
             <div class="text-lg text-white">PICK UP</div><div class="stat-number text-3xl font-bold text-white" id="stat-pickup">0</div>
@@ -220,7 +233,7 @@
       <select id="filtro-envio-dep" class="filter-input">
         <option value="">Método Envío (Todos)</option>
         <option value="DAC">DAC</option>
-        <option value="GESTION POST">GESTIÓN POST</option>
+        <option value="GESTION POS">GESTION POS</option>
         <option value="PICK UP">PICK UP</option>
       </select>
       <input type="search" id="filtro-buscar-dep" placeholder="Buscar..." class="filter-input flex-grow">
@@ -242,9 +255,9 @@
       </table>
     </div>
   </div>
-</div>
+</div> 
 
-<div id="modal-bg" class="fixed inset-0 z-10 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4">
+<div id="modal-bg" class="fixed inset-0 z-[1050] bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4"> 
   <div id="modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-lg w-full p-7 relative max-h-[90vh] overflow-y-auto">
     <button id="modal-close" title="Cerrar" class="absolute top-4 right-5 text-slate-400 hover:text-custom-red text-3xl leading-none">&times;</button>
     <div id="modal-title" class="text-xl font-bold mb-5 text-custom-blue"></div>
@@ -274,6 +287,16 @@
   <div id="ticket-print" class="hidden print:block"></div>
 </div>
 
+<div id="app-width-selector-wrapper" class="fixed bottom-4 left-4 z-[1000] bg-white p-2 rounded-lg shadow-md flex items-center gap-2" style="display: none;">
+  <label for="app-width-selector" class="text-xs font-medium text-slate-600 whitespace-nowrap">Resolución:</label>
+  <select id="app-width-selector" class="text-xs p-1.5 rounded-md border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+    <option value="max-w-6xl">Normal</option>
+    <option value="max-w-7xl">Medio</option>
+    <option value="max-w-screen-2xl">Ancho</option>
+    <option value="max-w-full">Total</option>
+  </select>
+</div>
+
 <script>
 'use strict';
 
@@ -298,7 +321,7 @@ const dom = {
     statDac: null,
     statGp: null,
     statPickup: null,
-    statModificados: null, // For the modified stats
+    statModificados: null, 
     filtrosVentas: null,
     filtroFase: null,
     filtroPago: null,
@@ -319,22 +342,20 @@ const dom = {
     modalContent: null,
     ticketPrint: null,
     ticketPrintWrapper: null,
-    // Confirmation modal elements
     confirmModalBg: null,
     confirmModalBox: null,
     confirmModalMessage: null,
     confirmModalCancel: null,
     confirmModalOk: null,
-    // Attention modal elements
     attentionModalBg: null,
     attentionModalMessage: null,
     attentionModalOk: null,
-    // Wrapper for sales stats (to hide/show for deposit user)
     salesStatsWrapper: null,
-    // New: For products display in modal
     productosDisplayTable: null,
     productosEditArea: null,
     modalEditProductosBtn: null,
+    appWidthSelector: null,
+    appWidthSelectorWrapper: null,
 };
 
 function cacheDOMElements() {
@@ -342,31 +363,24 @@ function cacheDOMElements() {
         const id = key.replace(/([A-Z])/g, '-$1').toLowerCase();
         dom[key] = document.getElementById(id);
     }
-    // Specific selectors
     dom.tablaVentasBody = document.querySelector('#tabla-ventas tbody');
     dom.tablaDepositoBody = document.querySelector('#tabla-deposito tbody');
-    // Notification elements
     dom.notiMessage = document.getElementById('noti-message');
     dom.notiCloseBtn = document.getElementById('noti-close-btn');
     dom.notiOkBtn = document.getElementById('noti-ok-btn');
-    // Confirmation modal elements
     dom.confirmModalBg = document.getElementById('confirm-modal-bg');
     dom.confirmModalMessage = document.getElementById('confirm-modal-message');
     dom.confirmModalCancel = document.getElementById('confirm-modal-cancel');
     dom.confirmModalOk = document.getElementById('confirm-modal-ok');
-    // Attention modal elements
     dom.attentionModalBg = document.getElementById('attention-modal-bg');
     dom.attentionModalMessage = document.getElementById('attention-modal-message');
     dom.attentionModalOk = document.getElementById('attention-modal-ok');
-    // New stat element
     dom.statModificados = document.getElementById('stat-modificados');
-    // Sales stats wrapper
     dom.salesStatsWrapper = document.getElementById('sales-stats-wrapper');
 }
 
 
 // ===================== CONFIGURACIÓN ====================
-// ACTUALIZA ESTA URL CON LA URL DE TU BACKEND DESPLEGADO EN RENDER.COM
 const BACKEND_URL = 'https://gestor-pedidos-api-online.onrender.com';
 
 const USERS = {
@@ -377,7 +391,7 @@ const USERS = {
 
 const OPCIONES_EMPAQUE = {
   "DAC": ["", "20x20", "30x30", "40x40", "50x50", "60x60"],
-  "GESTIÓN POST": ["", "S", "M", "L"]
+  "GESTION POS": ["", "S", "M", "L"] 
 };
 const WOOCOMMERCE_TRANSLATE = {
   "pending": "Pendiente de pago",
@@ -385,34 +399,18 @@ const WOOCOMMERCE_TRANSLATE = {
   "processing": "Procesando",
   "completed": "Completado"
 };
-// NEW: Map for department codes
 const DEPARTAMENTO_MAP = {
-  'AR': 'Artigas',
-  'CA': 'Canelones',
-  'CL': 'Cerro Largo',
-  'CO': 'Colonia',
-  'DU': 'Durazno',
-  'FS': 'Flores',
-  'FD': 'Florida',
-  'LA': 'Lavalleja',
-  'MA': 'Maldonado',
-  'MO': 'Montevideo',
-  'PA': 'Paysandú',
-  'RN': 'Río Negro',
-  'RV': 'Rivera',
-  'RO': 'Rocha',
-  'SA': 'Salto',
-  'SJ': 'San José',
-  'SO': 'Soriano',
-  'TA': 'Tacuarembó',
-  'TT': 'Treinta y Tres',
+  'AR': 'Artigas', 'CA': 'Canelones', 'CL': 'Cerro Largo', 'CO': 'Colonia',
+  'DU': 'Durazno', 'FS': 'Flores', 'FD': 'Florida', 'LA': 'Lavalleja',
+  'MA': 'Maldonado', 'MO': 'Montevideo', 'PA': 'Paysandú', 'RN': 'Río Negro',
+  'RV': 'Rivera', 'RO': 'Rocha', 'SA': 'Salto', 'SJ': 'San José',
+  'SO': 'Soriano', 'TA': 'Tacuarembó', 'TT': 'Treinta y Tres',
 };
 
 let usuario = null;
 let pedidos = [];
 let pedidoActualIdx = null;
 let printCount = {}; 
-
 let originalPedidoState = null;
 let notiTimeoutId = null; 
 
@@ -424,107 +422,78 @@ const FIELDS_TO_TRACK_VENTAS = [
 ];
 const FIELDS_TO_TRACK_DEPOSITO = ['FASE', 'EMPAQUE'];
 
+const APP_WIDTH_CLASSES = ['max-w-6xl', 'max-w-7xl', 'max-w-screen-2xl', 'max-w-full'];
+
 
 // ===================== UTILITIES ============================
-/**
- * Translates a department code (e.g., UY-MO or MO) to its full name.
- * @param {string} code - The department code.
- * @returns {string} The full department name or the original code if not found.
- */
 function getDepartamentoFullName(code) {
     if (!code) return '';
-    const upperCode = String(code).toUpperCase().trim(); // Ensure it's a string and trim
+    const upperCode = String(code).toUpperCase().trim(); 
     const key = upperCode.startsWith('UY-') ? upperCode.substring(3) : upperCode;
-    return DEPARTAMENTO_MAP[key] || code; // Return full name or original code
+    return DEPARTAMENTO_MAP[key] || code; 
 }
+
+function getMetodoEnvioDisplayName(metodo) {
+    const normalizedMetodo = (metodo || "").trim().toUpperCase();
+    if (normalizedMetodo === "GESTION POS" || normalizedMetodo === "GESTIÓN POST") { 
+        return "GESTION POS"; 
+    }
+    return metodo || ""; 
+}
+
 
 function showNoti(msg, isSuccess = true) {
   if (!dom.notiBadge || !dom.notiMessage || !dom.notiCloseBtn || !dom.notiOkBtn) return;
-
-  if (notiTimeoutId) {
-    clearTimeout(notiTimeoutId);
-    notiTimeoutId = null;
-  }
-
+  if (notiTimeoutId) clearTimeout(notiTimeoutId);
   dom.notiMessage.textContent = msg;
   dom.notiBadge.classList.remove('hidden', 'bg-blue-600', 'bg-red-600', 'bg-green-600');
-
-  if (isSuccess === null) { 
-    dom.notiBadge.classList.add('bg-blue-600');
-  } else if (isSuccess) {
-    dom.notiBadge.classList.add('bg-green-600');
-  } else {
-    dom.notiBadge.classList.add('bg-red-600');
-  }
+  dom.notiBadge.classList.add(isSuccess === null ? 'bg-blue-600' : (isSuccess ? 'bg-green-600' : 'bg-red-600'));
   dom.notiBadge.style.display = 'flex'; 
-
   dom.notiOkBtn.classList.add('hidden'); 
   dom.notiCloseBtn.onclick = hideNoti; 
   notiTimeoutId = setTimeout(hideNoti, 3000); 
 }
 
 function hideNoti() {
-  if (dom.notiBadge) {
-    dom.notiBadge.classList.add('hidden');
-    dom.notiBadge.style.display = 'none';
-  }
+  if (dom.notiBadge) dom.notiBadge.style.display = 'none';
   if (dom.notiOkBtn) dom.notiOkBtn.onclick = null;
   if (dom.notiCloseBtn) dom.notiCloseBtn.onclick = null;
-  if (notiTimeoutId) {
-    clearTimeout(notiTimeoutId);
-    notiTimeoutId = null;
-  }
+  if (notiTimeoutId) { clearTimeout(notiTimeoutId); notiTimeoutId = null; }
 }
 
 function showAttentionModal(message) {
   return new Promise(resolve => {
     if (!dom.attentionModalBg || !dom.attentionModalMessage || !dom.attentionModalOk) {
-      console.error("Attention modal DOM elements not found.");
-      resolve(false);
-      return;
+      resolve(false); return;
     }
-
     dom.attentionModalMessage.textContent = message;
     dom.attentionModalBg.classList.remove('hidden');
     dom.attentionModalBg.classList.add('flex');
-
     const handleOk = () => {
       dom.attentionModalBg.classList.add('hidden');
       dom.attentionModalBg.classList.remove('flex');
       dom.attentionModalOk.removeEventListener('click', handleOk);
       resolve(true);
     };
-
     dom.attentionModalOk.addEventListener('click', handleOk);
   });
 }
-
 
 function mostrarSyncLog(text, ok) {
   if (!dom.syncLog) return;
   dom.syncLog.textContent = text;
   dom.syncLog.classList.remove('text-green-600', 'text-red-600', 'text-slate-500');
-  if (ok === true) {
-    dom.syncLog.classList.add('text-green-600');
-  } else if (ok === false) {
-    dom.syncLog.classList.add('text-red-600');
-  } else {
-    dom.syncLog.classList.add('text-slate-500');
-  }
+  dom.syncLog.classList.add(ok === true ? 'text-green-600' : (ok === false ? 'text-red-600' : 'text-slate-500'));
 }
 
 function showConfirmationModal(message) {
   return new Promise(resolve => {
     if (!dom.confirmModalBg || !dom.confirmModalMessage || !dom.confirmModalOk || !dom.confirmModalCancel) {
-      console.error("Confirmation modal DOM elements not found.");
-      resolve(false); 
-      return;
+      resolve(false); return;
     }
-
     dom.confirmModalMessage.textContent = message;
     dom.confirmModalBg.classList.remove('hidden');
     dom.confirmModalBg.classList.add('flex');
-
     const handleConfirm = () => {
       dom.confirmModalBg.classList.add('hidden');
       dom.confirmModalBg.classList.remove('flex');
@@ -532,7 +501,6 @@ function showConfirmationModal(message) {
       dom.confirmModalCancel.removeEventListener('click', handleCancel);
       resolve(true);
     };
-
     const handleCancel = () => {
       dom.confirmModalBg.classList.add('hidden');
       dom.confirmModalBg.classList.remove('flex');
@@ -540,10 +508,20 @@ function showConfirmationModal(message) {
       dom.confirmModalCancel.removeEventListener('click', handleCancel);
       resolve(false);
     };
-
     dom.confirmModalOk.addEventListener('click', handleConfirm);
     dom.confirmModalCancel.addEventListener('click', handleCancel);
   });
+}
+
+function applyAppWidth(newWidthClass) {
+    if (!dom.mainApp || !newWidthClass || !APP_WIDTH_CLASSES.includes(newWidthClass)) {
+        console.warn("Invalid width class or mainApp element not found for applyAppWidth:", newWidthClass);
+        return;
+    }
+    APP_WIDTH_CLASSES.forEach(cls => dom.mainApp.classList.remove(cls));
+    dom.mainApp.classList.add(newWidthClass);
+    localStorage.setItem('appPreferredWidth', newWidthClass);
+    console.log(`App width set to: ${newWidthClass}`);
 }
 
 
@@ -556,6 +534,7 @@ function handleLogin(event) {
     usuario = USERS[u];
     dom.mainApp.style.display = 'block';
     dom.loginPanel.style.display = 'none';
+    if (dom.appWidthSelectorWrapper) dom.appWidthSelectorWrapper.style.display = 'flex'; 
     cargarPedidos();
     showNoti(`Bienvenido ${usuario.nombre}!`, true);
   } else {
@@ -570,6 +549,7 @@ function logout() {
   printCount = {};
   if(dom.mainApp) dom.mainApp.style.display = 'none';
   if(dom.loginPanel) dom.loginPanel.style.display = 'block';
+  if (dom.appWidthSelectorWrapper) dom.appWidthSelectorWrapper.style.display = 'none'; 
   if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0]; 
   if(dom.loginPass) dom.loginPass.value = ''; 
   if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
@@ -648,7 +628,6 @@ function updateStats() {
         return;
     }
 
-    // --- Sales Stats Calculation (based on all 'pedidos') ---
     const salesStatsData = {
         total: pedidos.length,
         espera: pedidos.filter(p => p.FASE === "EN ESPERA").length,
@@ -657,17 +636,25 @@ function updateStats() {
         completado: pedidos.filter(p => p.FASE === "COMPLETADO").length,
     };
 
-    // --- Deposit Stats Calculation (based on 'aplicarFiltrosDeposito') ---
-    const pedidosFiltradosParaDeposito = pedidos.filter(aplicarFiltrosDeposito);
+    const fasesExcluidasParaStatsDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO"];
+    const pedidosParaEstadisticasMetodoEnvioDeposito = pedidos.filter(p => 
+        !fasesExcluidasParaStatsDeposito.includes(p.FASE)
+    );
+    
+    console.log("Total pedidos (global):", pedidos.length);
+    console.log("Pedidos para stats depósito (por método):", pedidosParaEstadisticasMetodoEnvioDeposito.length, pedidosParaEstadisticasMetodoEnvioDeposito.map(p => ({id: p.ID, fase: p.FASE, metodo: p.METODO_ENVIO})));
+
 
     const depositStatsData = {
-        dac: pedidosFiltradosParaDeposito.filter(p => p.METODO_ENVIO === "DAC").length,
-        gp: pedidosFiltradosParaDeposito.filter(p => p.METODO_ENVIO === "GESTIÓN POST").length,
-        pickup: pedidosFiltradosParaDeposito.filter(p => p.METODO_ENVIO === "PICK UP").length,
-        modificados: pedidosFiltradosParaDeposito.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length
+        dac: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "DAC").length,
+        gp: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "GESTION POS").length,
+        pickup: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "PICK UP").length,
+        modificados: pedidos.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length 
     };
+    
+    console.log("Deposit Stats Data (Calculated):", JSON.stringify(depositStatsData));
 
-    // --- Update Sales Stat DOM Elements & Visibility ---
+
     const salesStatElementsMap = {
         'stat-total': salesStatsData.total,
         'stat-espera': salesStatsData.espera,
@@ -677,21 +664,16 @@ function updateStats() {
     };
     for (const id in salesStatElementsMap) {
         const element = document.getElementById(id);
-        const value = salesStatElementsMap[id];
+        const value = salesStatElementsMap[id]; // Corrected: Access value from the map
         if (element) {
-            element.textContent = value;
+            element.textContent = String(value);
             const parentBox = element.closest('.stat-box-animate-pop');
             if (parentBox) {
-                if (value === 0) {
-                    parentBox.classList.add('hidden');
-                } else {
-                    parentBox.classList.remove('hidden');
-                }
+                parentBox.classList.toggle('hidden', Number(value) === 0 && id !== 'stat-total'); 
             }
         }
     }
 
-    // --- Update Deposit Stat DOM Elements & Visibility ---
     const depositStatElementsMap = {
         'stat-dac': depositStatsData.dac,
         'stat-gp': depositStatsData.gp,
@@ -700,17 +682,20 @@ function updateStats() {
     };
     for (const id in depositStatElementsMap) {
         const element = document.getElementById(id);
-        const value = depositStatElementsMap[id];
+        const value = depositStatElementsMap[id]; // Corrected: Access value from the map
+        console.log(`Updating DOM for ${id}: Value = ${value}`); 
         if (element) {
-            element.textContent = value;
+            element.textContent = String(value); 
             const parentBox = element.closest('.stat-box-animate-pop');
             if (parentBox) {
-                if (value === 0) {
+                 if (Number(value) === 0) {
                     parentBox.classList.add('hidden');
                 } else {
                     parentBox.classList.remove('hidden');
                 }
             }
+        } else {
+             console.warn(`Elemento DOM no encontrado para stat ID: ${id}`);
         }
     }
 }
@@ -718,9 +703,7 @@ function updateStats() {
 
 function renderizarTodo() {
   if (!usuario || !dom.moduloVentas) return;
-
   updateStats(); 
-
   const isAdmin = usuario.rol === "admin";
   const isVentas = usuario.rol === "ventas";
   const isDeposito = usuario.rol === "deposito";
@@ -728,7 +711,7 @@ function renderizarTodo() {
   if (dom.salesStatsWrapper) {
       dom.salesStatsWrapper.style.display = (isAdmin || isVentas) ? "grid" : "none";
   }
-
+  
   dom.moduloVentas.style.display = (isAdmin || isVentas) ? "" : "none";
   dom.filtrosVentas.style.display = (isAdmin || isVentas) ? "flex" : "none"; 
   dom.moduloDeposito.style.display = (isAdmin || isVentas || isDeposito) ? "" : "none";
@@ -739,105 +722,53 @@ function renderizarTodo() {
 
 function formatTimeAgoOrDate(dateString) {
     if (!dateString) return '';
-
     const parts = dateString.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
     if (!parts) {
         try {
             const d = new Date(dateString);
-            if (!isNaN(d.getTime())) {
-                return d.toLocaleDateString('es-ES'); 
-            }
+            if (!isNaN(d.getTime())) return d.toLocaleDateString('es-ES'); 
             const parsedDate = new Date(dateString);
             if (!isNaN(parsedDate.getTime())) {
                 const diffHours = (new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60);
                 if (diffHours < 24) {
                     const diffMinutes = Math.round((new Date().getTime() - parsedDate.getTime()) / (1000 * 60));
-                    if (diffMinutes < 60) {
-                        return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`;
-                    } else {
-                        const roundedHours = Math.round(diffHours);
-                        return `Hace ${roundedHours} hora${roundedHours === 1 ? '' : 's'}`;
-                    }
+                    return diffMinutes < 60 ? `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}` : `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`;
                 } else {
                     return parsedDate.toLocaleDateString('es-ES'); 
                 }
             }
-        } catch (e) {
-            // ignore
-        }
+        } catch (e) { /* ignore */ }
         return dateString; 
     }
-
-    const day = parseInt(parts[1], 10);
-    const month = parseInt(parts[2], 10) - 1; 
-    const year = parseInt(parts[3], 10);
-    const hours = parseInt(parts[4], 10);
-    const minutes = parseInt(parts[5], 10);
-
+    const day = parseInt(parts[1],10), month = parseInt(parts[2],10)-1, year = parseInt(parts[3],10), hours = parseInt(parts[4],10), minutes = parseInt(parts[5],10);
     const date = new Date(year, month, day, hours, minutes);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-
+    const diffMs = new Date().getTime() - date.getTime(), diffHours = diffMs / (36e5);
     if (diffHours < 24) {
-        const diffMinutes = Math.round(diffMs / (1000 * 60));
-        if (diffMinutes < 60) {
-            return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`;
-        } else {
-            const roundedHours = Math.round(diffHours);
-            return `Hace ${roundedHours} hora${roundedHours === 1 ? '' : 's'}`;
-        }
+        const diffMinutes = Math.round(diffMs / 6e4);
+        return diffMinutes < 60 ? `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}` : `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`;
     } else {
-        return `${day}/${month + 1}/${year}`; 
+        return `${day}/${month+1}/${year}`; 
     }
 }
 
 function formatProductLineToHtmlRow(line) {
     if (!line || typeof line !== 'string') return '';
     const trimmedLine = line.trim();
-
-    if (trimmedLine.toLowerCase().startsWith('sku') && trimmedLine.toLowerCase().includes('descripción') && trimmedLine.toLowerCase().includes('cant.')) {
-        return ''; 
-    }
-    if (trimmedLine.startsWith('---') && trimmedLine.includes('|')) {
-        return ''; 
-    }
-    if (trimmedLine === '') {
-        return ''; 
-    }
-    if (trimmedLine.match(/^-+$/)) { 
-        return '';
-    }
-
-
+    if (trimmedLine.toLowerCase().startsWith('sku') && trimmedLine.toLowerCase().includes('descripción') && trimmedLine.toLowerCase().includes('cant.')) return ''; 
+    if (trimmedLine.startsWith('---') && trimmedLine.includes('|')) return ''; 
+    if (trimmedLine === '' || trimmedLine.match(/^-+$/)) return ''; 
     const parts = trimmedLine.split(' - ');
-    
-    let sku = '';
-    let description = '';
-    let quantity = '';
-
+    let sku = '', description = '', quantity = '';
     if (parts.length >= 3) {
-        sku = parts[0].trim();
-        quantity = parts[parts.length - 1].trim();
-        const descriptionParts = parts.slice(1, parts.length - 1);
-        description = descriptionParts.join(' - ').trim(); 
+        sku = parts[0].trim(); quantity = parts[parts.length - 1].trim(); description = parts.slice(1, -1).join(' - ').trim(); 
     } else if (parts.length === 2) {
         const lastPart = parts[1].trim();
-        if (!isNaN(parseInt(lastPart)) && String(parseInt(lastPart)) === lastPart) {
-            description = parts[0].trim();
-            quantity = lastPart;
-        } else {
-            description = trimmedLine;
-        }
-    } else if (parts.length === 1 && trimmedLine !== '') {
-        description = trimmedLine;
-    } else {
-        return ''; 
-    }
-    
+        if (!isNaN(parseInt(lastPart)) && String(parseInt(lastPart)) === lastPart) { description = parts[0].trim(); quantity = lastPart; } 
+        else { description = trimmedLine; }
+    } else if (parts.length === 1 && trimmedLine) { description = trimmedLine; } 
+    else { return ''; }
     return `<tr class="border-b border-slate-200 last:border-b-0"><td class="px-2 py-1 align-top">${sku}</td><td class="px-2 py-1 align-top">${description}</td><td class="px-2 py-1 align-top text-right">${quantity}</td></tr>`;
 }
-
 
 // ===================== VENTAS ==============================
 function aplicarFiltrosVentas(p) {
@@ -848,85 +779,47 @@ function aplicarFiltrosVentas(p) {
 
   if (fase === "ACTIVE_ONLY") {
       if (p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") {
-          if (p.METODO_ENVIO === "DAC" || p.METODO_ENVIO === "GESTIÓN POST") {
-              if (!p.ETIQUETA_EMITIDA || !p.FACTURADO || !p.AVISO_CLIENTE) {
-                  return true;
-              } else {
-                  return false; 
-              }
-          } else if (p.METODO_ENVIO === "PICK UP") {
-              if (!p.ENTREGADO || !p.FACTURADO || !p.AVISO_CLIENTE) {
-                  return true;
-              } else {
-                  return false; 
-              }
-          } else {
-              return false;
-          }
+          const metodoEnvioNorm = (p.METODO_ENVIO || "").trim().toUpperCase();
+          if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") { 
+              if (!p.ETIQUETA_EMITIDA || !p.FACTURADO || !p.AVISO_CLIENTE) return true; else return false; 
+          } else if (metodoEnvioNorm === "PICK UP") { 
+              if (!p.ENTREGADO || !p.FACTURADO || !p.AVISO_CLIENTE) return true; else return false; 
+          } else return false;
       }
-  } else if (fase === "ALL_PHASES") {
-      // No phase filtering
-  } else if (fase && p.FASE !== fase) {
-      return false; 
-  }
+  } else if (fase !== "ALL_PHASES" && fase && p.FASE !== fase) return false; 
 
   if (pago && (p.ESTADO_PAGO !== pago)) return false;
   if (woo && (p.ESTADO_WOO !== woo)) return false;
 
   if (buscar) { 
-    let encontrado = false;
     const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
-
-    if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) {
-      encontrado = true;
-    } else { 
-      if (
-        (p.CLIENTE || "").toLowerCase().includes(buscar) ||
-        (String(p.ID) || "").toLowerCase().includes(buscar) || 
-        (p.TELEFONO || "").toLowerCase().includes(buscar) ||
-        (p.NOTAS || "").toLowerCase().includes(buscar) ||
-        (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
-        deptoFullName.includes(buscar) || 
-        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) 
-      ) {
-        encontrado = true;
-      }
-    }
-    if (!encontrado) return false;
+    if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) return true;
+    if (!((p.CLIENTE || "").toLowerCase().includes(buscar) || (String(p.ID) || "").toLowerCase().includes(buscar) || 
+        (p.TELEFONO || "").toLowerCase().includes(buscar) || (p.NOTAS || "").toLowerCase().includes(buscar) ||
+        (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) || deptoFullName.includes(buscar) || 
+        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar))) return false;
   }
   return true;
 }
 
 function getBadgeClassForFase(fase) {
-    switch(fase) {
-        case "EN ESPERA": return "bg-blue-500 text-white";
-        case "PROCESANDO": return "bg-orange-500 text-white";
-        case "PREPARANDO": return "bg-yellow-400 text-white";
-        case "PREPARANDO MODIFICADO": return "bg-purple-400 text-white";
-        case "COMPLETADO": return "bg-green-500 text-white";
-        case "COMPLETADO MODIFICADO": return "bg-red-500 text-white";
-        case "URGENTE": return "bg-red-600 text-white";
-        default: return "bg-slate-300 text-slate-700";
-    }
+    const faseClasses = { "EN ESPERA": "bg-blue-500", "PROCESANDO": "bg-orange-500", "PREPARANDO": "bg-yellow-400", "PREPARANDO MODIFICADO": "bg-purple-400", "COMPLETADO": "bg-green-500", "COMPLETADO MODIFICADO": "bg-red-500", "URGENTE": "bg-red-600" };
+    return `${faseClasses[fase] || 'bg-slate-300 text-slate-700'} text-white`;
 }
 
 function renderVentas() {
   if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return;
-
   dom.tablaVentasBody.innerHTML = ""; 
-  const pedidosFiltrados = pedidos.filter(aplicarFiltrosVentas);
-
-  pedidosFiltrados.forEach(p => {
+  pedidos.filter(aplicarFiltrosVentas).forEach(p => {
     const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); 
     if (pedidoIdx === -1) return; 
-
     const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase();
     const tr = document.createElement('tr');
     tr.className = "bg-white border-b hover:bg-slate-50 transition";
     tr.innerHTML = `
       <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td>
       <td class="px-4 py-2">${p.CLIENTE || ""}</td>
-      <td class="px-4 py-2">${p.METODO_ENVIO || ""}</td>
+      <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td>
       <td class="px-4 py-2">${p.MONTO || ""}</td>
       <td class="px-4 py-2">${(p.ESTADO_PAGO || "").charAt(0).toUpperCase() + (p.ESTADO_PAGO || "").slice(1)}</td>
       <td class="px-4 py-2"><span class="text-slate-700">${wooTxt}</span></td>
@@ -934,8 +827,7 @@ function renderVentas() {
       <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td>
       <td class="px-4 py-2">
         <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="ventas">Ver/Editar</button>
-      </td>
-    `;
+      </td>`;
     dom.tablaVentasBody.appendChild(tr);
   });
 }
@@ -943,71 +835,47 @@ function renderVentas() {
 // ================== DEPÓSITO ===============================
 function aplicarFiltrosDeposito(p) {
   const fase = dom.filtroFaseDep.value;
-  const envio = dom.filtroEnvioDep.value;
+  const envio = dom.filtroEnvioDep.value; 
   const buscar = dom.filtroBuscarDep.value.toLowerCase();
 
   if (fase === "DEFAULT_DEPOSIT_FILTER") {
-      if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) {
-          return false;
-      }
+      if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false;
   } else if (fase === "MODIFICADOS_AGRUPADOS") {
-    return p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO";
-  } else if (fase && p.FASE !== fase) {
-      return false; 
-  }
-  else if (!fase) { 
-      if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) {
-          return false;
-      }
-  }
+    if (!(p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false;
+  } else if (fase && p.FASE !== fase) return false; 
+  else if (!fase && !(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false;
 
+  if (envio && (p.METODO_ENVIO || "").trim().toUpperCase() !== envio) return false;
 
-  if (envio && p.METODO_ENVIO !== envio) return false;
-  
   if (buscar) {
       const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
-      if (!(
-          (p.CLIENTE || "").toLowerCase().includes(buscar) ||
-          (String(p.ID)||"").toLowerCase().includes(buscar) ||
-          (p.TELEFONO || "").toLowerCase().includes(buscar) ||
-          (p.DIRECCION || "").toLowerCase().includes(buscar) ||
-          (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
-          deptoFullName.includes(buscar) || 
-          (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) 
-      )) return false;
+      if (!((p.CLIENTE || "").toLowerCase().includes(buscar) || (String(p.ID)||"").toLowerCase().includes(buscar) ||
+          (p.TELEFONO || "").toLowerCase().includes(buscar) || (p.DIRECCION || "").toLowerCase().includes(buscar) ||
+          (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) || deptoFullName.includes(buscar) || 
+          (p.DEPARTAMENTO || "").toLowerCase().includes(buscar))) return false;
   }
   return true;
 }
 
 function renderDeposito() {
   if (!usuario || !(usuario.rol === "admin" || usuario.rol === "ventas" || usuario.rol === "deposito") || !dom.tablaDepositoBody) return;
-
   dom.tablaDepositoBody.innerHTML = "";
-  const pedidosFiltrados = pedidos.filter(aplicarFiltrosDeposito);
-
-  pedidosFiltrados.forEach(p => {
+  pedidos.filter(aplicarFiltrosDeposito).forEach(p => {
     const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID);
     if (pedidoIdx === -1) return;
-
     const tr = document.createElement('tr');
-    let rowBgClass = '';
-    if (p.FASE === 'COMPLETADO MODIFICADO') {
-        rowBgClass = 'bg-red-100';
-    } else if (p.FASE === 'PREPARANDO MODIFICADO') {
-        rowBgClass = 'bg-purple-50';
-    }
+    let rowBgClass = p.FASE === 'COMPLETADO MODIFICADO' ? 'bg-red-100' : (p.FASE === 'PREPARANDO MODIFICADO' ? 'bg-purple-50' : '');
     tr.className = `bg-white border-b hover:bg-slate-50 transition ${rowBgClass}`;
     tr.innerHTML = `
       <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td>
       <td class="px-4 py-2">${p.CLIENTE || ""}</td>
-      <td class="px-4 py-2">${p.METODO_ENVIO || ""}</td>
+      <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td>
       <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td>
       <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td>
       <td class="px-4 py-2 text-center">${p.TICKET_IMPRESO ? '🖨️' : ''}</td>
       <td class="px-4 py-2">
         <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="deposito">Ver/Completar</button>
-      </td>
-    `;
+      </td>`;
     dom.tablaDepositoBody.appendChild(tr);
   });
 }
@@ -1016,43 +884,30 @@ function renderDeposito() {
 function openModal(idx, modulo) {
   pedidoActualIdx = idx;
   const pedido = pedidos[pedidoActualIdx];
-  if (!pedido) {
-    console.error("Pedido no encontrado para el índice:", idx);
-    showNoti("Error: Pedido no encontrado.", false);
-    return;
-  }
-  console.log("Raw PRODUCTS data for pedido:", pedido.ID, ":", pedido.PRODUCTS);
-
-
+  if (!pedido) { console.error("Pedido no encontrado:", idx); showNoti("Error: Pedido no encontrado.", false); return; }
   originalPedidoState = JSON.parse(JSON.stringify(pedido));
-
   let content = "";
-  if (modulo === 'ventas') {
-    dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b> - <b>$${pedido.MONTO || ""}</b>`;
-  } else { 
-    dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>`; 
-  }
-
+  dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>${modulo === 'ventas' ? ` - <b>$${pedido.MONTO || ""}</b>` : ''}`;
+  
   let productsTableHtml = '';
   const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); 
-
   if (productLines.length > 0) {
-      productsTableHtml += `<table class="min-w-full text-left text-sm text-slate-700 border-collapse">`;
-      productsTableHtml += `<thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead>`;
-      productsTableHtml += `<tbody>`;
-      productLines.forEach(line => {
-          const formattedRow = formatProductLineToHtmlRow(line);
-          if (formattedRow) { 
-              productsTableHtml += formattedRow;
-          }
-      });
+      productsTableHtml += `<table class="min-w-full text-left text-sm text-slate-700 border-collapse"><thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead><tbody>`;
+      productLines.forEach(line => { const formattedRow = formatProductLineToHtmlRow(line); if (formattedRow) productsTableHtml += formattedRow; });
       productsTableHtml += `</tbody></table>`;
   } else {
       productsTableHtml = `<p class="text-slate-500 text-sm italic">No hay productos registrados.</p>`;
   }
 
   const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); 
-  const metodoEnvioActual = (pedido.METODO_ENVIO || "").trim().toUpperCase(); // Normalize for comparison
+  const metodoEnvioActualNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); 
+  const metodoEnvioDisplay = getMetodoEnvioDisplayName(pedido.METODO_ENVIO); 
+
+  console.log(`Abriendo modal para Pedido ID: ${pedido.ID}, Módulo: ${modulo}`);
+  console.log(` - METODO_ENVIO original del pedido: '${pedido.METODO_ENVIO}'`);
+  console.log(` - metodoEnvioActualNorm (para lógica de select y checkboxes): '${metodoEnvioActualNorm}'`);
+  console.log(` - metodoEnvioDisplay (para mostrar en texto plano en Depósito): '${metodoEnvioDisplay}'`);
+
 
   if (modulo === 'ventas') {
     content = `
@@ -1061,9 +916,7 @@ function openModal(idx, modulo) {
           <label for="modal-productos" class="block text-sm font-medium text-slate-600">Productos:</label>
           <button id="modal-edit-productos-btn" class="bg-blue-500 text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 transition-colors flex-shrink-0">Editar</button>
         </div>
-        <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">
-          ${productsTableHtml}
-        </div>
+        <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div>
         <textarea class="modal-input w-full hidden" id="modal-productos" rows="8" style="font-family: monospace;">${pedido.PRODUCTS || ""}</textarea>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
@@ -1079,9 +932,9 @@ function openModal(idx, modulo) {
         <div><label for="modal-metodo-envio" class="block text-sm font-medium text-slate-600 mb-1">Método de Envío:</label>
           <select id="modal-metodo-envio" class="modal-input">
             <option value="">Seleccionar</option>
-            <option value="DAC" ${metodoEnvioActual === "DAC" ? " selected" : ""}>DAC</option>
-            <option value="GESTION POST" ${metodoEnvioActual === "GESTION POST" ? " selected" : ""}>GESTIÓN POST</option>
-            <option value="PICK UP" ${metodoEnvioActual === "PICK UP" ? " selected" : ""}>PICK UP</option>
+            <option value="DAC" ${metodoEnvioActualNorm === "DAC" ? " selected" : ""}>DAC</option>
+            <option value="GESTION POS" ${metodoEnvioActualNorm === "GESTION POS" ? " selected" : ""}>GESTION POS</option>
+            <option value="PICK UP" ${metodoEnvioActualNorm === "PICK UP" ? " selected" : ""}>PICK UP</option>
           </select>
         </div>
         <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label>
@@ -1093,61 +946,19 @@ function openModal(idx, modulo) {
         </div>
       </div>
       <div class="mb-4 space-y-2">
-        <div id="entregado-checkbox-wrapper" class="${metodoEnvioActual === 'PICK UP' ? '' : 'hidden'}">
-          <div class="flex items-center">
-            <input type="checkbox" id="modal-entregado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ENTREGADO ? "checked" : ""}>
-            <label for="modal-entregado" class="cursor-pointer">Entregado</label>
-          </div>
-        </div>
-        <div id="etiqueta-emitida-checkbox-wrapper" class="${(metodoEnvioActual === 'DAC' || metodoEnvioActual === 'GESTION POST') ? '' : 'hidden'}">
-          <div class="flex items-center">
-            <input type="checkbox" id="modal-etiqueta-emitida" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ETIQUETA_EMITIDA ? "checked" : ""}>
-            <label for="modal-etiqueta-emitida" class="cursor-pointer">Etiqueta Emitida</label>
-          </div>
-        </div>
-        <div class="flex items-center">
-          <input type="checkbox" id="modal-facturado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.FACTURADO ? "checked" : ""}>
-          <label for="modal-facturado" class="cursor-pointer">Facturado</label>
-        </div>
-        <div class="flex items-center">
-          <input type="checkbox" id="modal-aviso-cliente" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.AVISO_CLIENTE ? "checked" : ""}>
-          <label for="modal-aviso-cliente" class="cursor-pointer">Aviso al cliente</label>
-        </div>
+        <div id="entregado-checkbox-wrapper" class="${metodoEnvioActualNorm === 'PICK UP' ? '' : 'hidden'}"><div class="flex items-center"><input type="checkbox" id="modal-entregado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ENTREGADO ? "checked" : ""}><label for="modal-entregado" class="cursor-pointer">Entregado</label></div></div>
+        <div id="etiqueta-emitida-checkbox-wrapper" class="${(metodoEnvioActualNorm === 'DAC' || metodoEnvioActualNorm === 'GESTION POS') ? '' : 'hidden'}"><div class="flex items-center"><input type="checkbox" id="modal-etiqueta-emitida" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ETIQUETA_EMITIDA ? "checked" : ""}><label for="modal-etiqueta-emitida" class="cursor-pointer">Etiqueta Emitida</label></div></div>
+        <div class="flex items-center"><input type="checkbox" id="modal-facturado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.FACTURADO ? "checked" : ""}><label for="modal-facturado" class="cursor-pointer">Facturado</label></div>
+        <div class="flex items-center"><input type="checkbox" id="modal-aviso-cliente" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.AVISO_CLIENTE ? "checked" : ""}><label for="modal-aviso-cliente" class="cursor-pointer">Aviso al cliente</label></div>
       </div>
       <div class="flex flex-col sm:flex-row gap-3 mt-4">
         <button id="modal-save-venta" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-blue hover:bg-blue-700 focus:ring-custom-blue">Guardar Cambios</button>
-        ${(pedido.FASE === 'COMPLETADO' || pedido.FASE === 'PREPARANDO') ? `
-          <button id="modal-modificar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange">Modificar Pedido</button>
-        ` : ''}
+        ${(pedido.FASE === 'COMPLETADO' || pedido.FASE === 'PREPARANDO') ? `<button id="modal-modificar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange">Modificar Pedido</button>` : ''}
       </div>
-
-      <div class="mt-6 pt-4 border-t border-slate-200">
-          <h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4>
-          <div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm">
-              ${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ?
-                  pedido.HISTORIAL.map(entry => `
-                      <div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0">
-                          <div class="font-medium text-slate-800">${entry.user} - ${new Date(entry.timestamp).toLocaleString('es-ES')}</div>
-                          <ul class="list-disc list-inside text-slate-600 ml-4">
-                              ${entry.changes.map(change => `
-                                  <li>${formatChangeEntry(change)}</li>
-                              `).join('')}
-                          </ul>
-                      </div>
-                  `).join('')
-                  : '<p class="text-slate-500">No hay historial de actividad para este pedido.</p>'
-              }
-          </div>
-      </div>
-    `;
+      <div class="mt-6 pt-4 border-t border-slate-200"><h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4><div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm">${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ? pedido.HISTORIAL.map(entry => `<div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0"><div class="font-medium text-slate-800">${entry.user} - ${new Date(entry.timestamp).toLocaleString('es-ES')}</div><ul class="list-disc list-inside text-slate-600 ml-4">${entry.changes.map(change => `<li>${formatChangeEntry(change)}</li>`).join('')}</ul></div>`).join('') : '<p class="text-slate-500">No hay historial.</p>'}</div></div>`;
   } else { // DEPÓSITO
     content = `
-      <div class="mb-2">
-        <strong class="text-slate-700">Productos:</strong>
-        <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">
-          ${productsTableHtml}
-        </div>
-      </div>
+      <div class="mb-2"><strong class="text-slate-700">Productos:</strong><div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div></div>
       <div class="space-y-1 text-sm mb-3">
         <div><strong class="text-slate-600">Cliente:</strong> ${pedido.CLIENTE || ""}</div>
         <div><strong class="text-slate-600">Dirección:</strong> ${pedido.DIRECCION || ""}</div>
@@ -1156,30 +967,16 @@ function openModal(idx, modulo) {
         <div><strong class="text-slate-600">Teléfono:</strong> ${pedido.TELEFONO || ""}</div>
         <div><strong class="text-slate-600">Email:</strong> ${pedido.EMAIL || ""}</div>
         <div><strong class="text-slate-600">Notas:</strong> ${pedido.NOTAS || ""}</div>
-        <div><strong class="text-slate-600">Método de Envío:</strong> ${pedido.METODO_ENVIO || ""}</div>
-      </div>
-    `;
-    if (["DAC","GESTION POST"].includes(metodoEnvioActual)) { 
-      let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActual] || OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op => // Fallback to original if needed
-        `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op ? op : "Seleccionar"}</option>`
-      ).join("");
-      content += `
-      <div class="mb-4">
-        <label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label>
-        <select id="modal-tipo-empaque" class="modal-input">${opcionesEmpaque}</select>
-      </div>
-      `;
+        <div><strong class="text-slate-600">Método de Envío:</strong> ${metodoEnvioDisplay}</div>
+      </div>`;
+    if (["DAC","GESTION POS"].includes(metodoEnvioActualNorm)) { 
+      let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActualNorm] || OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op => `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op||"Seleccionar"}</option>`).join("");
+      content += `<div class="mb-4"><label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label><select id="modal-tipo-empaque" class="modal-input">${opcionesEmpaque}</select></div>`;
     }
     const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
     const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
-    const isCompleteButtonDisabled = (["DAC","GESTION POST"].includes(metodoEnvioActual) && !pedido.EMPAQUE); 
-
-    content += `
-      <div class="flex flex-col sm:flex-row gap-3 mt-4">
-        <button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button>
-        <button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button>
-      </div>
-    `;
+    const isCompleteButtonDisabled = (["DAC","GESTION POS"].includes(metodoEnvioActualNorm) && !pedido.EMPAQUE); 
+    content += `<div class="flex flex-col sm:flex-row gap-3 mt-4"><button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button><button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button></div>`;
   }
   dom.modalContent.innerHTML = content;
   dom.modalBg.classList.remove('hidden');
@@ -1188,56 +985,29 @@ function openModal(idx, modulo) {
   if (modulo === 'ventas') {
     document.getElementById('modal-save-venta')?.addEventListener('click', () => guardarVenta(pedidoActualIdx));
     document.getElementById('modal-modificar-pedido')?.addEventListener('click', () => modificarPedidoVentas(pedidoActualIdx)); 
-
     const metodoEnvioSelect = document.getElementById('modal-metodo-envio');
     const entregadoCheckboxWrapper = document.getElementById('entregado-checkbox-wrapper');
     const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper');
-
     const toggleCheckboxesVisibility = () => {
       const currentMetodoEnvioSelected = (metodoEnvioSelect.value || "").trim().toUpperCase(); 
-
-      if (currentMetodoEnvioSelected === 'PICK UP') {
-        entregadoCheckboxWrapper?.classList.remove('hidden');
-      } else {
-        entregadoCheckboxWrapper?.classList.add('hidden');
-        const entregadoCheckbox = document.getElementById('modal-entregado');
-        if (entregadoCheckbox) entregadoCheckbox.checked = false;
-      }
-
-      if (currentMetodoEnvioSelected === 'DAC' || currentMetodoEnvioSelected === 'GESTION POST') {
-        etiquetaEmitidaCheckboxWrapper?.classList.remove('hidden');
-      } else {
-        etiquetaEmitidaCheckboxWrapper?.classList.add('hidden');
-        const etiquetaEmitidaCheckbox = document.getElementById('modal-etiqueta-emitida');
-        if (etiquetaEmitidaCheckbox) etiquetaEmitidaCheckbox.checked = false;
-      }
+      if(entregadoCheckboxWrapper) entregadoCheckboxWrapper.classList.toggle('hidden', currentMetodoEnvioSelected !== 'PICK UP');
+      if(entregadoCheckboxWrapper?.classList.contains('hidden')) { const cb = document.getElementById('modal-entregado'); if(cb) cb.checked = false;}
+      if(etiquetaEmitidaCheckboxWrapper) etiquetaEmitidaCheckboxWrapper.classList.toggle('hidden', !(currentMetodoEnvioSelected === 'DAC' || currentMetodoEnvioSelected === 'GESTION POS'));
+      if(etiquetaEmitidaCheckboxWrapper?.classList.contains('hidden')) { const cb = document.getElementById('modal-etiqueta-emitida'); if(cb) cb.checked = false;}
     };
-
-    if (metodoEnvioSelect) {
-      metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility);
-      toggleCheckboxesVisibility(); 
-    }
-
+    if (metodoEnvioSelect) { metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility); toggleCheckboxesVisibility(); }
     dom.productosDisplayTable = document.getElementById('productos-display-table');
     dom.productosEditArea = document.getElementById('modal-productos');
     dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn');
-
     if (dom.productosDisplayTable && dom.productosEditArea && dom.modalEditProductosBtn) {
         dom.modalEditProductosBtn.addEventListener('click', () => {
-            dom.productosDisplayTable.classList.add('hidden'); 
-            dom.productosEditArea.classList.remove('hidden'); 
-            dom.productosEditArea.removeAttribute('readonly'); 
-            dom.productosEditArea.focus();
-            dom.modalEditProductosBtn.classList.add('hidden'); 
+            dom.productosDisplayTable.classList.add('hidden'); dom.productosEditArea.classList.remove('hidden'); 
+            dom.productosEditArea.removeAttribute('readonly'); dom.productosEditArea.focus(); dom.modalEditProductosBtn.classList.add('hidden'); 
         });
-        dom.productosDisplayTable.classList.remove('hidden');
-        dom.productosEditArea.classList.add('hidden');
-        dom.productosEditArea.setAttribute('readonly', 'true');
-        dom.modalEditProductosBtn.classList.remove('hidden');
+        dom.productosDisplayTable.classList.remove('hidden'); dom.productosEditArea.classList.add('hidden');
+        dom.productosEditArea.setAttribute('readonly', 'true'); dom.modalEditProductosBtn.classList.remove('hidden');
     }
-
-
-  } else { // Deposito
+  } else { 
     document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx));
     document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx));
     const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque');
@@ -1246,7 +1016,7 @@ function openModal(idx, modulo) {
             const currentPedido = pedidos[pedidoActualIdx];
             if (currentPedido) currentPedido.EMPAQUE = this.value; 
             const btnCompletar = document.getElementById('modal-complete-pedido');
-            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POST"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase());
+            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POS"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase());
         });
     }
   }
@@ -1268,410 +1038,182 @@ function getChanges(oldObj, newObj, fieldsToTrack) {
     fieldsToTrack.forEach(field => {
         let oldValue = oldObj[field] || '';
         let newValue = newObj[field] || '';
-
-        if (field === 'DEPARTAMENTO') {
-            oldValue = getDepartamentoFullName(oldValue);
-            newValue = getDepartamentoFullName(newValue);
-        }
-
+        if (field === 'DEPARTAMENTO') { oldValue = getDepartamentoFullName(oldValue); newValue = getDepartamentoFullName(newValue); }
         oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : oldValue;
         newValue = typeof newObj[field] === 'boolean' ? newObj[field] : newValue;
-
-
-        if (oldValue !== newValue) {
-            changes.push({ field: field, old: oldValue, new: newValue });
-        }
+        if (oldValue !== newValue) changes.push({ field: field, old: oldValue, new: newValue });
     });
     return changes;
 }
 
 function formatChangeEntry(change) {
     const fieldNameMap = {
-        'CLIENTE': 'el cliente',
-        'DIRECCION': 'la dirección',
-        'TELEFONO': 'el teléfono',
-        'EMAIL': 'el email',
-        'NOTAS': 'las notas',
-        'METODO_ENVIO': 'el método de envío',
-        'ESTADO_PAGO': 'el estado de pago',
-        'ENTREGADO': 'el estado de "Entregado"',
-        'FACTURADO': 'el estado de "Facturado"',
-        'AVISO_CLIENTE': 'el estado de "Aviso al Cliente"',
-        'FASE': 'la fase del pedido',
-        'EMPAQUE': 'el tipo de empaque',
-        'TICKET_IMPRESO': 'el estado de "Ticket Impreso"',
-        'FECHA_INGRESO_SISTEMA': 'la fecha de ingreso al sistema',
-        'BARRIO_LOCALIDAD': 'el barrio/localidad',
-        'DEPARTAMENTO': 'el departamento',
-        'ETIQUETA_EMITIDA': 'el estado de "Etiqueta Emitida"',
-        'PRODUCTS': 'los productos' 
+        'CLIENTE': 'el cliente', 'DIRECCION': 'la dirección', 'TELEFONO': 'el teléfono', 'EMAIL': 'el email',
+        'NOTAS': 'las notas', 'METODO_ENVIO': 'el método de envío', 'ESTADO_PAGO': 'el estado de pago',
+        'ENTREGADO': 'el estado de "Entregado"', 'FACTURADO': 'el estado de "Facturado"', 
+        'AVISO_CLIENTE': 'el estado de "Aviso al Cliente"', 'FASE': 'la fase del pedido', 'EMPAQUE': 'el tipo de empaque',
+        'TICKET_IMPRESO': 'el estado de "Ticket Impreso"', 'FECHA_INGRESO_SISTEMA': 'la fecha de ingreso',
+        'BARRIO_LOCALIDAD': 'el barrio/localidad', 'DEPARTAMENTO': 'el departamento',
+        'ETIQUETA_EMITIDA': 'el estado de "Etiqueta Emitida"', 'PRODUCTS': 'los productos' 
     };
-
-    const formatBoolean = (val) => val ? 'Sí' : 'No';
-
-    const oldValFormatted = typeof change.old === 'boolean' ? formatBoolean(change.old) : (change.old === '' ? '(vacío)' : change.old);
-    const newValFormatted = typeof change.new === 'boolean' ? formatBoolean(change.new) : (change.new === '' ? '(vacío)' : change.new);
-
-    const fieldDescription = fieldNameMap[change.field] || change.field;
-
+    const formatBool = (val) => val ? 'Sí' : 'No';
+    const oldF = typeof change.old === 'boolean' ? formatBool(change.old) : (change.old === '' ? '(vacío)' : change.old);
+    const newF = typeof change.new === 'boolean' ? formatBool(change.new) : (change.new === '' ? '(vacío)' : change.new);
+    const desc = fieldNameMap[change.field] || change.field;
     if (typeof change.old === 'boolean' || typeof change.new === 'boolean') {
-        if (change.new === true) {
-            return `Se marcó como "${fieldDescription.replace('el estado de "', '').replace('"', '')}".`;
-        } else if (change.new === false) {
-            return `Se desmarcó como "${fieldDescription.replace('el estado de "', '').replace('"', '')}".`;
-        }
+        return change.new ? `Se marcó como "${desc.replace('el estado de "', '').replace('"', '')}".` : `Se desmarcó como "${desc.replace('el estado de "', '').replace('"', '')}".`;
     }
-
-    if (change.old === '' && change.new !== '') {
-        return `Se estableció ${fieldDescription} a "<span class="text-green-500">${newValFormatted}</span>".`;
-    }
-    if (change.old !== '' && change.new === '') {
-        return `Se eliminó el valor de ${fieldDescription}: de "<span class="text-red-500">${oldValFormatted}</span>" a "(vacío)".`;
-    }
-
-
-    return `El ${fieldDescription} cambió de "<span class="text-red-500">${oldValFormatted}</span>" a "<span class="text-green-500">${newValFormatted}</span>".`;
+    if (change.old === '' && change.new !== '') return `Se estableció ${desc} a "<span class="text-green-500">${newF}</span>".`;
+    if (change.old !== '' && change.new === '') return `Se eliminó el valor de ${desc}: de "<span class="text-red-500">${oldF}</span>" a "(vacío)".`;
+    return `El ${desc} cambió de "<span class="text-red-500">${oldF}</span>" a "<span class="text-green-500">${newF}</span>".`;
 }
-
 
 // ================== ACTIONS ================================
 async function guardarFaseYDatos(pedido) {
   try {
     const updatedFields = {
-      CLIENTE: pedido.CLIENTE,
-      DIRECCION: pedido.DIRECCION,
-      TELEFONO: pedido.TELEFONO,
-      EMAIL: pedido.EMAIL,
-      NOTAS: pedido.NOTAS,
-      METODO_ENVIO: pedido.METODO_ENVIO,
-      ESTADO_PAGO: pedido.ESTADO_PAGO,
-      ENTREGADO: pedido.ENTREGADO,
-      FACTURADO: pedido.FACTURADO,
-      AVISO_CLIENTE: pedido.AVISO_CLIENTE,
-      FASE: pedido.FASE,
-      TICKET_IMPRESO: pedido.TICKET_IMPRESO, 
-      FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, 
-      BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, 
-      DEPARTAMENTO: pedido.DEPARTAMENTO, 
-      ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, 
-      PRODUCTS: pedido.PRODUCTS 
+      CLIENTE: pedido.CLIENTE, DIRECCION: pedido.DIRECCION, TELEFONO: pedido.TELEFONO, EMAIL: pedido.EMAIL,
+      NOTAS: pedido.NOTAS, METODO_ENVIO: pedido.METODO_ENVIO, ESTADO_PAGO: pedido.ESTADO_PAGO,
+      ENTREGADO: pedido.ENTREGADO, FACTURADO: pedido.FACTURADO, AVISO_CLIENTE: pedido.AVISO_CLIENTE,
+      FASE: pedido.FASE, TICKET_IMPRESO: pedido.TICKET_IMPRESO, FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, 
+      BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, DEPARTAMENTO: pedido.DEPARTAMENTO, 
+      ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, PRODUCTS: pedido.PRODUCTS 
     };
-
     const response = await fetch(`${BACKEND_URL}/set-fase/${pedido.ID}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        updatedFields: updatedFields, 
-        historial: pedido.HISTORIAL 
-      })
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ updatedFields: updatedFields, historial: pedido.HISTORIAL })
     });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Error del servidor: ${response.status} - ${errorData.error}`);
-    }
-    const result = await response.json();
-    console.log("Respuesta del backend Node.js:", result);
-    return true;
-  } catch (err) {
-    console.error("Error guardando datos:", err);
-    showNoti(`Error al guardar: ${err.message}`, false);
-    return false;
-  }
+    if (!response.ok) { const errData = await response.json(); throw new Error(`Servidor: ${response.status} - ${errData.error}`);}
+    console.log("Backend:", await response.json()); return true;
+  } catch (err) { console.error("Guardando datos:", err); showNoti(`Error: ${err.message}`, false); return false; }
 }
 
 async function guardarVenta(idx) {
-  const p = pedidos[idx];
-  if (!p) return;
-
+  const p = pedidos[idx]; if (!p) return;
   const oldFase = p.FASE;
-
-  const deptoValue = document.getElementById('modal-departamento')?.value || '';
-
-  const currentModalValues = {
-    CLIENTE: document.getElementById('modal-cliente')?.value || '',
-    DIRECCION: document.getElementById('modal-direccion')?.value || '',
-    TELEFONO: document.getElementById('modal-telefono')?.value || '',
-    EMAIL: document.getElementById('modal-email')?.value || '',
-    BARRIO_LOCALIDAD: document.getElementById('modal-barrio-localidad')?.value || '',
-    DEPARTAMENTO: deptoValue, 
-    NOTAS: document.getElementById('modal-notas')?.value || '',
-    METODO_ENVIO: document.getElementById('modal-metodo-envio')?.value || '',
-    ESTADO_PAGO: document.getElementById('modal-estado-pago')?.value || '',
-    ENTREGADO: document.getElementById('entregado-checkbox-wrapper')?.classList.contains('hidden') ? false : (document.getElementById('modal-entregado')?.checked || false),
-    ETIQUETA_EMITIDA: document.getElementById('etiqueta-emitida-checkbox-wrapper')?.classList.contains('hidden') ? false : (document.getElementById('modal-etiqueta-emitida')?.checked || false),
-    FACTURADO: document.getElementById('modal-facturado')?.checked || false,
-    AVISO_CLIENTE: document.getElementById('modal-aviso-cliente')?.checked || false,
-    TICKET_IMPRESO: p.TICKET_IMPRESO,
-    FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA,
-    PRODUCTS: document.getElementById('modal-productos')?.value || '' 
+  const modalValues = {
+    CLIENTE: dom.modalContent.querySelector('#modal-cliente')?.value || '',
+    DIRECCION: dom.modalContent.querySelector('#modal-direccion')?.value || '',
+    TELEFONO: dom.modalContent.querySelector('#modal-telefono')?.value || '',
+    EMAIL: dom.modalContent.querySelector('#modal-email')?.value || '',
+    BARRIO_LOCALIDAD: dom.modalContent.querySelector('#modal-barrio-localidad')?.value || '',
+    DEPARTAMENTO: dom.modalContent.querySelector('#modal-departamento')?.value || '',
+    NOTAS: dom.modalContent.querySelector('#modal-notas')?.value || '',
+    METODO_ENVIO: dom.modalContent.querySelector('#modal-metodo-envio')?.value || '',
+    ESTADO_PAGO: dom.modalContent.querySelector('#modal-estado-pago')?.value || '',
+    ENTREGADO: dom.modalContent.querySelector('#entregado-checkbox-wrapper')?.classList.contains('hidden') ? false : (dom.modalContent.querySelector('#modal-entregado')?.checked || false),
+    ETIQUETA_EMITIDA: dom.modalContent.querySelector('#etiqueta-emitida-checkbox-wrapper')?.classList.contains('hidden') ? false : (dom.modalContent.querySelector('#modal-etiqueta-emitida')?.checked || false),
+    FACTURADO: dom.modalContent.querySelector('#modal-facturado')?.checked || false,
+    AVISO_CLIENTE: dom.modalContent.querySelector('#modal-aviso-cliente')?.checked || false,
+    PRODUCTS: dom.modalContent.querySelector('#modal-productos')?.value || '' 
   };
-
-  p.CLIENTE = currentModalValues.CLIENTE;
-  p.DIRECCION = currentModalValues.DIRECCION;
-  p.TELEFONO = currentModalValues.TELEFONO;
-  p.EMAIL = currentModalValues.EMAIL;
-  p.BARRIO_LOCALIDAD = currentModalValues.BARRIO_LOCALIDAD;
-  p.DEPARTAMENTO = currentModalValues.DEPARTAMENTO;
-  p.NOTAS = currentModalValues.NOTAS;
-  p.METODO_ENVIO = currentModalValues.METODO_ENVIO;
-  p.ESTADO_PAGO = currentModalValues.ESTADO_PAGO;
-  p.ENTREGADO = currentModalValues.ENTREGADO;
-  p.ETIQUETA_EMITIDA = currentModalValues.ETIQUETA_EMITIDA;
-  p.FACTURADO = currentModalValues.FACTURADO;
-  p.AVISO_CLIENTE = currentModalValues.AVISO_CLIENTE;
-  p.PRODUCTS = currentModalValues.PRODUCTS; 
+  Object.assign(p, modalValues, { TICKET_IMPRESO: p.TICKET_IMPRESO, FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA });
 
   if (oldFase !== "COMPLETADO" && oldFase !== "COMPLETADO MODIFICADO" && oldFase !== "PREPARANDO MODIFICADO") {
-      let newFase = oldFase;
-      if (newFase === "EN ESPERA") newFase = "PROCESANDO";
-      if (p.METODO_ENVIO && p.ESTADO_PAGO === "confirmado" && newFase !== "COMPLETADO") {
-          newFase = "PREPARANDO";
-      }
-      p.FASE = newFase;
+      if (p.FASE === "EN ESPERA") p.FASE = "PROCESANDO";
+      if (p.METODO_ENVIO && p.ESTADO_PAGO === "confirmado" && p.FASE !== "COMPLETADO") p.FASE = "PREPARANDO";
   }
-
-  const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_VENTAS.filter(field => field !== 'FASE' && field !== 'EMPAQUE'));
-
+  const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_VENTAS.filter(f => f !== 'FASE' && f !== 'EMPAQUE'));
   if (changes.length > 0) {
-    const historyEntry = {
-      timestamp: new Date().toISOString(),
-      user: usuario.nombre,
-      changes: changes
-    };
-    if (!Array.isArray(p.HISTORIAL)) {
-        p.HISTORIAL = [];
-    }
-    p.HISTORIAL.push(historyEntry);
-
+    p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes });
     if (oldFase === "PREPARANDO" || oldFase === "COMPLETADO") {
         showAttentionModal("¡Atención! Has guardado cambios en un pedido que Depósito está gestionando. Para que vean las modificaciones, usa el botón 'Modificar Pedido'.");
     }
-
   }
-
-  const success = await guardarFaseYDatos(p);
-  if (success) {
-    showNoti("Pedido guardado con éxito!", true);
-    renderizarTodo();
-  }
+  if (await guardarFaseYDatos(p)) { showNoti("Pedido guardado!", true); renderizarTodo(); }
 }
 
 async function modificarPedidoVentas(idx) {
-  const p = pedidos[idx];
-  if (!p) return;
-
-  const confirmMessage = `¿Estás seguro de que quieres modificar este pedido? Esto lo marcará como '${p.FASE === 'COMPLETADO' ? 'COMPLETADO MODIFICADO' : 'PREPARANDO MODIFICADO'}' y limpiará el empaque.`;
-  const userConfirmed = await showConfirmationModal(confirmMessage);
-
-  if (!userConfirmed) {
-    showNoti("Modificación cancelada.", null);
-    return;
-  }
-
-  const oldFase = p.FASE;
-  const oldEmpaque = p.EMPAQUE;
-
-  if (oldFase === "COMPLETADO") {
-      p.FASE = "COMPLETADO MODIFICADO";
-  } else if (oldFase === "PREPARANDO") {
-      p.FASE = "PREPARANDO MODIFICADO";
-  } else {
-      showNoti("No se puede modificar un pedido en esta fase.", false);
-      return;
-  }
+  const p = pedidos[idx]; if (!p) return;
+  const confirmMsg = `¿Seguro que quieres modificar este pedido? Se marcará como '${p.FASE === 'COMPLETADO' ? 'COMPLETADO MODIFICADO':'PREPARANDO MODIFICADO'}' y se limpiará el empaque.`;
+  if (!await showConfirmationModal(confirmMsg)) { showNoti("Modificación cancelada.", null); return; }
+  const oldFase = p.FASE, oldEmpaque = p.EMPAQUE;
+  p.FASE = p.FASE === "COMPLETADO" ? "COMPLETADO MODIFICADO" : (p.FASE === "PREPARANDO" ? "PREPARANDO MODIFICADO" : p.FASE);
+  if (p.FASE === oldFase) { showNoti("No se puede modificar esta fase.", false); return;}
   p.EMPAQUE = ''; 
-
   const changes = [];
-  if (oldFase !== p.FASE) {
-      changes.push({ field: 'FASE', old: oldFase, new: p.FASE });
-  }
-  if (oldEmpaque !== p.EMPAQUE) {
-      changes.push({ field: 'EMPAQUE', old: oldEmpaque, new: p.EMPAQUE });
-  }
-
-  if (changes.length > 0) {
-    const historyEntry = {
-      timestamp: new Date().toISOString(),
-      user: usuario.nombre,
-      changes: changes
-    };
-    if (!Array.isArray(p.HISTORIAL)) {
-        p.HISTORIAL = [];
-    }
-    p.HISTORIAL.push(historyEntry);
-  }
-
-  const success = await guardarFaseYDatos(p);
-  if (success) {
-    showNoti("Pedido modificado y marcado!", true);
-    renderizarTodo();
-  }
+  if (oldFase !== p.FASE) changes.push({ field: 'FASE', old: oldFase, new: p.FASE });
+  if (oldEmpaque !== p.EMPAQUE) changes.push({ field: 'EMPAQUE', old: oldEmpaque, new: p.EMPAQUE });
+  if (changes.length > 0) p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes });
+  if (await guardarFaseYDatos(p)) { showNoti("Pedido modificado!", true); renderizarTodo(); }
 }
 
-
 async function completarPedido(idx) {
-  const p = pedidos[idx];
-  if (!p) return;
-
-  const oldFase = p.FASE;
-  const oldEmpaque = p.EMPAQUE;
-
-  if (["DAC","GESTION POST"].includes((p.METODO_ENVIO || "").trim().toUpperCase())) { // Normalize for check
-    const empaqueSelect = document.getElementById('modal-tipo-empaque');
-    const val = empaqueSelect ? empaqueSelect.value : p.EMPAQUE;
-    if (!val) {
-        showNoti("Debe seleccionar un tipo de empaque.", false);
-        return;
-    }
+  const p = pedidos[idx]; if (!p) return;
+  if (["DAC","GESTION POS"].includes((p.METODO_ENVIO || "").trim().toUpperCase())) { 
+    const empaqueSel = dom.modalContent.querySelector('#modal-tipo-empaque');
+    const val = empaqueSel ? empaqueSel.value : p.EMPAQUE;
+    if (!val) { showNoti("Debe seleccionar empaque.", false); return; }
     p.EMPAQUE = val;
   }
-  p.FASE = "COMPLETADO";
-
+  const oldFase = p.FASE; p.FASE = "COMPLETADO";
   const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_DEPOSITO);
-
-  if (changes.length > 0) {
-    const historyEntry = {
-      timestamp: new Date().toISOString(),
-      user: usuario.nombre,
-      changes: changes
-    };
-    if (!Array.isArray(p.HISTORIAL)) {
-        p.HISTORIAL = [];
-    }
-    p.HISTORIAL.push(historyEntry);
-  }
-
-  const success = await guardarFaseYDatos(p);
-  if (success) {
-    showNoti("Pedido marcado como completado!", true);
-    renderizarTodo();
-  }
+  if (changes.length > 0) p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes });
+  if (await guardarFaseYDatos(p)) { showNoti("Pedido completado!", true); renderizarTodo(); }
   closeModal();
 }
 
 function imprimirTicket(idx) {
-  const p = pedidos[idx];
-  if (!p) return;
-
+  const p = pedidos[idx]; if (!p) return;
   let prodsHtml = "";
   if (p.PRODUCTS) {
-      const productLines = (p.PRODUCTS || "").split('\n').filter(line => line.trim() !== '');
-      productLines.forEach(line => {
-          const formattedRow = formatProductLineToHtmlRow(line);
-          if (formattedRow) {
-              prodsHtml += formattedRow;
-          }
-      });
+      (p.PRODUCTS || "").split('\n').filter(l => l.trim() !== '').forEach(l => { const fr = formatProductLineToHtmlRow(l); if (fr) prodsHtml += fr; });
   }
-
-  dom.ticketPrint.innerHTML = `
-    <div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;">
-      <div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div>
-      <div style="font-size:10pt;"><b>Pedido #${p.ID || ""}</b></div>
-      <div style="font-size:10pt;"><b>Cliente:</b> ${p.CLIENTE || ""}</div>
-      <div style="font-size:10pt;"><b>Dirección:</b> ${p.DIRECCION || ""}</div>
-      <div style="font-size:10pt;"><b>Barrio/Localidad:</b> ${p.BARRIO_LOCALIDAD || ""}</div>
-      <div style="font-size:10pt;"><b>Departamento:</b> ${getDepartamentoFullName(p.DEPARTAMENTO || "")}</div>
-      <div style="font-size:10pt;"><b>Tel:</b> ${p.TELEFONO || ""}</div>
-      <div style="font-10pt;"><b>Método de Envío:</b> ${p.METODO_ENVIO || ""}</div>
-      <div style="font-size:10pt;"><b>Fecha:</b> ${p.FECHA || ""}</div>
-      ${prodsHtml ? `
-      <table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;">
-        <thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead>
-        <tbody>${prodsHtml}</tbody>
-      </table>` : '<div style="font-size:9pt; margin:8px 0;">No hay detalle de productos.</div>'}
-      <div style="font-size:10pt;"><b>Notas:</b> ${p.NOTAS || "Ninguna"}</div>
-      <div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias por su compra</div>
-    </div>
-  `;
-
+  dom.ticketPrint.innerHTML = `<div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;"><div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div><div><b>Pedido #${p.ID||""}</b></div><div><b>Cliente:</b> ${p.CLIENTE||""}</div><div><b>Dirección:</b> ${p.DIRECCION||""}</div><div><b>Barrio/Loc:</b> ${p.BARRIO_LOCALIDAD||""}</div><div><b>Depto:</b> ${getDepartamentoFullName(p.DEPARTAMENTO||"")}</div><div><b>Tel:</b> ${p.TELEFONO||""}</div><div><b>Envío:</b> ${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</div><div><b>Fecha:</b> ${p.FECHA||""}</div>${prodsHtml ? `<table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;"><thead><tr><th>SKU</th><th>Desc.</th><th style="text-align:right;">Cant.</th></tr></thead><tbody>${prodsHtml}</tbody></table>` : '<div>No hay productos.</div>'}<div><b>Notas:</b> ${p.NOTAS||"Ninguna"}</div><div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias</div></div>`;
   setTimeout(() => {
-    window.print();
-    printCount[p.ID] = true; 
-    const btnPrintInModal = document.getElementById('modal-print-ticket');
-    if (btnPrintInModal) {
-      btnPrintInModal.textContent = "Reimprimir Ticket";
-      btnPrintInModal.classList.remove('bg-blue-500', 'hover:bg-blue-600', 'focus:ring-blue-500');
-      btnPrintInModal.classList.add('bg-custom-orange', 'hover:bg-orange-700', 'focus:ring-custom-orange');
-    }
-
-    if (p.TICKET_IMPRESO !== true) { 
-        p.TICKET_IMPRESO = true;
-        guardarFaseYDatos(p);
-    }
+    window.print(); printCount[p.ID] = true; 
+    const btn = dom.modalContent.querySelector('#modal-print-ticket');
+    if (btn) { btn.textContent = "Reimprimir Ticket"; btn.classList.remove('bg-blue-500','hover:bg-blue-600','focus:ring-blue-500'); btn.classList.add('bg-custom-orange','hover:bg-orange-700','focus:ring-custom-orange');}
+    if (p.TICKET_IMPRESO !== true) { p.TICKET_IMPRESO = true; guardarFaseYDatos(p); }
   }, 250); 
 }
 
 // ===================== EVENT LISTENERS ====================
 function setupEventListeners() {
-  dom.loginForm.addEventListener('submit', handleLogin);
-  dom.logoutBtn.addEventListener('click', logout);
-  dom.refreshButton.addEventListener('click', cargarPedidos);
-
-  [dom.filtroFase, dom.filtroPago, dom.filtroWoo].forEach(el => {
-    if (el) el.addEventListener('change', renderizarTodo);
-  });
-  if (dom.filtroBuscar) dom.filtroBuscar.addEventListener('input', renderizarTodo);
-
-  if (dom.filtroFaseDep) dom.filtroFaseDep.addEventListener('change', renderizarTodo);
-  if (dom.filtroEnvioDep) dom.filtroEnvioDep.addEventListener('change', renderizarTodo);
-  if (dom.filtroBuscarDep) dom.filtroBuscarDep.addEventListener('input', renderizarTodo);
-
-  dom.modalClose.addEventListener('click', closeModal);
-  dom.modalBg.addEventListener('click', (e) => {
-    if (e.target === dom.modalBg) closeModal();
-  });
-
-  if (dom.notiCloseBtn) {
-      dom.notiCloseBtn.addEventListener('click', hideNoti);
-  }
-  if (dom.notiOkBtn) {
-      dom.notiOkBtn.addEventListener('click', hideNoti);
-  }
-
-  if (dom.notiBadge) {
-      dom.notiBadge.addEventListener('click', (e) => {
-          e.stopPropagation();
-      });
-  }
-
+  dom.loginForm?.addEventListener('submit', handleLogin);
+  dom.logoutBtn?.addEventListener('click', logout);
+  dom.refreshButton?.addEventListener('click', cargarPedidos);
+  [dom.filtroFase, dom.filtroPago, dom.filtroWoo].forEach(el => el?.addEventListener('change', renderizarTodo));
+  dom.filtroBuscar?.addEventListener('input', renderizarTodo);
+  [dom.filtroFaseDep, dom.filtroEnvioDep].forEach(el => el?.addEventListener('change', renderizarTodo));
+  dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
+  dom.modalClose?.addEventListener('click', closeModal);
+  dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
+  dom.notiCloseBtn?.addEventListener('click', hideNoti);
+  dom.notiOkBtn?.addEventListener('click', hideNoti);
+  dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
   if (dom.attentionModalBg) {
-      dom.attentionModalBg.addEventListener('click', (e) => {
-          if (e.target === dom.attentionModalBg) {
-              e.stopPropagation(); 
-          }
-      });
-      const attentionModalBox = document.getElementById('attention-modal-box');
-      if (attentionModalBox) {
-          attentionModalBox.addEventListener('click', (e) => {
-              e.stopPropagation();
-          });
-      }
+      dom.attentionModalBg.addEventListener('click', (e) => { if (e.target === dom.attentionModalBg) e.stopPropagation(); });
+      dom.attentionModalBox?.addEventListener('click', (e) => e.stopPropagation());
   }
-
-
-  dom.tablaVentasBody.addEventListener('click', (e) => {
-    if (e.target.matches('button[data-idx]')) { 
-      const idx = parseInt(e.target.dataset.idx);
-      const modulo = e.target.dataset.module;
-      openModal(idx, modulo);
-    }
-  });
-  dom.tablaDepositoBody.addEventListener('click', (e) => {
-     if (e.target.matches('button[data-idx]')) { 
-      const idx = parseInt(e.target.dataset.idx);
-      const modulo = e.target.dataset.module;
-      openModal(idx, modulo);
-    }
-  });
+  dom.tablaVentasBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
+  dom.tablaDepositoBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
+  
+  // Event listener for app width selector
+  if (dom.appWidthSelector) {
+    dom.appWidthSelector.addEventListener('change', (event) => {
+        applyAppWidth(event.target.value);
+    });
+  }
 }
 
 // ===================== INITIALIZATION ===================
 document.addEventListener('DOMContentLoaded', () => {
-  cacheDOMElements();
-  setupEventListeners();
+  cacheDOMElements(); 
+  
+  const savedWidth = localStorage.getItem('appPreferredWidth');
+  if (savedWidth && APP_WIDTH_CLASSES.includes(savedWidth)) {
+      applyAppWidth(savedWidth);
+      if (dom.appWidthSelector) dom.appWidthSelector.value = savedWidth;
+  } else if (dom.mainApp && dom.appWidthSelector) { 
+      const defaultHtmlWidth = APP_WIDTH_CLASSES.find(cls => dom.mainApp.classList.contains(cls)) || 'max-w-6xl';
+      applyAppWidth(defaultHtmlWidth); 
+      dom.appWidthSelector.value = defaultHtmlWidth;
+  }
+  
+  setupEventListeners(); 
   logout(); 
-  setInterval(() => { if (usuario) cargarPedidos(); }, 60000); // Auto-refresh every 60 seconds
+  setInterval(() => { if (usuario) cargarPedidos(); }, 60000);
 });
 
 </script>
