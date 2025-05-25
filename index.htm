@@ -385,6 +385,29 @@ const WOOCOMMERCE_TRANSLATE = {
   "processing": "Procesando",
   "completed": "Completado"
 };
+// NEW: Map for department codes
+const DEPARTAMENTO_MAP = {
+  'AR': 'Artigas',
+  'CA': 'Canelones',
+  'CL': 'Cerro Largo',
+  'CO': 'Colonia',
+  'DU': 'Durazno',
+  'FS': 'Flores',
+  'FD': 'Florida',
+  'LA': 'Lavalleja',
+  'MA': 'Maldonado',
+  'MO': 'Montevideo',
+  'PA': 'Paysandú',
+  'RN': 'Río Negro',
+  'RV': 'Rivera',
+  'RO': 'Rocha',
+  'SA': 'Salto',
+  'SJ': 'San José',
+  'SO': 'Soriano',
+  'TA': 'Tacuarembó',
+  'TT': 'Treinta y Tres',
+};
+
 let usuario = null;
 let pedidos = [];
 let pedidoActualIdx = null;
@@ -403,6 +426,18 @@ const FIELDS_TO_TRACK_DEPOSITO = ['FASE', 'EMPAQUE'];
 
 
 // ===================== UTILITIES ============================
+/**
+ * Translates a department code (e.g., UY-MO or MO) to its full name.
+ * @param {string} code - The department code.
+ * @returns {string} The full department name or the original code if not found.
+ */
+function getDepartamentoFullName(code) {
+    if (!code) return '';
+    const upperCode = String(code).toUpperCase().trim(); // Ensure it's a string and trim
+    const key = upperCode.startsWith('UY-') ? upperCode.substring(3) : upperCode;
+    return DEPARTAMENTO_MAP[key] || code; // Return full name or original code
+}
+
 function showNoti(msg, isSuccess = true) {
   if (!dom.notiBadge || !dom.notiMessage || !dom.notiCloseBtn || !dom.notiOkBtn) return;
 
@@ -539,7 +574,7 @@ function logout() {
   if(dom.loginPass) dom.loginPass.value = ''; 
   if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
   if(dom.tablaDepositoBody) dom.tablaDepositoBody.innerHTML = '';
-  updateStats([]); 
+  updateStats(); 
   mostrarSyncLog('Sesión cerrada.', null);
 }
 
@@ -599,32 +634,50 @@ async function cargarPedidos() {
 }
 
 // ==================== RENDERIZADO GENERAL =====================
-function updateStats(filteredPedidos) {
-    const currentPedidos = filteredPedidos || pedidos; 
-    if (!dom.statTotal) return; 
+function updateStats() {
+    if (!dom.statTotal || !pedidos) { 
+        const allStatIds = ['stat-total', 'stat-espera', 'stat-procesando', 'stat-preparando', 'stat-completado', 'stat-dac', 'stat-gp', 'stat-pickup', 'stat-modificados'];
+        allStatIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = '0';
+                const parentBox = element.closest('.stat-box-animate-pop');
+                if (parentBox) parentBox.classList.add('hidden');
+            }
+        });
+        return;
+    }
 
-    const stats = {
-        total: currentPedidos.length,
-        espera: currentPedidos.filter(p => p.FASE === "EN ESPERA").length,
-        procesando: currentPedidos.filter(p => p.FASE === "PROCESANDO").length,
-        preparando: currentPedidos.filter(p => p.FASE === "PREPARANDO").length,
-        completado: currentPedidos.filter(p => p.FASE === "COMPLETADO").length,
-        dac: currentPedidos.filter(p => p.METODO_ENVIO === "DAC").length,
-        gp: currentPedidos.filter(p => p.METODO_ENVIO === "GESTIÓN POST").length,
-        pickup: currentPedidos.filter(p => p.METODO_ENVIO === "PICK UP").length,
-        modificados: currentPedidos.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length
+    // --- Sales Stats Calculation (based on all 'pedidos') ---
+    const salesStatsData = {
+        total: pedidos.length,
+        espera: pedidos.filter(p => p.FASE === "EN ESPERA").length,
+        procesando: pedidos.filter(p => p.FASE === "PROCESANDO").length,
+        preparando: pedidos.filter(p => p.FASE === "PREPARANDO").length,
+        completado: pedidos.filter(p => p.FASE === "COMPLETADO").length,
     };
 
-    const salesStatElements = {
-        'stat-total': stats.total,
-        'stat-espera': stats.espera,
-        'stat-procesando': stats.procesando,
-        'stat-preparando': stats.preparando,
-        'stat-completado': stats.completado
+    // --- Deposit Stats Calculation (based on 'aplicarFiltrosDeposito') ---
+    const pedidosFiltradosParaDeposito = pedidos.filter(aplicarFiltrosDeposito);
+
+    const depositStatsData = {
+        dac: pedidosFiltradosParaDeposito.filter(p => p.METODO_ENVIO === "DAC").length,
+        gp: pedidosFiltradosParaDeposito.filter(p => p.METODO_ENVIO === "GESTIÓN POST").length,
+        pickup: pedidosFiltradosParaDeposito.filter(p => p.METODO_ENVIO === "PICK UP").length,
+        modificados: pedidosFiltradosParaDeposito.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length
     };
-    for (const id in salesStatElements) {
+
+    // --- Update Sales Stat DOM Elements & Visibility ---
+    const salesStatElementsMap = {
+        'stat-total': salesStatsData.total,
+        'stat-espera': salesStatsData.espera,
+        'stat-procesando': salesStatsData.procesando,
+        'stat-preparando': salesStatsData.preparando,
+        'stat-completado': salesStatsData.completado
+    };
+    for (const id in salesStatElementsMap) {
         const element = document.getElementById(id);
-        const value = salesStatElements[id];
+        const value = salesStatElementsMap[id];
         if (element) {
             element.textContent = value;
             const parentBox = element.closest('.stat-box-animate-pop');
@@ -638,15 +691,16 @@ function updateStats(filteredPedidos) {
         }
     }
 
-    const depositStatElements = {
-        'stat-dac': stats.dac,
-        'stat-gp': stats.gp,
-        'stat-pickup': stats.pickup,
-        'stat-modificados': stats.modificados
+    // --- Update Deposit Stat DOM Elements & Visibility ---
+    const depositStatElementsMap = {
+        'stat-dac': depositStatsData.dac,
+        'stat-gp': depositStatsData.gp,
+        'stat-pickup': depositStatsData.pickup,
+        'stat-modificados': depositStatsData.modificados
     };
-    for (const id in depositStatElements) {
+    for (const id in depositStatElementsMap) {
         const element = document.getElementById(id);
-        const value = depositStatElements[id];
+        const value = depositStatElementsMap[id];
         if (element) {
             element.textContent = value;
             const parentBox = element.closest('.stat-box-animate-pop');
@@ -665,7 +719,7 @@ function updateStats(filteredPedidos) {
 function renderizarTodo() {
   if (!usuario || !dom.moduloVentas) return;
 
-  updateStats(pedidos); 
+  updateStats(); 
 
   const isAdmin = usuario.rol === "admin";
   const isVentas = usuario.rol === "ventas";
@@ -792,7 +846,6 @@ function aplicarFiltrosVentas(p) {
   const woo = dom.filtroWoo.value;
   const buscar = dom.filtroBuscar.value.toLowerCase().trim();
 
-
   if (fase === "ACTIVE_ONLY") {
       if (p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") {
           if (p.METODO_ENVIO === "DAC" || p.METODO_ENVIO === "GESTIÓN POST") {
@@ -822,6 +875,8 @@ function aplicarFiltrosVentas(p) {
 
   if (buscar) { 
     let encontrado = false;
+    const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); // Get full name for search
+
     if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) {
       encontrado = true;
     } else { 
@@ -831,7 +886,8 @@ function aplicarFiltrosVentas(p) {
         (p.TELEFONO || "").toLowerCase().includes(buscar) ||
         (p.NOTAS || "").toLowerCase().includes(buscar) ||
         (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
-        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar)
+        deptoFullName.includes(buscar) || // Search by full name
+        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) // Keep search by code too
       ) {
         encontrado = true;
       }
@@ -907,14 +963,19 @@ function aplicarFiltrosDeposito(p) {
 
 
   if (envio && p.METODO_ENVIO !== envio) return false;
-  if (buscar && !(
-    (p.CLIENTE || "").toLowerCase().includes(buscar) ||
-    (String(p.ID)||"").toLowerCase().includes(buscar) ||
-    (p.TELEFONO || "").toLowerCase().includes(buscar) ||
-    (p.DIRECCION || "").toLowerCase().includes(buscar) ||
-    (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
-    (p.DEPARTAMENTO || "").toLowerCase().includes(buscar)
-  )) return false;
+  
+  if (buscar) {
+      const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); // Get full name for search
+      if (!(
+          (p.CLIENTE || "").toLowerCase().includes(buscar) ||
+          (String(p.ID)||"").toLowerCase().includes(buscar) ||
+          (p.TELEFONO || "").toLowerCase().includes(buscar) ||
+          (p.DIRECCION || "").toLowerCase().includes(buscar) ||
+          (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
+          deptoFullName.includes(buscar) || // Search by full name
+          (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) // Keep search by code too
+      )) return false;
+  }
   return true;
 }
 
@@ -990,6 +1051,7 @@ function openModal(idx, modulo) {
       productsTableHtml = `<p class="text-slate-500 text-sm italic">No hay productos registrados.</p>`;
   }
 
+  const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); // Translate department name
 
   if (modulo === 'ventas') {
     content = `
@@ -1007,7 +1069,7 @@ function openModal(idx, modulo) {
         <div><label for="modal-telefono" class="block text-sm font-medium text-slate-600 mb-1">Teléfono:</label><input class="modal-input" id="modal-telefono" value="${(pedido.TELEFONO || "")}"></div>
         <div><label for="modal-email" class="block text-sm font-medium text-slate-600 mb-1">Email:</label><input type="email" class="modal-input" id="modal-email" value="${pedido.EMAIL || ""}"></div>
         <div><label for="modal-barrio-localidad" class="block text-sm font-medium text-slate-600 mb-1">Barrio/Localidad:</label><input class="modal-input" id="modal-barrio-localidad" value="${pedido.BARRIO_LOCALIDAD || ""}"></div>
-        <div><label for="modal-departamento" class="block text-sm font-medium text-slate-600 mb-1">Departamento:</label><input class="modal-input" id="modal-departamento" value="${pedido.DEPARTAMENTO || ""}"></div>
+        <div><label for="modal-departamento" class="block text-sm font-medium text-slate-600 mb-1">Departamento:</label><input class="modal-input" id="modal-departamento" value="${deptoFullName}"></div>
       </div>
       <div class="mb-3"><label for="modal-notas" class="block text-sm font-medium text-slate-600 mb-1">Notas:</label><textarea class="modal-input" id="modal-notas" rows="2">${pedido.NOTAS || ""}</textarea></div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1075,7 +1137,7 @@ function openModal(idx, modulo) {
           </div>
       </div>
     `;
-  } else { 
+  } else { // DEPÓSITO
     content = `
       <div class="mb-2">
         <strong class="text-slate-700">Productos:</strong>
@@ -1087,7 +1149,7 @@ function openModal(idx, modulo) {
         <div><strong class="text-slate-600">Cliente:</strong> ${pedido.CLIENTE || ""}</div>
         <div><strong class="text-slate-600">Dirección:</strong> ${pedido.DIRECCION || ""}</div>
         <div><strong class="text-slate-600">Barrio/Localidad:</strong> ${pedido.BARRIO_LOCALIDAD || ""}</div>
-        <div><strong class="text-slate-600">Departamento:</strong> ${pedido.DEPARTAMENTO || ""}</div>
+        <div><strong class="text-slate-600">Departamento:</strong> ${deptoFullName}</div>
         <div><strong class="text-slate-600">Teléfono:</strong> ${pedido.TELEFONO || ""}</div>
         <div><strong class="text-slate-600">Email:</strong> ${pedido.EMAIL || ""}</div>
         <div><strong class="text-slate-600">Notas:</strong> ${pedido.NOTAS || ""}</div>
@@ -1201,8 +1263,19 @@ function closeModal() {
 function getChanges(oldObj, newObj, fieldsToTrack) {
     const changes = [];
     fieldsToTrack.forEach(field => {
-        const oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : (oldObj[field] || '');
-        const newValue = typeof newObj[field] === 'boolean' ? newObj[field] : (newObj[field] || '');
+        let oldValue = oldObj[field] || '';
+        let newValue = newObj[field] || '';
+
+        // If the field is DEPARTAMENTO, compare using full names
+        if (field === 'DEPARTAMENTO') {
+            oldValue = getDepartamentoFullName(oldValue);
+            newValue = getDepartamentoFullName(newValue);
+        }
+
+        // Handle boolean values explicitly for consistent comparison
+        oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : oldValue;
+        newValue = typeof newObj[field] === 'boolean' ? newObj[field] : newValue;
+
 
         if (oldValue !== newValue) {
             changes.push({ field: field, old: oldValue, new: newValue });
@@ -1278,7 +1351,7 @@ async function guardarFaseYDatos(pedido) {
       TICKET_IMPRESO: pedido.TICKET_IMPRESO, 
       FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, 
       BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, 
-      DEPARTAMENTO: pedido.DEPARTAMENTO, 
+      DEPARTAMENTO: pedido.DEPARTAMENTO, // Send original/edited value
       ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, 
       PRODUCTS: pedido.PRODUCTS 
     };
@@ -1311,13 +1384,20 @@ async function guardarVenta(idx) {
 
   const oldFase = p.FASE;
 
+  // IMPORTANT: We need a way to potentially get the code back if the user
+  // enters a full name. For now, we save what's in the input. If the user
+  // doesn't change it, it will save the full name. If they type a code,
+  // it will save the code. This might need refinement later if strict
+  // code saving is needed. For now, it saves the input's value.
+  const deptoValue = document.getElementById('modal-departamento')?.value || '';
+
   const currentModalValues = {
     CLIENTE: document.getElementById('modal-cliente')?.value || '',
     DIRECCION: document.getElementById('modal-direccion')?.value || '',
     TELEFONO: document.getElementById('modal-telefono')?.value || '',
     EMAIL: document.getElementById('modal-email')?.value || '',
     BARRIO_LOCALIDAD: document.getElementById('modal-barrio-localidad')?.value || '',
-    DEPARTAMENTO: document.getElementById('modal-departamento')?.value || '',
+    DEPARTAMENTO: deptoValue, // Save the value from the input
     NOTAS: document.getElementById('modal-notas')?.value || '',
     METODO_ENVIO: document.getElementById('modal-metodo-envio')?.value || '',
     ESTADO_PAGO: document.getElementById('modal-estado-pago')?.value || '',
@@ -1495,7 +1575,7 @@ function imprimirTicket(idx) {
       <div style="font-size:10pt;"><b>Cliente:</b> ${p.CLIENTE || ""}</div>
       <div style="font-size:10pt;"><b>Dirección:</b> ${p.DIRECCION || ""}</div>
       <div style="font-size:10pt;"><b>Barrio/Localidad:</b> ${p.BARRIO_LOCALIDAD || ""}</div>
-      <div style="font-size:10pt;"><b>Departamento:</b> ${p.DEPARTAMENTO || ""}</div>
+      <div style="font-size:10pt;"><b>Departamento:</b> ${getDepartamentoFullName(p.DEPARTAMENTO || "")}</div>
       <div style="font-size:10pt;"><b>Tel:</b> ${p.TELEFONO || ""}</div>
       <div style="font-10pt;"><b>Método de Envío:</b> ${p.METODO_ENVIO || ""}</div>
       <div style="font-size:10pt;"><b>Fecha:</b> ${p.FECHA || ""}</div>
