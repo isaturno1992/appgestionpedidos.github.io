@@ -144,7 +144,7 @@
 
   <div id="sales-stats-wrapper" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
     <div class="stat-box-animate-pop bg-custom-blue text-white p-5 rounded-custom shadow-md flex flex-col items-start min-h-[120px]">
-      <div class="text-lg text-white">Total</div><div class="stat-number text-3xl font-bold text-white" id="stat-total">0</div>
+      <div class="text-lg text-white">Total Activos</div><div class="stat-number text-3xl font-bold text-white" id="stat-total">0</div>
     </div>
     <div class="stat-box-animate-pop bg-custom-purple text-white p-5 rounded-custom shadow-md flex flex-col items-start">
       <div class="text-lg text-white">En Espera</div><div class="stat-number text-3xl font-bold text-white" id="stat-espera">0</div>
@@ -156,13 +156,14 @@
       <div class="text-lg text-white">Preparando</div><div class="stat-number text-3xl font-bold text-white" id="stat-preparando">0</div>
     </div>
     <div class="stat-box-animate-pop bg-custom-green text-white p-5 rounded-custom shadow-md flex flex-col items-start">
-      <div class="text-lg text-white">Completado</div><div class="stat-number text-3xl font-bold text-white" id="stat-completado">0</div>
+      <div class="text-lg text-white">Completado (Activo)</div><div class="stat-number text-3xl font-bold text-white" id="stat-completado">0</div>
     </div>
   </div>
 
   <div id="filtros-ventas" class="flex flex-wrap gap-3 mb-6 items-center">
     <select id="filtro-fase" class="filter-input">
       <option value="ACTIVE_ONLY" selected>Fases Activas</option>
+      <option value="COMPLETADOS_ACTIVOS">Completados Activos</option>
       <option value="EN ESPERA">En Espera</option>
       <option value="PROCESANDO">Procesando</option>
       <option value="PREPARANDO">Preparando</option>
@@ -614,6 +615,23 @@ async function cargarPedidos() {
 }
 
 // ==================== RENDERIZADO GENERAL =====================
+// Helper function to determine if a sales order is "active" for stats and filtering
+function isOrderActive(pedido) {
+    const metodoEnvioNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase();
+    // Active if not in a terminal phase that is fully resolved
+    if (pedido.FASE !== "COMPLETADO" && pedido.FASE !== "COMPLETADO MODIFICADO") {
+        return true; 
+    }
+    // If "COMPLETADO" or "COMPLETADO MODIFICADO", check for pending actions
+    if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") {
+        return !pedido.ETIQUETA_EMITIDA || !pedido.FACTURADO || !pedido.AVISO_CLIENTE;
+    } else if (metodoEnvioNorm === "PICK UP") {
+        return !pedido.ENTREGADO || !pedido.FACTURADO || !pedido.AVISO_CLIENTE;
+    }
+    // For other/no shipping methods, completed orders are considered not "active" for this specific filter's purpose
+    return false; 
+}
+
 function updateStats() {
     if (!dom.statTotal || !pedidos) { 
         const allStatIds = ['stat-total', 'stat-espera', 'stat-procesando', 'stat-preparando', 'stat-completado', 'stat-dac', 'stat-gp', 'stat-pickup', 'stat-modificados'];
@@ -625,25 +643,27 @@ function updateStats() {
                 if (parentBox) parentBox.classList.add('hidden');
             }
         });
-        return;
+        if (!pedidos || pedidos.length === 0) return;
     }
 
-    const salesStatsData = {
-        total: pedidos.length,
-        espera: pedidos.filter(p => p.FASE === "EN ESPERA").length,
-        procesando: pedidos.filter(p => p.FASE === "PROCESANDO").length,
-        preparando: pedidos.filter(p => p.FASE === "PREPARANDO").length,
-        completado: pedidos.filter(p => p.FASE === "COMPLETADO").length,
-    };
+    const pedidosActivosParaEstadisticasVentas = pedidos.filter(isOrderActive);
 
-    const fasesExcluidasParaStatsDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO"];
+    const salesStatsData = {
+        total: pedidosActivosParaEstadisticasVentas.length,
+        espera: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "EN ESPERA").length,
+        procesando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PROCESANDO").length,
+        preparando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO").length,
+        completado: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO").length,
+    };
+    
+    console.log("Sales Stats Data (based on isOrderActive):", JSON.stringify(salesStatsData));
+
+    const fasesExcluidasParaStatsMetodoEnvioDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO"];
     const pedidosParaEstadisticasMetodoEnvioDeposito = pedidos.filter(p => 
-        !fasesExcluidasParaStatsDeposito.includes(p.FASE)
+        !fasesExcluidasParaStatsMetodoEnvioDeposito.includes(p.FASE)
     );
     
-    console.log("Total pedidos (global):", pedidos.length);
     console.log("Pedidos para stats depósito (por método):", pedidosParaEstadisticasMetodoEnvioDeposito.length, pedidosParaEstadisticasMetodoEnvioDeposito.map(p => ({id: p.ID, fase: p.FASE, metodo: p.METODO_ENVIO})));
-
 
     const depositStatsData = {
         dac: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "DAC").length,
@@ -654,7 +674,6 @@ function updateStats() {
     
     console.log("Deposit Stats Data (Calculated):", JSON.stringify(depositStatsData));
 
-
     const salesStatElementsMap = {
         'stat-total': salesStatsData.total,
         'stat-espera': salesStatsData.espera,
@@ -664,7 +683,7 @@ function updateStats() {
     };
     for (const id in salesStatElementsMap) {
         const element = document.getElementById(id);
-        const value = salesStatElementsMap[id]; // Corrected: Access value from the map
+        const value = salesStatElementsMap[id]; 
         if (element) {
             element.textContent = String(value);
             const parentBox = element.closest('.stat-box-animate-pop');
@@ -682,8 +701,8 @@ function updateStats() {
     };
     for (const id in depositStatElementsMap) {
         const element = document.getElementById(id);
-        const value = depositStatElementsMap[id]; // Corrected: Access value from the map
-        console.log(`Updating DOM for ${id}: Value = ${value}`); 
+        const value = depositStatElementsMap[id]; 
+        console.log(`Updating DOM for deposit stat ${id}: Value = ${value}`); 
         if (element) {
             element.textContent = String(value); 
             const parentBox = element.closest('.stat-box-animate-pop');
@@ -772,32 +791,49 @@ function formatProductLineToHtmlRow(line) {
 
 // ===================== VENTAS ==============================
 function aplicarFiltrosVentas(p) {
-  const fase = dom.filtroFase.value;
+  const faseFiltro = dom.filtroFase.value;
   const pago = dom.filtroPago.value;
   const woo = dom.filtroWoo.value;
   const buscar = dom.filtroBuscar.value.toLowerCase().trim();
 
-  if (fase === "ACTIVE_ONLY") {
-      if (p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") {
-          const metodoEnvioNorm = (p.METODO_ENVIO || "").trim().toUpperCase();
-          if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") { 
-              if (!p.ETIQUETA_EMITIDA || !p.FACTURADO || !p.AVISO_CLIENTE) return true; else return false; 
-          } else if (metodoEnvioNorm === "PICK UP") { 
-              if (!p.ENTREGADO || !p.FACTURADO || !p.AVISO_CLIENTE) return true; else return false; 
-          } else return false;
+  // Lógica de filtro por fase
+  if (faseFiltro === "ACTIVE_ONLY") {
+      if (!isOrderActive(p)) { // Usa la función helper
+          return false;
       }
-  } else if (fase !== "ALL_PHASES" && fase && p.FASE !== fase) return false; 
+  } else if (faseFiltro === "COMPLETADOS_ACTIVOS") {
+      if (!((p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") && isOrderActive(p))) {
+          return false; 
+      }
+  } else if (faseFiltro === "ALL_PHASES") {
+      // Sin filtro de fase
+  } else if (faseFiltro && p.FASE !== faseFiltro) {
+      return false; 
+  }
 
+  // Resto de los filtros
   if (pago && (p.ESTADO_PAGO !== pago)) return false;
   if (woo && (p.ESTADO_WOO !== woo)) return false;
 
   if (buscar) { 
     const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
-    if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) return true;
-    if (!((p.CLIENTE || "").toLowerCase().includes(buscar) || (String(p.ID) || "").toLowerCase().includes(buscar) || 
-        (p.TELEFONO || "").toLowerCase().includes(buscar) || (p.NOTAS || "").toLowerCase().includes(buscar) ||
-        (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) || deptoFullName.includes(buscar) || 
-        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar))) return false;
+    let encontrado = false;
+    if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) {
+      encontrado = true;
+    } else { 
+      if (
+        (p.CLIENTE || "").toLowerCase().includes(buscar) ||
+        (String(p.ID) || "").toLowerCase().includes(buscar) || 
+        (p.TELEFONO || "").toLowerCase().includes(buscar) ||
+        (p.NOTAS || "").toLowerCase().includes(buscar) ||
+        (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) ||
+        deptoFullName.includes(buscar) || 
+        (p.DEPARTAMENTO || "").toLowerCase().includes(buscar)
+      ) {
+        encontrado = true;
+      }
+    }
+    if (!encontrado) return false;
   }
   return true;
 }
