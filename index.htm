@@ -167,13 +167,19 @@
       <option value="PROCESANDO">Procesando</option>
       <option value="PREPARANDO">Preparando</option>
       <option value="PREPARANDO MODIFICADO">Preparando Modificado</option>
-      <option value="COMPLETADOS_ACTIVOS">Completados Activos</option> {/* Movido aquí */}
+      <option value="COMPLETADOS_ACTIVOS">Completados Activos</option> 
       <option value="ALL_PHASES">Todas las fases (incluir completados)</option>
     </select>
     <select id="filtro-pago" class="filter-input">
       <option value="">Pago (Todos)</option>
       <option value="pendiente">Pendiente</option>
       <option value="confirmado">Confirmar</option>
+    </select>
+    <select id="filtro-envio-ventas" class="filter-input">
+        <option value="">Método Envío (Todos)</option>
+        <option value="DAC">DAC</option>
+        <option value="GESTION POS">GESTION POS</option>
+        <option value="PICK UP">PICK UP</option>
     </select>
     <select id="filtro-woo" class="filter-input">
       <option value="">Estado Woo (Todos)</option>
@@ -328,6 +334,7 @@ const dom = {
     filtroPago: null,
     filtroWoo: null,
     filtroBuscar: null,
+    filtroEnvioVentas: null, // Nuevo filtro
     refreshButton: null,
     moduloVentas: null,
     tablaVentasBody: null,
@@ -618,17 +625,14 @@ async function cargarPedidos() {
 // Helper function to determine if a sales order is "active" for stats and filtering
 function isOrderActive(pedido) {
     const metodoEnvioNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase();
-    // Active if not in a terminal phase that is fully resolved
     if (pedido.FASE !== "COMPLETADO" && pedido.FASE !== "COMPLETADO MODIFICADO") {
         return true; 
     }
-    // If "COMPLETADO" or "COMPLETADO MODIFICADO", check for pending actions
     if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") {
         return !pedido.ETIQUETA_EMITIDA || !pedido.FACTURADO || !pedido.AVISO_CLIENTE;
     } else if (metodoEnvioNorm === "PICK UP") {
         return !pedido.ENTREGADO || !pedido.FACTURADO || !pedido.AVISO_CLIENTE;
     }
-    // For other/no shipping methods, completed orders are considered not "active" for this specific filter's purpose
     return false; 
 }
 
@@ -793,6 +797,7 @@ function formatProductLineToHtmlRow(line) {
 function aplicarFiltrosVentas(p) {
   const faseFiltro = dom.filtroFase.value;
   const pago = dom.filtroPago.value;
+  const envioVentas = dom.filtroEnvioVentas.value; // Nuevo filtro
   const woo = dom.filtroWoo.value;
   const buscar = dom.filtroBuscar.value.toLowerCase().trim();
 
@@ -814,6 +819,7 @@ function aplicarFiltrosVentas(p) {
   // Resto de los filtros
   if (pago && (p.ESTADO_PAGO !== pago)) return false;
   if (woo && (p.ESTADO_WOO !== woo)) return false;
+  if (envioVentas && (p.METODO_ENVIO || "").trim().toUpperCase() !== envioVentas) return false; // Aplicar filtro de envío
 
   if (buscar) { 
     const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
@@ -976,7 +982,6 @@ function openModal(idx, modulo) {
         <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label>
           <select id="modal-estado-pago" class="modal-input">
             <option value="">Seleccionar</option>
-            <option value="pendiente" ${pedido.ESTADO_PAGO === "pendiente" ? " selected" : ""}>Pendiente</option>
             <option value="confirmado" ${pedido.ESTADO_PAGO === "confirmado" ? " selected" : ""}>Confirmado</option>
           </select>
         </div>
@@ -993,6 +998,7 @@ function openModal(idx, modulo) {
       </div>
       <div class="mt-6 pt-4 border-t border-slate-200"><h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4><div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm">${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ? pedido.HISTORIAL.map(entry => `<div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0"><div class="font-medium text-slate-800">${entry.user} - ${new Date(entry.timestamp).toLocaleString('es-ES')}</div><ul class="list-disc list-inside text-slate-600 ml-4">${entry.changes.map(change => `<li>${formatChangeEntry(change)}</li>`).join('')}</ul></div>`).join('') : '<p class="text-slate-500">No hay historial.</p>'}</div></div>`;
   } else { // DEPÓSITO
+    const isVentasUser = usuario && usuario.rol === 'ventas';
     content = `
       <div class="mb-2"><strong class="text-slate-700">Productos:</strong><div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div></div>
       <div class="space-y-1 text-sm mb-3">
@@ -1007,12 +1013,17 @@ function openModal(idx, modulo) {
       </div>`;
     if (["DAC","GESTION POS"].includes(metodoEnvioActualNorm)) { 
       let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActualNorm] || OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op => `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op||"Seleccionar"}</option>`).join("");
-      content += `<div class="mb-4"><label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label><select id="modal-tipo-empaque" class="modal-input">${opcionesEmpaque}</select></div>`;
+      content += `<div class="mb-4"><label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label><select id="modal-tipo-empaque" class="modal-input" ${isVentasUser ? 'disabled' : ''}>${opcionesEmpaque}</select></div>`;
     }
-    const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
-    const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
-    const isCompleteButtonDisabled = (["DAC","GESTION POS"].includes(metodoEnvioActualNorm) && !pedido.EMPAQUE); 
-    content += `<div class="flex flex-col sm:flex-row gap-3 mt-4"><button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button><button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button></div>`;
+    
+    if (!isVentasUser) { // Solo mostrar botones de acción si no es usuario de ventas
+        const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500';
+        const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket";
+        const isCompleteButtonDisabled = (["DAC","GESTION POS"].includes(metodoEnvioActualNorm) && !pedido.EMPAQUE); 
+        content += `<div class="flex flex-col sm:flex-row gap-3 mt-4"><button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button><button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button></div>`;
+    } else {
+        content += `<p class="mt-4 text-sm text-slate-500 italic">(Modo solo lectura para Ventas)</p>`;
+    }
   }
   dom.modalContent.innerHTML = content;
   dom.modalBg.classList.remove('hidden');
@@ -1043,17 +1054,19 @@ function openModal(idx, modulo) {
         dom.productosDisplayTable.classList.remove('hidden'); dom.productosEditArea.classList.add('hidden');
         dom.productosEditArea.setAttribute('readonly', 'true'); dom.modalEditProductosBtn.classList.remove('hidden');
     }
-  } else { 
-    document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx));
-    document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx));
-    const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque');
-    if (tipoEmpaqueSelect) {
-        tipoEmpaqueSelect.addEventListener('change', function() {
-            const currentPedido = pedidos[pedidoActualIdx];
-            if (currentPedido) currentPedido.EMPAQUE = this.value; 
-            const btnCompletar = document.getElementById('modal-complete-pedido');
-            if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POS"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase());
-        });
+  } else { // DEPÓSITO
+    if (!(usuario && usuario.rol === 'ventas')) { // Solo añadir listeners si no es usuario de ventas
+        document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx));
+        document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx));
+        const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque');
+        if (tipoEmpaqueSelect) {
+            tipoEmpaqueSelect.addEventListener('change', function() {
+                const currentPedido = pedidos[pedidoActualIdx];
+                if (currentPedido) currentPedido.EMPAQUE = this.value; 
+                const btnCompletar = document.getElementById('modal-complete-pedido');
+                if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POS"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase());
+            });
+        }
     }
   }
   document.querySelectorAll('#modal-box .modal-input').forEach(el => {
@@ -1209,7 +1222,7 @@ function setupEventListeners() {
   dom.loginForm?.addEventListener('submit', handleLogin);
   dom.logoutBtn?.addEventListener('click', logout);
   dom.refreshButton?.addEventListener('click', cargarPedidos);
-  [dom.filtroFase, dom.filtroPago, dom.filtroWoo].forEach(el => el?.addEventListener('change', renderizarTodo));
+  [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas].forEach(el => el?.addEventListener('change', renderizarTodo)); // Added filtroEnvioVentas
   dom.filtroBuscar?.addEventListener('input', renderizarTodo);
   [dom.filtroFaseDep, dom.filtroEnvioDep].forEach(el => el?.addEventListener('change', renderizarTodo));
   dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
@@ -1222,7 +1235,6 @@ function setupEventListeners() {
   dom.confirmModalCancel?.addEventListener('click', () => {
     dom.confirmModalBg.classList.add('hidden');
     dom.confirmModalBg.classList.remove('flex');
-    // Resolve the promise if it was set up by showConfirmationModal
     if (dom.confirmModalOk._promiseResolve) dom.confirmModalOk._promiseResolve(false);
   });
   dom.attentionModalOk?.addEventListener('click', () => {
@@ -1237,32 +1249,28 @@ function setupEventListeners() {
   dom.notiOkBtn?.addEventListener('click', hideNoti);
   dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
 
-  // Prevent clicks on the attention modal background from bubbling up
   if (dom.attentionModalBg) {
       dom.attentionModalBg.addEventListener('click', (e) => { if (e.target === dom.attentionModalBg) e.stopPropagation(); });
       dom.attentionModalBox?.addEventListener('click', (e) => e.stopPropagation());
   }
 
-  // Event delegation for action buttons in tables
   dom.tablaVentasBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
   dom.tablaDepositoBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
   
-  // Event listener for app width selector
   if (dom.appWidthSelector) {
     dom.appWidthSelector.addEventListener('change', (event) => {
         applyAppWidth(event.target.value);
     });
   }
 
-  // Global ESC key listener for modals
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       if (dom.modalBg && !dom.modalBg.classList.contains('hidden')) {
         closeModal();
       } else if (dom.confirmModalBg && !dom.confirmModalBg.classList.contains('hidden')) {
-        dom.confirmModalCancel.click(); // Simulate click on cancel
+        dom.confirmModalCancel.click(); 
       } else if (dom.attentionModalBg && !dom.attentionModalBg.classList.contains('hidden')) {
-        dom.attentionModalOk.click(); // Simulate click on OK
+        dom.attentionModalOk.click(); 
       }
     }
   });
