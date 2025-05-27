@@ -71,6 +71,22 @@
         display: none !important;
       }
     }
+    /* Style for date inputs */
+    .filter-input[type="date"] {
+        padding: 0.5rem 0.75rem; /* Similar padding to other inputs */
+        border: 1px solid #d1d5db; /* slate-300 */
+        border-radius: 0.375rem; /* rounded-md */
+        font-size: 0.875rem; /* text-sm */
+        line-height: 1.25rem;
+        color: #374151; /* slate-700 */
+        background-color: #fff; /* white */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .filter-input[type="date"]:focus {
+        border-color: #3b82f6; /* blue-500 */
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
   </style>
   <script>
     tailwind.config = {
@@ -172,8 +188,8 @@
     </select>
     <select id="filtro-pago" class="filter-input">
       <option value="">Pago (Todos)</option>
-      <option value="pendiente">Pendiente</option>
-      <option value="confirmado">Confirmar</option>
+      <option value="confirmado">Confirmado</option>
+      <option value="no_confirmado">No Confirmado</option>
     </select>
     <select id="filtro-envio-ventas" class="filter-input">
         <option value="">Método Envío (Todos)</option>
@@ -188,6 +204,8 @@
       <option value="processing">Procesando</option>
       <option value="completed">Completado</option>
     </select>
+    <input type="date" id="filtro-fecha-inicio-ventas" class="filter-input" title="Fecha inicio filtro ventas">
+    <input type="date" id="filtro-fecha-fin-ventas" class="filter-input" title="Fecha fin filtro ventas">
     <input type="search" id="filtro-buscar" placeholder="Buscar..." class="filter-input flex-grow">
     <button id="refresh-button" class="bg-custom-green text-white font-semibold py-2.5 px-5 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Refrescar</button>
   </div>
@@ -243,6 +261,8 @@
         <option value="GESTION POS">GESTION POS</option>
         <option value="PICK UP">PICK UP</option>
       </select>
+      <input type="date" id="filtro-fecha-inicio-dep" class="filter-input" title="Fecha inicio filtro depósito">
+      <input type="date" id="filtro-fecha-fin-dep" class="filter-input" title="Fecha fin filtro depósito">
       <input type="search" id="filtro-buscar-dep" placeholder="Buscar..." class="filter-input flex-grow">
     </div>
     <div class="overflow-x-auto bg-white rounded-custom shadow-md">
@@ -335,12 +355,16 @@ const dom = {
     filtroWoo: null,
     filtroBuscar: null,
     filtroEnvioVentas: null, 
+    filtroFechaInicioVentas: null, 
+    filtroFechaFinVentas: null,   
     refreshButton: null,
     moduloVentas: null,
     tablaVentasBody: null,
     moduloDeposito: null,
     filtroFaseDep: null,
     filtroEnvioDep: null,
+    filtroFechaInicioDep: null, 
+    filtroFechaFinDep: null,   
     filtroBuscarDep: null,
     tablaDepositoBody: null,
     modalBg: null,
@@ -434,6 +458,54 @@ const APP_WIDTH_CLASSES = ['max-w-6xl', 'max-w-7xl', 'max-w-screen-2xl', 'max-w-
 
 
 // ===================== UTILITIES ============================
+
+/**
+ * Formats a given date string (assumed to be UTC) to UTC-3 with dd/mm/yy hh:mm format.
+ * @param {string} dateString - The date string to format (e.g., ISO string, "DD/MM/YYYY HH:mm").
+ * @param {boolean} includeTime - Whether to include the time in the output.
+ * @returns {string} The formatted date string in UTC-3 or the original string if invalid.
+ */
+function formatDateToUTCMinus3(dateString, includeTime = true) {
+    if (!dateString) return '';
+    try {
+        let originalUtcDate;
+        const customFormatMatch = String(dateString).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/);
+
+        if (customFormatMatch) {
+            const day = parseInt(customFormatMatch[1], 10);
+            const month = parseInt(customFormatMatch[2], 10) - 1;
+            const year = parseInt(customFormatMatch[3], 10);
+            const hours = parseInt(customFormatMatch[4], 10);
+            const minutes = parseInt(customFormatMatch[5], 10);
+            const seconds = customFormatMatch[6] ? parseInt(customFormatMatch[6], 10) : 0;
+            originalUtcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+        } else {
+            originalUtcDate = new Date(dateString);
+        }
+
+        if (isNaN(originalUtcDate.getTime())) {
+            return dateString; 
+        }
+
+        const dateInUTCMinus3 = new Date(originalUtcDate.getTime() - (3 * 60 * 60 * 1000));
+
+        const d = String(dateInUTCMinus3.getUTCDate()).padStart(2, '0');
+        const m = String(dateInUTCMinus3.getUTCMonth() + 1).padStart(2, '0');
+        const y = String(dateInUTCMinus3.getUTCFullYear()).slice(-2); // Two-digit year
+        
+        if (includeTime) {
+            const h = String(dateInUTCMinus3.getUTCHours()).padStart(2, '0');
+            const min = String(dateInUTCMinus3.getUTCMinutes()).padStart(2, '0');
+            return `${d}/${m}/${y} ${h}:${min}`;
+        } else {
+            return `${d}/${m}/${y}`;
+        }
+    } catch (e) {
+        return dateString; 
+    }
+}
+
+
 function getDepartamentoFullName(code) {
     if (!code) return '';
     const upperCode = String(code).toUpperCase().trim(); 
@@ -586,7 +658,7 @@ async function cargarPedidos() {
       MONTO: p.MONTO || p.Total || p.TOTAL || p.total || "",
       ESTADO_WOO: p.ESTADO || p.Estado || p.estado || "",
       METODO_ENVIO: p.METODO_ENVIO || p.Metodo_Envio || p["Método de Envío"] || "",
-      FECHA: p.FECHA || "",
+      FECHA: p.FECHA || "", 
       TELEFONO: p.TELEFONO ? (String(p.TELEFONO).startsWith("0") ? String(p.TELEFONO) : "0" + String(p.TELEFONO)).replace(/^00+/, "0") : "",
       ESTADO_PAGO: p.ESTADO_PAGO || p.Estado_Pago || p["Estado de Pago"] || p.estado_pago || "",
       NOTAS: p.NOTAS || "",
@@ -622,7 +694,6 @@ async function cargarPedidos() {
 }
 
 // ==================== RENDERIZADO GENERAL =====================
-// Helper function to determine if a sales order is "active" for stats and filtering
 function isOrderActive(pedido) {
     const metodoEnvioNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase();
     if (pedido.FASE !== "COMPLETADO" && pedido.FASE !== "COMPLETADO MODIFICADO") {
@@ -660,15 +731,11 @@ function updateStats() {
         completado: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO").length,
     };
     
-    console.log("Sales Stats Data (based on isOrderActive):", JSON.stringify(salesStatsData));
-
     const fasesExcluidasParaStatsMetodoEnvioDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO"];
     const pedidosParaEstadisticasMetodoEnvioDeposito = pedidos.filter(p => 
         !fasesExcluidasParaStatsMetodoEnvioDeposito.includes(p.FASE)
     );
     
-    console.log("Pedidos para stats depósito (por método):", pedidosParaEstadisticasMetodoEnvioDeposito.length, pedidosParaEstadisticasMetodoEnvioDeposito.map(p => ({id: p.ID, fase: p.FASE, metodo: p.METODO_ENVIO})));
-
     const depositStatsData = {
         dac: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "DAC").length,
         gp: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "GESTION POS").length,
@@ -676,8 +743,6 @@ function updateStats() {
         modificados: pedidos.filter(p => p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO").length 
     };
     
-    console.log("Deposit Stats Data (Calculated):", JSON.stringify(depositStatsData));
-
     const salesStatElementsMap = {
         'stat-total': salesStatsData.total,
         'stat-espera': salesStatsData.espera,
@@ -706,7 +771,6 @@ function updateStats() {
     for (const id in depositStatElementsMap) {
         const element = document.getElementById(id);
         const value = depositStatElementsMap[id]; 
-        console.log(`Updating DOM for deposit stat ${id}: Value = ${value}`); 
         if (element) {
             element.textContent = String(value); 
             const parentBox = element.closest('.stat-box-animate-pop');
@@ -717,8 +781,6 @@ function updateStats() {
                     parentBox.classList.remove('hidden');
                 }
             }
-        } else {
-             console.warn(`Elemento DOM no encontrado para stat ID: ${id}`);
         }
     }
 }
@@ -745,34 +807,39 @@ function renderizarTodo() {
 
 function formatTimeAgoOrDate(dateString) {
     if (!dateString) return '';
-    const parts = dateString.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})/);
-    if (!parts) {
-        try {
-            const d = new Date(dateString);
-            if (!isNaN(d.getTime())) return d.toLocaleDateString('es-ES'); 
-            const parsedDate = new Date(dateString);
-            if (!isNaN(parsedDate.getTime())) {
-                const diffHours = (new Date().getTime() - parsedDate.getTime()) / (1000 * 60 * 60);
-                if (diffHours < 24) {
-                    const diffMinutes = Math.round((new Date().getTime() - parsedDate.getTime()) / (1000 * 60));
-                    return diffMinutes < 60 ? `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}` : `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`;
-                } else {
-                    return parsedDate.toLocaleDateString('es-ES'); 
-                }
-            }
-        } catch (e) { /* ignore */ }
+    let originalUtcDate;
+    const customFormatMatch = String(dateString).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/);
+
+    if (customFormatMatch) {
+        const day = parseInt(customFormatMatch[1], 10);
+        const month = parseInt(customFormatMatch[2], 10) - 1; 
+        const year = parseInt(customFormatMatch[3], 10);
+        const hours = parseInt(customFormatMatch[4], 10);
+        const minutes = parseInt(customFormatMatch[5], 10);
+        const seconds = customFormatMatch[6] ? parseInt(customFormatMatch[6], 10) : 0;
+        originalUtcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+    } else {
+        originalUtcDate = new Date(dateString);
+    }
+
+    if (isNaN(originalUtcDate.getTime())) {
         return dateString; 
     }
-    const day = parseInt(parts[1],10), month = parseInt(parts[2],10)-1, year = parseInt(parts[3],10), hours = parseInt(parts[4],10), minutes = parseInt(parts[5],10);
-    const date = new Date(year, month, day, hours, minutes);
-    const diffMs = new Date().getTime() - date.getTime(), diffHours = diffMs / (36e5);
-    if (diffHours < 24) {
-        const diffMinutes = Math.round(diffMs / 6e4);
-        return diffMinutes < 60 ? `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}` : `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`;
+
+    const now = new Date(); 
+    const diffMs = now.getTime() - originalUtcDate.getTime(); 
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours >= 0 && diffHours < 24) {
+        const diffMinutes = Math.round(diffMs / (1000 * 60));
+        if (diffMinutes < 1) return "Hace instantes";
+        if (diffMinutes < 60) return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`;
+        return `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`;
     } else {
-        return `${day}/${month+1}/${year}`; 
+        return formatDateToUTCMinus3(dateString, true); 
     }
 }
+
 
 function formatProductLineToHtmlRow(line) {
     if (!line || typeof line !== 'string') return '';
@@ -796,28 +863,43 @@ function formatProductLineToHtmlRow(line) {
 // ===================== VENTAS ==============================
 function aplicarFiltrosVentas(p) {
   const faseFiltro = dom.filtroFase.value;
-  const pago = dom.filtroPago.value;
+  const pago = dom.filtroPago.value; // "confirmado", "no_confirmado", ""
   const envioVentas = dom.filtroEnvioVentas.value; 
   const woo = dom.filtroWoo.value;
   const buscar = dom.filtroBuscar.value.toLowerCase().trim();
+  const fechaInicioStr = dom.filtroFechaInicioVentas.value;
+  const fechaFinStr = dom.filtroFechaFinVentas.value;
 
   if (faseFiltro === "ACTIVE_ONLY") {
-      if (!isOrderActive(p)) { 
-          return false;
-      }
+      if (!isOrderActive(p)) return false;
   } else if (faseFiltro === "COMPLETADOS_ACTIVOS") {
-      if (!((p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") && isOrderActive(p))) {
-          return false; 
-      }
-  } else if (faseFiltro === "ALL_PHASES") {
-      // Sin filtro de fase
-  } else if (faseFiltro && p.FASE !== faseFiltro) {
+      if (!((p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") && isOrderActive(p))) return false; 
+  } else if (faseFiltro !== "ALL_PHASES" && faseFiltro && p.FASE !== faseFiltro) {
       return false; 
   }
 
-  if (pago && (p.ESTADO_PAGO !== pago)) return false;
+  // Updated payment filter logic
+  if (pago === "confirmado" && p.ESTADO_PAGO !== "confirmado") return false;
+  if (pago === "no_confirmado" && p.ESTADO_PAGO === "confirmado") return false;
+  
   if (woo && (p.ESTADO_WOO !== woo)) return false;
   if (envioVentas && (p.METODO_ENVIO || "").trim().toUpperCase() !== envioVentas) return false; 
+
+  const orderDateStr = p.FECHA_INGRESO_SISTEMA || p.FECHA;
+  if (fechaInicioStr || fechaFinStr) { 
+      if (!orderDateStr) return false; 
+      let orderDate = new Date(orderDateStr); 
+      if (isNaN(orderDate.getTime())) return false; 
+      orderDate = new Date(Date.UTC(orderDate.getUTCFullYear(), orderDate.getUTCMonth(), orderDate.getUTCDate()));
+      if (fechaInicioStr) {
+          const filtroFechaInicio = new Date(fechaInicioStr + "T00:00:00Z"); 
+          if (orderDate < filtroFechaInicio) return false;
+      }
+      if (fechaFinStr) {
+          const filtroFechaFin = new Date(fechaFinStr + "T00:00:00Z"); 
+          if (orderDate > filtroFechaFin) return false;
+      }
+  }
 
   if (buscar) { 
     const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
@@ -847,6 +929,13 @@ function getBadgeClassForFase(fase) {
     return `${faseClasses[fase] || 'bg-slate-300 text-slate-700'} text-white`;
 }
 
+function formatMonto(montoStr) {
+    if (montoStr === null || montoStr === undefined || montoStr === "") return "";
+    const montoNum = parseFloat(String(montoStr).replace(',', '.')); // Handle both comma and dot as decimal
+    if (isNaN(montoNum)) return montoStr; // Return original if not a number
+    return Math.round(montoNum).toString();
+}
+
 function renderVentas() {
   if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return;
   dom.tablaVentasBody.innerHTML = ""; 
@@ -854,13 +943,15 @@ function renderVentas() {
     const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); 
     if (pedidoIdx === -1) return; 
     const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase();
+    const montoFormateado = formatMonto(p.MONTO);
+
     const tr = document.createElement('tr');
     tr.className = "bg-white border-b hover:bg-slate-50 transition";
     tr.innerHTML = `
       <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td>
       <td class="px-4 py-2">${p.CLIENTE || ""}</td>
       <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td>
-      <td class="px-4 py-2">${p.MONTO || ""}</td>
+      <td class="px-4 py-2">${montoFormateado}</td>
       <td class="px-4 py-2">${(p.ESTADO_PAGO || "").charAt(0).toUpperCase() + (p.ESTADO_PAGO || "").slice(1)}</td>
       <td class="px-4 py-2"><span class="text-slate-700">${wooTxt}</span></td>
       <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td>
@@ -877,6 +968,8 @@ function aplicarFiltrosDeposito(p) {
   const fase = dom.filtroFaseDep.value;
   const envio = dom.filtroEnvioDep.value; 
   const buscar = dom.filtroBuscarDep.value.toLowerCase();
+  const fechaInicioStr = dom.filtroFechaInicioDep.value;
+  const fechaFinStr = dom.filtroFechaFinDep.value;
 
   if (fase === "DEFAULT_DEPOSIT_FILTER") {
       if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false;
@@ -886,6 +979,22 @@ function aplicarFiltrosDeposito(p) {
   else if (!fase && !(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false;
 
   if (envio && (p.METODO_ENVIO || "").trim().toUpperCase() !== envio) return false;
+
+  const orderDateStr = p.FECHA_INGRESO_SISTEMA || p.FECHA;
+  if (fechaInicioStr || fechaFinStr) {
+      if (!orderDateStr) return false; 
+      let orderDate = new Date(orderDateStr);
+      if (isNaN(orderDate.getTime())) return false;
+      orderDate = new Date(Date.UTC(orderDate.getUTCFullYear(), orderDate.getUTCMonth(), orderDate.getUTCDate()));
+      if (fechaInicioStr) {
+          const filtroFechaInicio = new Date(fechaInicioStr + "T00:00:00Z");
+          if (orderDate < filtroFechaInicio) return false;
+      }
+      if (fechaFinStr) {
+          const filtroFechaFin = new Date(fechaFinStr + "T00:00:00Z");
+          if (orderDate > filtroFechaFin) return false;
+      }
+  }
 
   if (buscar) {
       const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); 
@@ -927,7 +1036,8 @@ function openModal(idx, modulo) {
   if (!pedido) { console.error("Pedido no encontrado:", idx); showNoti("Error: Pedido no encontrado.", false); return; }
   originalPedidoState = JSON.parse(JSON.stringify(pedido));
   let content = "";
-  dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>${modulo === 'ventas' ? ` - <b>$${pedido.MONTO || ""}</b>` : ''}`;
+  const montoFormateado = formatMonto(pedido.MONTO);
+  dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>${modulo === 'ventas' ? ` - <b>$${montoFormateado}</b>` : ''}`;
   
   let productsTableHtml = '';
   const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); 
@@ -942,12 +1052,6 @@ function openModal(idx, modulo) {
   const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); 
   const metodoEnvioActualNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); 
   const metodoEnvioDisplay = getMetodoEnvioDisplayName(pedido.METODO_ENVIO); 
-
-  console.log(`Abriendo modal para Pedido ID: ${pedido.ID}, Módulo: ${modulo}`);
-  console.log(` - METODO_ENVIO original del pedido: '${pedido.METODO_ENVIO}'`);
-  console.log(` - metodoEnvioActualNorm (para lógica de select y checkboxes): '${metodoEnvioActualNorm}'`);
-  console.log(` - metodoEnvioDisplay (para mostrar en texto plano en Depósito): '${metodoEnvioDisplay}'`);
-
 
   if (modulo === 'ventas') {
     content = `
@@ -979,7 +1083,7 @@ function openModal(idx, modulo) {
         </div>
         <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label>
           <select id="modal-estado-pago" class="modal-input">
-            <option value="">Seleccionar</option>
+            <option value="" ${pedido.ESTADO_PAGO !== "confirmado" ? " selected" : ""}>Seleccionar</option>
             <option value="confirmado" ${pedido.ESTADO_PAGO === "confirmado" ? " selected" : ""}>Confirmado</option>
           </select>
         </div>
@@ -994,7 +1098,15 @@ function openModal(idx, modulo) {
         <button id="modal-save-venta" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-blue hover:bg-blue-700 focus:ring-custom-blue">Guardar Cambios</button>
         ${(pedido.FASE === 'COMPLETADO' || pedido.FASE === 'PREPARANDO') ? `<button id="modal-modificar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange">Modificar Pedido</button>` : ''}
       </div>
-      <div class="mt-6 pt-4 border-t border-slate-200"><h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4><div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm">${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ? pedido.HISTORIAL.map(entry => `<div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0"><div class="font-medium text-slate-800">${entry.user} - ${new Date(entry.timestamp).toLocaleString('es-ES')}</div><ul class="list-disc list-inside text-slate-600 ml-4">${entry.changes.map(change => `<li>${formatChangeEntry(change)}</li>`).join('')}</ul></div>`).join('') : '<p class="text-slate-500">No hay historial.</p>'}</div></div>`;
+      <div class="mt-6 pt-4 border-t border-slate-200">
+        <h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4>
+        <div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm">
+          ${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ? pedido.HISTORIAL.map(entry => {
+            const formattedTimestamp = formatDateToUTCMinus3(entry.timestamp, true); 
+            return `<div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0"><div class="font-medium text-slate-800">${entry.user} - ${formattedTimestamp}</div><ul class="list-disc list-inside text-slate-600 ml-4">${entry.changes.map(change => `<li>${formatChangeEntry(change)}</li>`).join('')}</ul></div>`;
+          }).join('') : '<p class="text-slate-500">No hay historial.</p>'}
+        </div>
+      </div>`;
   } else { // DEPÓSITO
     const isVentasUser = usuario && usuario.rol === 'ventas';
     content = `
@@ -1147,13 +1259,20 @@ async function guardarVenta(idx) {
     DEPARTAMENTO: dom.modalContent.querySelector('#modal-departamento')?.value || '',
     NOTAS: dom.modalContent.querySelector('#modal-notas')?.value || '',
     METODO_ENVIO: dom.modalContent.querySelector('#modal-metodo-envio')?.value || '',
-    ESTADO_PAGO: dom.modalContent.querySelector('#modal-estado-pago')?.value || '',
+    ESTADO_PAGO: dom.modalContent.querySelector('#modal-estado-pago')?.value || '', 
     ENTREGADO: dom.modalContent.querySelector('#entregado-checkbox-wrapper')?.classList.contains('hidden') ? false : (dom.modalContent.querySelector('#modal-entregado')?.checked || false),
     ETIQUETA_EMITIDA: dom.modalContent.querySelector('#etiqueta-emitida-checkbox-wrapper')?.classList.contains('hidden') ? false : (dom.modalContent.querySelector('#modal-etiqueta-emitida')?.checked || false),
     FACTURADO: dom.modalContent.querySelector('#modal-facturado')?.checked || false,
     AVISO_CLIENTE: dom.modalContent.querySelector('#modal-aviso-cliente')?.checked || false,
     PRODUCTS: dom.modalContent.querySelector('#modal-productos')?.value || '' 
   };
+  
+  // If "Seleccionar" (value "") is chosen in the modal for ESTADO_PAGO,
+  // it means the payment is not confirmed. The value "" will be saved.
+  // The main filter for "No Confirmado" checks for ESTADO_PAGO !== "confirmado",
+  // so an empty string will correctly fall into the "No Confirmado" category.
+  // If "Confirmado" is chosen, "confirmado" is saved.
+
   Object.assign(p, modalValues, { TICKET_IMPRESO: p.TICKET_IMPRESO, FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA });
 
   if (oldFase !== "COMPLETADO" && oldFase !== "COMPLETADO MODIFICADO" && oldFase !== "PREPARANDO MODIFICADO") {
@@ -1206,7 +1325,13 @@ function imprimirTicket(idx) {
   if (p.PRODUCTS) {
       (p.PRODUCTS || "").split('\n').filter(l => l.trim() !== '').forEach(l => { const fr = formatProductLineToHtmlRow(l); if (fr) prodsHtml += fr; });
   }
-  dom.ticketPrint.innerHTML = `<div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;"><div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div><div><b>Pedido #${p.ID||""}</b></div><div><b>Cliente:</b> ${p.CLIENTE||""}</div><div><b>Dirección:</b> ${p.DIRECCION||""}</div><div><b>Barrio/Loc:</b> ${p.BARRIO_LOCALIDAD||""}</div><div><b>Depto:</b> ${getDepartamentoFullName(p.DEPARTAMENTO||"")}</div><div><b>Tel:</b> ${p.TELEFONO||""}</div><div><b>Envío:</b> ${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</div><div><b>Fecha:</b> ${p.FECHA||""}</div>${prodsHtml ? `<table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;"><thead><tr><th>SKU</th><th>Desc.</th><th style="text-align:right;">Cant.</th></tr></thead><tbody>${prodsHtml}</tbody></table>` : '<div>No hay productos.</div>'}<div><b>Notas:</b> ${p.NOTAS||"Ninguna"}</div><div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias</div></div>`;
+
+  let displayFecha = p.FECHA || "";
+  if (p.FECHA) {
+      displayFecha = formatDateToUTCMinus3(p.FECHA, true); 
+  }
+
+  dom.ticketPrint.innerHTML = `<div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;"><div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div><div><b>Pedido #${p.ID||""}</b></div><div><b>Cliente:</b> ${p.CLIENTE||""}</div><div><b>Dirección:</b> ${p.DIRECCION||""}</div><div><b>Barrio/Loc:</b> ${p.BARRIO_LOCALIDAD||""}</div><div><b>Depto:</b> ${getDepartamentoFullName(p.DEPARTAMENTO||"")}</div><div><b>Tel:</b> ${p.TELEFONO||""}</div><div><b>Envío:</b> ${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</div><div><b>Fecha:</b> ${displayFecha}</div>${prodsHtml ? `<table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;"><thead><tr><th>SKU</th><th>Desc.</th><th style="text-align:right;">Cant.</th></tr></thead><tbody>${prodsHtml}</tbody></table>` : '<div>No hay productos.</div>'}<div><b>Notas:</b> ${p.NOTAS||"Ninguna"}</div><div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias</div></div>`;
   setTimeout(() => {
     window.print(); printCount[p.ID] = true; 
     const btn = dom.modalContent.querySelector('#modal-print-ticket');
@@ -1220,9 +1345,11 @@ function setupEventListeners() {
   dom.loginForm?.addEventListener('submit', handleLogin);
   dom.logoutBtn?.addEventListener('click', logout);
   dom.refreshButton?.addEventListener('click', cargarPedidos);
-  [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas].forEach(el => el?.addEventListener('change', renderizarTodo)); // Added filtroEnvioVentas
+  
+  [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas, dom.filtroFechaInicioVentas, dom.filtroFechaFinVentas].forEach(el => el?.addEventListener('change', renderizarTodo));
   dom.filtroBuscar?.addEventListener('input', renderizarTodo);
-  [dom.filtroFaseDep, dom.filtroEnvioDep].forEach(el => el?.addEventListener('change', renderizarTodo));
+  
+  [dom.filtroFaseDep, dom.filtroEnvioDep, dom.filtroFechaInicioDep, dom.filtroFechaFinDep].forEach(el => el?.addEventListener('change', renderizarTodo));
   dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
   
   dom.modalClose?.addEventListener('click', closeModal);
@@ -1238,7 +1365,6 @@ function setupEventListeners() {
     dom.attentionModalBg.classList.remove('flex');
      if (dom.attentionModalOk._promiseResolve) dom.attentionModalOk._promiseResolve(true);
   });
-
 
   dom.notiCloseBtn?.addEventListener('click', hideNoti);
   dom.notiOkBtn?.addEventListener('click', hideNoti);
@@ -1267,6 +1393,10 @@ function setupEventListeners() {
       } else if (dom.attentionModalBg && !dom.attentionModalBg.classList.contains('hidden')) {
         dom.attentionModalOk.click(); 
       }
+    } else if (event.key === 'F5') {
+        event.preventDefault(); 
+        cargarPedidos();
+        showNoti("Datos actualizados (F5)", true);
     }
   });
 }
