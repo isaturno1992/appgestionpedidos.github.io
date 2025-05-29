@@ -743,11 +743,11 @@ function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
     return tr;
 }
 
-async function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = null) {
+function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = null) {
     tareaActualId = idTarea;
     dom.taskForm.reset();
     dom.taskId.value = idTarea || `T${Date.now()}`; 
-    const esNuevaTarea = !esEdicion;
+    const esNuevaTarea = !esEdicion; // Definida correctamente aquí
     
     const tareaExistente = esEdicion && idTarea ? tareas.find(t => t.ID_TAREA === idTarea) : null;
     
@@ -803,14 +803,14 @@ async function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto
             if (tarea.NOTIFICACIONES_COMENTARIO && tarea.NOTIFICACIONES_COMENTARIO[usuario.rol]) {
                 tarea.NOTIFICACIONES_COMENTARIO[usuario.rol] = false;
                 const tareaParaActualizarNotif = { ID_TAREA: tarea.ID_TAREA, NOTIFICACIONES_COMENTARIO: tarea.NOTIFICACIONES_COMENTARIO };
-                await actualizarTareaEnBackend(tareaParaActualizarNotif, tarea.ID_TAREA); 
+                actualizarTareaEnBackend(tareaParaActualizarNotif, tarea.ID_TAREA); 
             }
 
         } else {
             showNoti("Error: Tarea no encontrada para editar.", false);
             return;
         }
-    } else { 
+    } else { // Nueva Tarea
         dom.taskModalTitle.textContent = "Nueva Tarea";
         dom.taskDetailsExtraInfo.classList.add('hidden'); 
         if (usuario.rol === 'ventas' || usuario.rol === 'deposito') {
@@ -823,15 +823,9 @@ async function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto
 
     const puedeEditarEstado = esAdmin || esResponsableAsignado;
     const puedeComentar = esAdmin || esResponsableAsignado;
-    let puedeEditarGeneral = esAdmin || esNuevaTarea;
+    let puedeEditarGeneral = esAdmin || esNuevaTarea; 
     
-    if (esNuevaTarea && (usuario.rol === 'deposito')) { 
-        puedeEditarGeneral = false; 
-        dom.taskDescripcion.readOnly = false; 
-        dom.taskPrioridad.disabled = false;
-        dom.taskFechaVencimiento.readOnly = false;
-        dom.taskHoraVencimiento.readOnly = false;
-    } else if (!esAdmin && esEdicion && !esResponsableAsignado) { 
+    if (!esAdmin && esEdicion && !esResponsableAsignado) { 
         puedeEditarGeneral = false;
     }
 
@@ -847,12 +841,11 @@ async function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto
     document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
         if (esNuevaTarea && usuario.rol === 'deposito') {
             checkbox.disabled = !(checkbox.value === 'deposito' || checkbox.value === 'admin');
-            checkbox.parentElement.classList.toggle('opacity-50', checkbox.disabled);
-            checkbox.parentElement.classList.toggle('cursor-not-allowed', checkbox.disabled);
         } else {
             checkbox.disabled = !esAdmin && esEdicion; 
-            checkbox.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
         }
+        checkbox.parentElement.classList.toggle('opacity-50', checkbox.disabled);
+        checkbox.parentElement.classList.toggle('cursor-not-allowed', checkbox.disabled);
     });
 
     if(!esAdmin && esEdicion) {
@@ -890,13 +883,13 @@ async function actualizarTareaEnBackend(tareaData, idTareaOriginal) {
         for (const key in tareaData) {
             tareaParaEnviar[key.toUpperCase()] = tareaData[key];
         }
-        // Asegurarse de que los campos JSON se stringifiquen correctamente
-        const { RESPONSABLES, COMENTARIOS, HISTORIAL_TAREA, ...resto } = tareaParaEnviar;
+        
         const payload = {
-            ...resto,
-            RESPONSABLES: JSON.stringify(RESPONSABLES || []),
-            COMENTARIOS: JSON.stringify(COMENTARIOS || []),
-            HISTORIAL_TAREA: JSON.stringify(HISTORIAL_TAREA || [])
+            ...tareaParaEnviar, 
+            RESPONSABLES: JSON.stringify(tareaParaEnviar.RESPONSABLES || []),
+            COMENTARIOS: JSON.stringify(tareaParaEnviar.COMENTARIOS || []),
+            HISTORIAL_TAREA: JSON.stringify(tareaParaEnviar.HISTORIAL_TAREA || []),
+            NOTIFICACIONES_COMENTARIO: JSON.stringify(tareaParaEnviar.NOTIFICACIONES_COMENTARIO || {})
         };
 
 
@@ -1084,7 +1077,6 @@ function renderizarComentariosTarea(idTarea) {
     dom.taskCommentsList.innerHTML = (comentarios.length > 0) 
         ? comentarios.map(c => {
             let textoComentario = c.texto;
-            // Resaltar menciones
             textoComentario = textoComentario.replace(/@(\w+)/g, (match, rolMencionado) => {
                 const usuarioMencionado = USERS[rolMencionado.toLowerCase()];
                 if (usuarioMencionado) {
@@ -1167,14 +1159,14 @@ function setupMultiSelectResponsables() {
         e.stopPropagation(); 
         const esAdmin = usuario && usuario.rol === 'admin';
         const tareaExistente = tareaActualId && tareas.find(t => t.ID_TAREA === tareaActualId);
-        const esNuevaTarea = !tareaExistente;
-        let puedeAbrirDropdown = esAdmin || esNuevaTarea;
+        const esNuevaTareaLocal = !tareaExistente; // Renombrar para evitar conflicto con parámetro de abrirModalTarea
+        let puedeAbrirDropdown = esAdmin || esNuevaTareaLocal;
 
-        if (esNuevaTarea && (usuario.rol === 'deposito')) { 
+        if (esNuevaTareaLocal && (usuario.rol === 'deposito')) { 
              puedeAbrirDropdown = true;
-        } else if (esNuevaTarea && (usuario.rol === 'ventas')) { 
+        } else if (esNuevaTareaLocal && (usuario.rol === 'ventas')) { 
             puedeAbrirDropdown = true;
-        } else if (esEdicion && !esAdmin) { 
+        } else if (tareaExistente && !esAdmin) { // Editando y no es admin
             puedeAbrirDropdown = false;
         }
 
