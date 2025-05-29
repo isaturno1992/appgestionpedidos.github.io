@@ -419,7 +419,7 @@ const dom = {
     taskForm: null, taskId: null, taskDescripcion: null, taskResponsablesContainer: null,
     taskResponsablesSelected: null, taskResponsablesOptions: null, taskPrioridad: null,
     taskFechaVencimiento: null, taskHoraVencimiento: null, 
-    taskEstado: null, /* taskTipoTarea: null, // Eliminado */ taskModalCancel: null,
+    taskEstado: null, taskModalCancel: null,
     taskModalSave: null, taskModuloAsociado: null,
     taskDetailsExtraInfo: null, taskCommentsList: null, taskNewComment: null, 
     taskAddCommentBtn: null, taskHistoryList: null, taskAddCommentSection: null,
@@ -453,7 +453,7 @@ const APP_WIDTH_CLASSES = ['max-w-6xl', 'max-w-7xl', 'max-w-screen-2xl', 'max-w-
 
 let usuario = null;
 let pedidos = [];
-let tareas = []; // Se cargará desde el backend
+let tareas = []; 
 let pedidoActualIdx = null;
 let tareaActualId = null; 
 let printCount = {}; 
@@ -528,7 +528,7 @@ async function cargarTareas() {
         const response = await fetch(`${BACKEND_URL}/tareas`);
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Error HTTP al cargar tareas: ${response.status} - ${errorData.error || response.statusText}`);
+            throw new Error(`HTTP ${response.status} - ${errorData.error || response.statusText}`);
         }
         const data = await response.json();
         tareas = Array.isArray(data) ? data : [];
@@ -538,8 +538,8 @@ async function cargarTareas() {
     } catch (err) {
         mostrarSyncLog(`Error al cargar tareas: ${err.message}`, false);
         console.error("Error en cargarTareas:", err);
-        tareas = []; // Asegurar que tareas sea un array vacío en caso de error
-        renderizarTareas(); // Renderizar (vacío) incluso si hay error
+        tareas = []; 
+        renderizarTareas(); 
     }
 }
 
@@ -637,7 +637,7 @@ function renderizarTareas() {
     if (dom.tablaTareasVentasBody) {
         dom.tablaTareasVentasBody.innerHTML = "";
         const tareasVisiblesVentas = tareas.filter(tarea => 
-            tarea.responsables && tarea.responsables.includes('ventas')
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('ventas')
         );
         tareasVisiblesVentas.forEach(tarea => dom.tablaTareasVentasBody.appendChild(crearFilaTareaHtml(tarea)));
     }
@@ -645,7 +645,7 @@ function renderizarTareas() {
     if (dom.tablaTareasDepositoBody) {
         dom.tablaTareasDepositoBody.innerHTML = "";
         const tareasVisiblesDeposito = tareas.filter(tarea => 
-            tarea.responsables && tarea.responsables.includes('deposito')
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('deposito')
         );
         tareasVisiblesDeposito.forEach(tarea => dom.tablaTareasDepositoBody.appendChild(crearFilaTareaHtml(tarea)));
     }
@@ -653,7 +653,7 @@ function renderizarTareas() {
     if (dom.tablaTareasAdminBody && usuario.rol === 'admin') {
         dom.tablaTareasAdminBody.innerHTML = "";
         const tareasVisiblesAdmin = tareas.filter(tarea => 
-            tarea.responsables && tarea.responsables.includes('admin')
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('admin')
         );
         tareasVisiblesAdmin.forEach(tarea => dom.tablaTareasAdminBody.appendChild(crearFilaTareaHtml(tarea, true)));
     }
@@ -676,29 +676,34 @@ function getEstadoTareaClass(estado) {
 function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
     const tr = document.createElement('tr');
     tr.className = "bg-white border-b hover:bg-slate-50 transition";
-    const responsablesNombres = Array.isArray(tarea.responsables) ? tarea.responsables.map(rol => USERS[rol]?.nombre || rol).join(', ') : (USERS[tarea.responsables]?.nombre || tarea.responsables || 'N/A');
+    const responsables = tarea.RESPONSABLES; 
+    const responsablesNombres = Array.isArray(responsables) ? responsables.map(rol => USERS[rol]?.nombre || rol).join(', ') : (USERS[responsables]?.nombre || responsables || 'N/A');
     
     let fechaVencimientoDisplay = 'N/A';
-    if (tarea.fecha_vencimiento) {
-        fechaVencimientoDisplay = formatDateToDisplay(tarea.fecha_vencimiento);
-        if (tarea.hora_vencimiento) {
-            fechaVencimientoDisplay += ` ${tarea.hora_vencimiento}`;
+    const fechaVenc = tarea.FECHA_VENCIMIENTO;
+    const horaVenc = tarea.HORA_VENCIMIENTO;
+
+    if (fechaVenc) {
+        fechaVencimientoDisplay = formatDateToDisplay(fechaVenc);
+        if (horaVenc) {
+            fechaVencimientoDisplay += ` ${horaVenc}`;
         }
     }
     
-    let moduloAsociadoDisplay = tarea.modulo_asociado || 'General'; 
+    let moduloAsociadoDisplay = tarea.MODULO_ASOCIADO || 'General'; 
+    const idTarea = tarea.ID_TAREA;
 
     tr.innerHTML = `
-        <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${tarea.ID_TAREA || tarea.id_tarea}</td>
-        <td class="px-4 py-2">${(tarea.DESCRIPCION || tarea.descripcion || "").toUpperCase()}</td>
+        <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${idTarea}</td>
+        <td class="px-4 py-2">${(tarea.DESCRIPCION || "").toUpperCase()}</td>
         <td class="px-4 py-2">${responsablesNombres}</td>
-        <td class="px-4 py-2"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPrioridadClass(tarea.PRIORIDAD || tarea.prioridad)}">${tarea.PRIORIDAD || tarea.prioridad}</span></td>
+        <td class="px-4 py-2"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPrioridadClass(tarea.PRIORIDAD)}">${tarea.PRIORIDAD}</span></td>
         <td class="px-4 py-2">${fechaVencimientoDisplay}</td>
-        <td class="px-4 py-2"><span class="inline-block px-3 py-1 rounded-md text-xs font-semibold ${getEstadoTareaClass(tarea.ESTADO_TAREA || tarea.estado_tarea)}">${tarea.ESTADO_TAREA || tarea.estado_tarea}</span></td>
+        <td class="px-4 py-2"><span class="inline-block px-3 py-1 rounded-md text-xs font-semibold ${getEstadoTareaClass(tarea.ESTADO_TAREA)}">${tarea.ESTADO_TAREA}</span></td>
         ${esVistaAdmin ? `<td class="px-4 py-2">${moduloAsociadoDisplay}</td>` : ''}
         <td class="px-4 py-2">
-            <button class="font-semibold py-1 px-2 rounded-md text-xs bg-custom-blue text-white hover:bg-blue-700 mr-1" onclick="abrirModalTarea('${tarea.ID_TAREA || tarea.id_tarea}', true)">Ver/Editar</button>
-            ${usuario && usuario.rol === 'admin' ? `<button class="font-semibold py-1 px-2 rounded-md text-xs bg-custom-red text-white hover:bg-red-700" onclick="eliminarTarea('${tarea.ID_TAREA || tarea.id_tarea}')">Eliminar</button>` : ''}
+            <button class="font-semibold py-1 px-2 rounded-md text-xs bg-custom-blue text-white hover:bg-blue-700 mr-1" onclick="abrirModalTarea('${idTarea}', true)">Ver/Editar</button>
+            ${usuario && usuario.rol === 'admin' ? `<button class="font-semibold py-1 px-2 rounded-md text-xs bg-custom-red text-white hover:bg-red-700" onclick="eliminarTarea('${idTarea}')">Eliminar</button>` : ''}
         </td>
     `;
     return tr;
@@ -709,8 +714,8 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     dom.taskForm.reset();
     dom.taskId.value = idTarea || `T${Date.now()}`; 
     
-    const tareaExistente = esEdicion && idTarea ? tareas.find(t => (t.ID_TAREA || t.id_tarea) === idTarea) : null;
-    dom.taskModuloAsociado.value = moduloContexto || (tareaExistente ? tareaExistente.MODULO_ASOCIADO || tareaExistente.modulo_asociado : 'Admin');
+    const tareaExistente = esEdicion && idTarea ? tareas.find(t => t.ID_TAREA === idTarea) : null;
+    dom.taskModuloAsociado.value = moduloContexto || (tareaExistente ? tareaExistente.MODULO_ASOCIADO : 'Admin');
     
     const responsablesOptionsHtml = Object.values(USERS).map(u => 
         `<label class="flex items-center space-x-2"><input type="checkbox" name="task_responsables_opt" value="${u.rol}" class="form-checkbox h-4 w-4 text-custom-purple rounded"><span>${u.nombre}</span></label>`
@@ -719,29 +724,30 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     updateSelectedResponsablesDisplay();
 
     let tarea = null;
-    let puedeEditarCamposSensibles = false; 
     const esAdmin = usuario && usuario.rol === 'admin';
+    const esNuevaTarea = !esEdicion; // Definido aquí
+    let esResponsableAsignado = false; 
 
     if (esEdicion && idTarea) {
         tarea = tareaExistente;
         if (tarea) {
             dom.taskModalTitle.textContent = "Editar Tarea";
-            dom.taskDescripcion.value = tarea.DESCRIPCION || tarea.descripcion; 
+            dom.taskDescripcion.value = tarea.DESCRIPCION; 
             document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
-                const responsables = tarea.RESPONSABLES || tarea.responsables;
-                if (responsables && responsables.includes(checkbox.value)) {
+                if (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(checkbox.value)) {
                     checkbox.checked = true;
                 }
             });
             updateSelectedResponsablesDisplay();
-            dom.taskPrioridad.value = tarea.PRIORIDAD || tarea.prioridad;
-            dom.taskFechaVencimiento.value = tarea.FECHA_VENCIMIENTO || tarea.fecha_vencimiento || '';
-            dom.taskHoraVencimiento.value = tarea.HORA_VENCIMIENTO || tarea.hora_vencimiento || ''; 
-            dom.taskEstado.value = tarea.ESTADO_TAREA || tarea.estado_tarea;
-            // dom.taskTipoTarea.value = tarea.tipo_tarea || 'Unica'; // Eliminado
-            dom.taskModuloAsociado.value = tarea.MODULO_ASOCIADO || tarea.modulo_asociado || ''; 
+            dom.taskPrioridad.value = tarea.PRIORIDAD;
+            dom.taskFechaVencimiento.value = tarea.FECHA_VENCIMIENTO || '';
+            dom.taskHoraVencimiento.value = tarea.HORA_VENCIMIENTO || ''; 
+            dom.taskEstado.value = tarea.ESTADO_TAREA;
+            dom.taskModuloAsociado.value = tarea.MODULO_ASOCIADO || ''; 
             
-            puedeEditarCamposSensibles = (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol)) || (tarea.responsables && tarea.responsables.includes(usuario.rol)) || esAdmin;
+            if (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol)) {
+                esResponsableAsignado = true;
+            }
 
             dom.taskDetailsExtraInfo.classList.remove('hidden');
             renderizarComentariosTarea(idTarea);
@@ -752,23 +758,24 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
         }
     } else { 
         dom.taskModalTitle.textContent = "Nueva Tarea";
-        puedeEditarCamposSensibles = esAdmin; 
         dom.taskDetailsExtraInfo.classList.add('hidden'); 
         if (!moduloContexto) dom.taskModuloAsociado.value = 'Admin'; 
     }
 
-    dom.taskEstado.disabled = !puedeEditarCamposSensibles;
-    if (dom.taskAddCommentSection) dom.taskAddCommentSection.style.display = puedeEditarCamposSensibles ? 'block' : 'none';
+    const puedeEditarEstado = esAdmin || esResponsableAsignado;
+    const puedeComentar = esAdmin || esResponsableAsignado;
+    const puedeEditarGeneral = esAdmin || esNuevaTarea; 
+
+    dom.taskEstado.disabled = !puedeEditarEstado;
+    if (dom.taskAddCommentSection) dom.taskAddCommentSection.style.display = puedeComentar ? 'block' : 'none';
     
-    const noPuedeEditarGeneral = !esAdmin && esEdicion && !puedeEditarCamposSensibles;
-    dom.taskDescripcion.readOnly = noPuedeEditarGeneral; 
-    dom.taskPrioridad.disabled = noPuedeEditarGeneral;
-    dom.taskFechaVencimiento.readOnly = noPuedeEditarGeneral;
-    dom.taskHoraVencimiento.readOnly = noPuedeEditarGeneral;
-    // dom.taskTipoTarea.disabled = noPuedeEditarGeneral; // Eliminado
+    dom.taskDescripcion.readOnly = !puedeEditarGeneral; 
+    dom.taskPrioridad.disabled = !puedeEditarGeneral;
+    dom.taskFechaVencimiento.readOnly = !puedeEditarGeneral;
+    dom.taskHoraVencimiento.readOnly = !puedeEditarGeneral;
     
     document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
-        checkbox.disabled = !esAdmin && esEdicion;
+        checkbox.disabled = !esAdmin && esEdicion; 
     });
     if(!esAdmin && esEdicion) {
         dom.taskResponsablesSelected.style.pointerEvents = 'none';
@@ -778,12 +785,17 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
         dom.taskResponsablesSelected.style.backgroundColor = '#fff';
     }
 
-    dom.taskModalSave.disabled = !esAdmin && esEdicion && !puedeEditarCamposSensibles;
+    dom.taskModalSave.style.display = (esAdmin || esNuevaTarea) ? 'inline-flex' : 'none';
+    // La propiedad 'disabled' del botón de guardar se maneja principalmente por su visibilidad
+    // Si el botón está visible (admin o nueva tarea), está habilitado por defecto.
+    // La lógica de `guardarTarea` verificará si el usuario tiene permiso para la acción específica (ej. cambiar estado).
+    dom.taskModalSave.disabled = false; 
 
 
     dom.taskModalBg.classList.remove('hidden');
     dom.taskModalBg.classList.add('flex');
 }
+
 
 function cerrarModalTarea() {
     dom.taskModalBg.classList.add('hidden');
@@ -791,8 +803,44 @@ function cerrarModalTarea() {
     tareaActualId = null;
 }
 
+async function actualizarTareaEnBackend(tareaData, idTareaOriginal) {
+    const idParaEndpoint = idTareaOriginal || tareaData.ID_TAREA;
+    if (!idParaEndpoint) {
+        console.error("actualizarTareaEnBackend: ID de tarea es indefinido.");
+        showNoti("Error: No se pudo identificar la tarea para actualizar.", false);
+        return false;
+    }
+    try {
+        const response = await fetch(`${BACKEND_URL}/tareas/${idParaEndpoint}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tareaData) 
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`HTTP ${response.status} - ${errorData.error || response.statusText}`);
+        }
+        const tareaGuardada = await response.json();
+        
+        const index = tareas.findIndex(t => (t.ID_TAREA) === idParaEndpoint); 
+        if (index > -1) {
+            tareas[index] = tareaGuardada;
+        } else {
+            tareas.push(tareaGuardada);
+        }
+        renderizarTareas();
+        return true;
+    } catch (err) {
+        showNoti(`Error al actualizar tarea: ${err.message}`, false);
+        console.error("Error en actualizarTareaEnBackend:", err);
+        return false;
+    }
+}
+
+
 async function guardarTarea(event) {
-    event.preventDefault();
+    event.preventDefault(); 
+    
     const id = dom.taskId.value;
     const descripcion = dom.taskDescripcion.value.trim().toUpperCase(); 
     const responsablesSeleccionados = Array.from(document.querySelectorAll('input[name="task_responsables_opt"]:checked')).map(cb => cb.value);
@@ -818,7 +866,7 @@ async function guardarTarea(event) {
         }
     }
 
-    const existingTaskIndex = tareas.findIndex(t => (t.ID_TAREA || t.id_tarea) === id);
+    const existingTaskIndex = tareas.findIndex(t => t.ID_TAREA === id);
     let tareaOriginal = null;
     let esNuevaTarea = true;
 
@@ -826,38 +874,50 @@ async function guardarTarea(event) {
         esNuevaTarea = false;
         tareaOriginal = JSON.parse(JSON.stringify(tareas[existingTaskIndex])); 
     }
-
-    const puedeModificarEstado = (tareaOriginal && (tareaOriginal.RESPONSABLES || tareaOriginal.responsables) && (tareaOriginal.RESPONSABLES || tareaOriginal.responsables).includes(usuario.rol)) || usuario.rol === 'admin' || esNuevaTarea;
-
-    if (!esNuevaTarea && (tareaOriginal.ESTADO_TAREA || tareaOriginal.estado_tarea) !== estado_tarea_nuevo && !puedeModificarEstado) {
-        showNoti("No tienes permiso para cambiar el estado de esta tarea.", false);
-        dom.taskEstado.value = tareaOriginal.ESTADO_TAREA || tareaOriginal.estado_tarea; 
-        return;
-    }
     
-    const tareaData = {
-        ID_TAREA: id, // Usar mayúsculas para consistencia con el backend map
+    const tareaData = { 
+        ID_TAREA: id, 
         DESCRIPCION: descripcion, 
         RESPONSABLES: responsablesSeleccionados,
         PRIORIDAD: prioridad,
         FECHA_VENCIMIENTO: fecha_vencimiento,
         HORA_VENCIMIENTO: hora_vencimiento, 
         ESTADO_TAREA: estado_tarea_nuevo,
-        // TIPO_TAREA: "Unica", // Ya no es necesario, se asume
         MODULO_ASOCIADO: moduloAsociado,
-        FECHA_CREACION: esNuevaTarea ? new Date().toISOString() : (tareaOriginal.FECHA_CREACION || tareaOriginal.fecha_creacion),
-        CREADOR: esNuevaTarea ? usuario.nombre : (tareaOriginal.CREADOR || tareaOriginal.creador),
-        COMENTARIOS: esNuevaTarea ? [] : (tareaOriginal.COMENTARIOS || tareaOriginal.comentarios || []),
-        HISTORIAL_TAREA: esNuevaTarea ? [] : (tareaOriginal.HISTORIAL_TAREA || tareaOriginal.historial_tarea || [])
+        FECHA_CREACION: esNuevaTarea ? new Date().toISOString() : tareaOriginal.FECHA_CREACION,
+        CREADOR: esNuevaTarea ? usuario.nombre : tareaOriginal.CREADOR,
+        COMENTARIOS: esNuevaTarea ? [] : (tareaOriginal.COMENTARIOS || []),
+        HISTORIAL_TAREA: esNuevaTarea ? [] : (tareaOriginal.HISTORIAL_TAREA || [])
     };
 
-    let endpoint = `${BACKEND_URL}/tareas`;
-    let method = 'POST';
-
-    if (!esNuevaTarea) {
-        endpoint = `${BACKEND_URL}/tareas/${id}`;
-        method = 'PUT';
-        const changes = getTaskChanges(tareaOriginal, tareaData);
+    if (esNuevaTarea) {
+        tareaData.HISTORIAL_TAREA.push({
+            usuario: usuario.nombre,
+            accion: "Creación",
+            detalle: "Tarea creada.",
+            timestamp: new Date().toISOString()
+        });
+        try {
+            const response = await fetch(`${BACKEND_URL}/tareas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(tareaData)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Error HTTP al crear tarea: ${response.status} - ${errorData.error || response.statusText}`);
+            }
+            const tareaCreada = await response.json();
+            tareas.push(tareaCreada);
+            showNoti("Tarea agregada exitosamente.", true);
+            renderizarTareas();
+            cerrarModalTarea();
+        } catch (err) {
+            showNoti(`Error al agregar tarea: ${err.message}`, false);
+            console.error("Error en guardarTarea (nueva):", err);
+        }
+    } else { 
+        const changes = getTaskChanges(tareaOriginal, tareaData); 
         if (changes.length > 0) {
             tareaData.HISTORIAL_TAREA.push({
                 usuario: usuario.nombre,
@@ -866,38 +926,11 @@ async function guardarTarea(event) {
                 timestamp: new Date().toISOString()
             });
         }
-    } else {
-         tareaData.HISTORIAL_TAREA.push({
-            usuario: usuario.nombre,
-            accion: "Creación",
-            detalle: "Tarea creada.",
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    try {
-        const response = await fetch(endpoint, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tareaData)
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Error HTTP al guardar tarea: ${response.status} - ${errorData.error || response.statusText}`);
+        const actualizacionExitosa = await actualizarTareaEnBackend(tareaData, id);
+        if (actualizacionExitosa) {
+            showNoti("Tarea actualizada exitosamente.", true);
+            cerrarModalTarea(); 
         }
-        const tareaGuardada = await response.json();
-        
-        if (esNuevaTarea) {
-            tareas.push(tareaGuardada); // Añadir la tarea devuelta por el backend (puede tener campos procesados)
-        } else {
-            tareas[existingTaskIndex] = tareaGuardada;
-        }
-        showNoti(`Tarea ${esNuevaTarea ? 'agregada' : 'actualizada'} exitosamente.`, true);
-        renderizarTareas();
-        cerrarModalTarea();
-    } catch (err) {
-        showNoti(`Error al guardar tarea: ${err.message}`, false);
-        console.error("Error en guardarTarea:", err);
     }
 }
 
@@ -906,11 +939,10 @@ function getTaskChanges(oldTask, newTask) {
     const changes = [];
     const fieldsToCompare = ['DESCRIPCION', 'RESPONSABLES', 'PRIORIDAD', 'FECHA_VENCIMIENTO', 'HORA_VENCIMIENTO', 'ESTADO_TAREA', 'MODULO_ASOCIADO'];
     fieldsToCompare.forEach(field => {
-        let oldValue = field === 'RESPONSABLES' ? ((oldTask[field] || oldTask[field.toLowerCase()]) || []).sort().join(', ') : (oldTask[field] || oldTask[field.toLowerCase()] || '');
+        let oldValue = field === 'RESPONSABLES' ? (oldTask[field] || []).sort().join(', ') : (oldTask[field] || '');
         let newValue = field === 'RESPONSABLES' ? (newTask[field] || []).sort().join(', ') : (newTask[field] || '');
         
         if (field === 'DESCRIPCION' && typeof oldValue === 'string') { oldValue = oldValue.toUpperCase(); }
-        // newTask.DESCRIPCION ya está en mayúsculas
         
         if (String(oldValue) !== String(newValue)) { 
             changes.push({ field: field.toLowerCase(), old: oldValue || '(vacío)', new: newValue || '(vacío)' });
@@ -933,7 +965,7 @@ async function eliminarTarea(idTarea) {
                 const errorData = await response.json();
                 throw new Error(`Error HTTP al eliminar tarea: ${response.status} - ${errorData.error || response.statusText}`);
             }
-            tareas = tareas.filter(t => (t.ID_TAREA || t.id_tarea) !== idTarea);
+            tareas = tareas.filter(t => t.ID_TAREA !== idTarea);
             renderizarTareas();
             showNoti(`Tarea ${idTarea} eliminada.`, true);
         } catch (err) {
@@ -946,18 +978,18 @@ async function eliminarTarea(idTarea) {
 }
 
 function renderizarComentariosTarea(idTarea) {
-    const tarea = tareas.find(t => (t.ID_TAREA || t.id_tarea) === idTarea);
+    const tarea = tareas.find(t => t.ID_TAREA === idTarea);
     if (!dom.taskCommentsList || !tarea) return;
-    const comentarios = tarea.COMENTARIOS || tarea.comentarios || [];
+    const comentarios = tarea.COMENTARIOS || [];
     dom.taskCommentsList.innerHTML = (comentarios.length > 0) 
         ? comentarios.map(c => `<div class="text-xs mb-1 p-1 bg-slate-100 rounded"><strong>${c.usuario}</strong> (${formatDateToUTCMinus3(c.timestamp)}): ${c.texto}</div>`).join('')
         : '<p class="text-xs text-slate-500 italic">No hay comentarios.</p>';
 }
 
 function renderizarHistorialTarea(idTarea) {
-    const tarea = tareas.find(t => (t.ID_TAREA || t.id_tarea) === idTarea);
+    const tarea = tareas.find(t => t.ID_TAREA === idTarea);
     if (!dom.taskHistoryList || !tarea) return;
-    const historial = tarea.HISTORIAL_TAREA || tarea.historial_tarea || [];
+    const historial = tarea.HISTORIAL_TAREA || [];
      dom.taskHistoryList.innerHTML = (historial.length > 0)
         ? historial.slice().reverse().map(h => `<div class="text-xs mb-1 p-1 bg-slate-100 rounded"><strong>${h.usuario}</strong> (${formatDateToUTCMinus3(h.timestamp)}): ${h.accion} - ${h.detalle}</div>`).join('')
         : '<p class="text-xs text-slate-500 italic">No hay historial para esta tarea.</p>';
@@ -965,12 +997,13 @@ function renderizarHistorialTarea(idTarea) {
 
 async function agregarComentarioTarea() {
     if (!tareaActualId || !dom.taskNewComment) return;
-    const tareaIndex = tareas.findIndex(t => (t.ID_TAREA || t.id_tarea) === tareaActualId);
+    const tareaIndex = tareas.findIndex(t => t.ID_TAREA === tareaActualId);
     if (tareaIndex === -1) { showNoti("Error: Tarea no encontrada.", false); return; }
     
     let tarea = tareas[tareaIndex];
+    const responsablesTarea = tarea.RESPONSABLES;
+    const puedeComentar = (responsablesTarea && responsablesTarea.includes(usuario.rol)) || usuario.rol === 'admin';
 
-    const puedeComentar = ( (tarea.RESPONSABLES || tarea.responsables) && (tarea.RESPONSABLES || tarea.responsables).includes(usuario.rol)) || usuario.rol === 'admin';
     if (!puedeComentar) { showNoti("No tienes permiso para agregar comentarios a esta tarea.", false); return; }
     
     const textoComentario = dom.taskNewComment.value.trim();
@@ -978,45 +1011,21 @@ async function agregarComentarioTarea() {
 
     const nuevoComentario = { usuario: usuario.nombre, texto: textoComentario, timestamp: new Date().toISOString() };
     const nuevaEntradaHistorial = { usuario: usuario.nombre, accion: "Comentario agregado", detalle: `"${textoComentario}"`, timestamp: new Date().toISOString() };
-
-    // Actualizar localmente primero para UI optimista
-    const comentariosActualizados = [...(tarea.COMENTARIOS || tarea.comentarios || []), nuevoComentario];
-    const historialActualizado = [...(tarea.HISTORIAL_TAREA || tarea.historial_tarea || []), nuevaEntradaHistorial];
     
-    // Crear un objeto de tarea actualizado para enviar al backend
-    // Asegurándose de usar las claves que el backend espera (mayúsculas)
     const tareaActualizadaParaBackend = {
-        ...tarea, // Copia todas las propiedades existentes
-        COMENTARIOS: comentariosActualizados,
-        HISTORIAL_TAREA: historialActualizado
+        ...tarea, 
+        COMENTARIOS: [...(tarea.COMENTARIOS || []), nuevoComentario],
+        HISTORIAL_TAREA: [...(tarea.HISTORIAL_TAREA || []), nuevaEntradaHistorial]
     };
-    // Eliminar claves en minúscula si existen para evitar duplicados o confusión
-    delete tareaActualizadaParaBackend.comentarios;
-    delete tareaActualizadaParaBackend.historial_tarea;
-
-
-    try {
-        const response = await fetch(`${BACKEND_URL}/tareas/${tareaActualId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tareaActualizadaParaBackend)
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Error HTTP al agregar comentario: ${response.status} - ${errorData.error || response.statusText}`);
-        }
-        // Actualizar el array local 'tareas' con la respuesta del servidor (que debería ser la tarea completa actualizada)
-        tareas[tareaIndex] = await response.json(); 
-        
+    
+    const actualizacionExitosa = await actualizarTareaEnBackend(tareaActualizadaParaBackend, tareaActualId);
+    if (actualizacionExitosa) {
         renderizarComentariosTarea(tareaActualId);
         renderizarHistorialTarea(tareaActualId); 
         dom.taskNewComment.value = '';
         showNoti("Comentario agregado y tarea actualizada.", true);
-    } catch (err) {
-        showNoti(`Error al guardar comentario: ${err.message}`, false);
-        console.error("Error en agregarComentarioTarea:", err);
-        // Si falla el backend, podríamos considerar revertir los cambios locales,
-        // pero por ahora la UI se actualizó optimistamente.
+    } else {
+        showNoti("Error al guardar comentario. Intente de nuevo.", false);
     }
 }
 
@@ -1026,7 +1035,7 @@ function setupMultiSelectResponsables() {
     dom.taskResponsablesSelected.addEventListener('click', (e) => {
         e.stopPropagation(); 
         const esAdmin = usuario && usuario.rol === 'admin';
-        const tareaExistente = tareaActualId && tareas.find(t => (t.ID_TAREA || t.id_tarea) === tareaActualId);
+        const tareaExistente = tareaActualId && tareas.find(t => t.ID_TAREA === tareaActualId);
         const puedeAbrirDropdown = esAdmin || !tareaExistente;
 
         if (puedeAbrirDropdown) {
@@ -1097,6 +1106,37 @@ function setupEventListeners() {
   dom.taskModalBg?.addEventListener('click', (e) => { if (e.target === dom.taskModalBg) cerrarModalTarea(); });
   dom.taskForm?.addEventListener('submit', guardarTarea);
   dom.taskAddCommentBtn?.addEventListener('click', agregarComentarioTarea);
+
+  dom.taskEstado?.addEventListener('change', async (event) => {
+    if (!tareaActualId || !usuario) return;
+    const tarea = tareas.find(t => t.ID_TAREA === tareaActualId);
+    if (!tarea) return;
+
+    const esResponsableNoAdmin = (usuario.rol === 'deposito' && tarea.RESPONSABLES.includes('deposito')) || 
+                               (usuario.rol === 'ventas' && tarea.RESPONSABLES.includes('ventas'));
+    
+    if (esResponsableNoAdmin && tarea.ESTADO_TAREA !== event.target.value) {
+        console.log(`Cambio de estado detectado por usuario ${usuario.rol}. Guardando...`);
+        const tareaData = { ...tarea }; 
+        tareaData.ESTADO_TAREA = event.target.value; 
+        
+        if (!tareaData.HISTORIAL_TAREA) tareaData.HISTORIAL_TAREA = [];
+         tareaData.HISTORIAL_TAREA.push({
+            usuario: usuario.nombre,
+            accion: "Cambio de estado",
+            detalle: `Estado cambiado a "${event.target.value}"`,
+            timestamp: new Date().toISOString()
+        });
+
+        const actualizacionExitosa = await actualizarTareaEnBackend(tareaData, tareaActualId);
+        if (actualizacionExitosa) {
+            showNoti("Estado de tarea actualizado.", true);
+        } else {
+            event.target.value = tarea.ESTADO_TAREA; 
+        }
+    }
+  });
+
 
   setupMultiSelectResponsables();
   setupCollapsibleModules(); 
