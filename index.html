@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión Centralizada de Pedidos y Tareas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    @keyframes pop { 0% {transform: scale(0.94);} 80% {transform: scale(1.06);} 100% {transform: scale(1);} }
+    .animate-pop { animation: pop 0.35s cubic-bezier(.53,1.77,.51,.95); }
+    .stat-box-animate-pop { animation: pop 0.45s cubic-bezier(.53,1.77,.51,.95); }
+    @media print {
+      body > *:not(#ticket-print-wrapper):not(#app-width-selector-wrapper) { display: none !important; }
+      #ticket-print-wrapper { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+      #ticket-print { visibility: visible !important; width: 79mm !important; min-width: 0 !important; background: #fff !important; color: #000 !important; font-family: monospace; margin: 0; padding: 0; box-shadow: none; border: none; }
+      #ticket-print * { visibility: visible !important; font-family: monospace !important; }
+      .ticket-table { width: 100%; font-size: 10pt; border-collapse: collapse; margin-bottom: 10px; }
+      .ticket-table th, .ticket-table td { border: 1px solid #222; padding: 2px 4px; font-weight: normal; text-align: left; }
+      #ticket-print button { display: none !important; }
+    }
+    .filter-input[type="date"], .task-modal-input[type="date"], .task-modal-input[type="time"] { padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; line-height: 1.25rem; color: #374151; background-color: #fff; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+    .filter-input[type="date"]:focus, .task-modal-input[type="date"]:focus, .task-modal-input[type="time"]:focus { border-color: #3b82f6; outline: 0; box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25); }
+    .multi-select-container { position: relative; }
+    .multi-select-selected { border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; min-height: 38px; }
+    .multi-select-options { display: none; position: absolute; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; max-height: 150px; overflow-y: auto; z-index: 10; width: 100%; margin-top: 2px;}
+    .multi-select-options label { display: block; padding: 0.5rem; cursor: pointer; }
+    .multi-select-options label:hover { background-color: #f3f4f6; }
+    .module-header {
+        cursor: pointer;
+        user-select: none;
+    }
+    .module-content {
+        overflow: hidden;
+    }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'custom-blue': '#2563eb', 'custom-green': '#16a34a', 'custom-yellow': '#facc15', 
+            'custom-red': '#dc2626', 'custom-orange': '#ea580c', 'custom-purple': '#a259f7',
+            'custom-gray': '#6b7280', 'text-dark': '#22223b',
+            'priority-low': '#22c55e', 'priority-medium': '#eab308', 'priority-high': '#ef4444',
+          },
+          borderRadius: { 'custom': '18px', }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-100 text-slate-800 text-base min-h-screen">
+
+<div id="noti-badge" class="fixed top-4 right-4 bg-blue-600 text-white rounded-xl py-2 px-6 z-[2000] font-bold shadow-lg hidden flex items-center justify-between">
+  <span id="noti-message"></span>
+  <div class="flex items-center">
+    <button id="noti-ok-btn" class="ml-4 bg-white text-blue-600 px-3 py-1 rounded-md text-sm font-semibold hidden">OK</button>
+    <button id="noti-close-btn" class="ml-2 text-white text-xl leading-none hover:text-slate-200">&times;</button>
+  </div>
+</div>
+
+<div id="login-panel" class="bg-white rounded-custom shadow-lg p-9 max-w-sm mx-auto mt-16 sm:mt-32">
+  <h2 class="text-2xl font-bold mb-6 text-center text-custom-blue">Iniciar sesión</h2>
+  <form id="login-form">
+    <div class="mb-4">
+      <label for="login-user" class="block mb-1.5 font-medium text-slate-700">Usuario</label>
+      <select id="login-user" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+        <option value="admin">Admin</option>
+        <option value="ventas">Ventas</option>
+        <option value="deposito">Depósito</option>
+      </select>
+    </div>
+    <div class="mb-6">
+      <label for="login-pass" class="block mb-1.5 font-medium text-slate-700">Contraseña</label>
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="Contraseña" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+    </div>
+    <button type="submit" class="w-full bg-custom-green text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Entrar</button>
+  </form>
+</div>
+
+<div id="main-app" class="container max-w-6xl mx-auto my-10 bg-white rounded-custom shadow-lg p-6 sm:p-9 hidden">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+    <div>
+      <h2 class="text-3xl font-bold text-custom-blue">Gestión Centralizada</h2>
+      <div id="sync-log" class="text-sm mt-1 text-slate-500">Sincronizando...</div>
+    </div>
+    <div class="flex flex-col items-end gap-2 mt-4 sm:mt-0"> 
+      <div id="app-width-selector-wrapper" class="flex items-center gap-1">
+        <label for="app-width-selector" class="text-xs font-medium text-slate-500 whitespace-nowrap">Resolución:</label>
+        <select id="app-width-selector" class="text-xs p-1 rounded border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+          <option value="max-w-6xl">Normal</option>
+          <option value="max-w-7xl">Medio</option>
+          <option value="max-w-screen-2xl">Ancho</option>
+          <option value="max-w-full">Total</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-2"> 
+        <button id="logout-btn" title="Cerrar sesión" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-between items-center mb-6">
+      <button id="btn-agregar-tarea-global" class="bg-custom-purple text-white font-semibold py-2 px-5 rounded-lg hover:bg-purple-700 transition shadow-md admin-only text-sm" style="display:none;">
+          Agregar Tarea
+      </button>
+      <button id="refresh-button" class="bg-custom-green text-white font-semibold py-2 px-5 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md text-sm">Sincronizar Datos</button>
+  </div>
+
+
+  <div id="sales-stats-wrapper" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
+    <div class="stat-box-animate-pop bg-custom-blue text-white p-5 rounded-custom shadow-md flex flex-col items-start min-h-[120px]">
+      <div class="text-lg text-white">Total Activos</div><div class="stat-number text-3xl font-bold text-white" id="stat-total">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-purple text-white p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">En Espera</div><div class="stat-number text-3xl font-bold text-white" id="stat-espera">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-orange text-white p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">Procesando</div><div class="stat-number text-3xl font-bold text-white" id="stat-procesando">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-yellow p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">Preparando</div><div class="stat-number text-3xl font-bold text-white" id="stat-preparando">0</div>
+    </div>
+    <div class="stat-box-animate-pop bg-custom-green text-white p-5 rounded-custom shadow-md flex flex-col items-start">
+      <div class="text-lg text-white">Completado (Activo)</div><div class="stat-number text-3xl font-bold text-white" id="stat-completado">0</div>
+    </div>
+  </div>
+
+  <div id="modulo-ventas" class="mb-8 border border-slate-300 rounded-lg shadow-sm">
+    <div class="module-header flex justify-between items-center bg-slate-200 p-3 rounded-t-lg" data-module-id="modulo-ventas-content">
+        <h3 class="text-xl font-semibold text-slate-700">Módulo de Ventas</h3>
+        <button class="module-toggle-btn text-xl font-bold text-slate-600 hover:text-slate-800">-</button>
+    </div>
+    <div id="modulo-ventas-content" class="module-content p-4">
+        <div id="filtros-ventas" class="flex flex-wrap gap-3 mb-6 items-center">
+            <select id="filtro-fase" class="filter-input">
+              <option value="ACTIVE_ONLY" selected>Fases Activas</option>
+              <option value="EN ESPERA">En Espera</option>
+              <option value="PROCESANDO">Procesando</option>
+              <option value="PREPARANDO">Preparando</option>
+              <option value="PREPARANDO MODIFICADO">Preparando Modificado</option>
+              <option value="COMPLETADOS_ACTIVOS">Completados Activos</option> 
+              <option value="CANCELADO">Cancelado</option>
+              <option value="ALL_PHASES">Todas las fases (incluir completados y cancelados)</option>
+            </select>
+            <select id="filtro-pago" class="filter-input">
+              <option value="">Pago (Todos)</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="no_confirmado">No Confirmado</option>
+            </select>
+            <select id="filtro-envio-ventas" class="filter-input">
+                <option value="">Método Envío (Todos)</option>
+                <option value="DAC">DAC</option>
+                <option value="GESTION POS">GESTION POS</option>
+                <option value="PICK UP">PICK UP</option>
+            </select>
+            <select id="filtro-woo" class="filter-input">
+              <option value="">Estado Woo (Todos)</option>
+              <option value="pending">Pendiente de pago</option>
+              <option value="on-hold">En espera</option>
+              <option value="processing">Procesando</option>
+              <option value="completed">Completado</option>
+            </select>
+            <input type="date" id="filtro-fecha-inicio-ventas" class="filter-input" title="Fecha inicio filtro ventas">
+            <input type="date" id="filtro-fecha-fin-ventas" class="filter-input" title="Fecha fin filtro ventas">
+            <input type="search" id="filtro-buscar" placeholder="Buscar Pedidos..." class="filter-input flex-grow">
+        </div>
+        <div class="overflow-x-auto bg-white rounded-md shadow-md">
+          <table id="tabla-ventas" class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs text-white uppercase bg-custom-blue">
+              <tr>
+                <th scope="col" class="px-4 py-3">ID</th> <th scope="col" class="px-4 py-3">Cliente</th>
+                <th scope="col" class="px-4 py-3">Método de Envío</th> <th scope="col" class="px-4 py-3">Monto $</th>
+                <th scope="col" class="px-4 py-3">Estado de Pago</th> <th scope="col" class="px-4 py-3">Estado WooCommerce</th>
+                <th scope="col" class="px-4 py-3">Fase</th> <th scope="col" class="px-4 py-3">Fecha</th>
+                <th scope="col" class="px-4 py-3">Acción</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="mt-8">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-lg font-semibold text-slate-700">Tareas - Ventas</h4>
+                </div>
+            <div class="overflow-x-auto bg-white rounded-md shadow-md">
+                <table id="tabla-tareas-ventas" class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-white uppercase bg-custom-purple">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">ID</th> <th scope="col" class="px-4 py-3">Descripción</th>
+                            <th scope="col" class="px-4 py-3">Responsables</th> <th scope="col" class="px-4 py-3">Prioridad</th>
+                            <th scope="col" class="px-4 py-3">Vencimiento</th> <th scope="col" class="px-4 py-3">Estado</th>
+                            <th scope="col" class="px-4 py-3">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div id="modulo-deposito" class="mb-8 border border-slate-300 rounded-lg shadow-sm" style="display:none;">
+    <div class="module-header flex justify-between items-center bg-slate-200 p-3 rounded-t-lg" data-module-id="modulo-deposito-content">
+        <h3 class="text-xl font-semibold text-slate-700">Módulo de Depósito</h3>
+        <button class="module-toggle-btn text-xl font-bold text-slate-600 hover:text-slate-800">-</button>
+    </div>
+    <div id="modulo-deposito-content" class="module-content p-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
+            <div class="stat-box-animate-pop bg-custom-blue text-white p-6 rounded-2xl shadow-lg flex flex-col items-start min-h-[120px]">
+                <div class="text-lg text-white">DAC</div><div class="stat-number text-3xl font-bold text-white" id="stat-dac">0</div>
+            </div>
+            <div class="stat-box-animate-pop bg-custom-yellow p-6 rounded-2xl shadow-lg flex flex-col items-start">
+                <div class="text-lg text-white">GESTION POS</div><div class="stat-number text-3xl font-bold text-white" id="stat-gp">0</div>
+            </div>
+            <div class="stat-box-animate-pop bg-custom-red text-white p-6 rounded-2xl shadow-lg flex flex-col items-start">
+                <div class="text-lg text-white">PICK UP</div><div class="stat-number text-3xl font-bold text-white" id="stat-pickup">0</div>
+            </div>
+            <div class="stat-box-animate-pop bg-purple-600 text-white p-6 rounded-2xl shadow-lg flex flex-col items-start">
+                <div class="text-lg text-white">Modificados</div><div class="stat-number text-3xl font-bold text-white" id="stat-modificados">0</div>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-3 mb-6 items-center">
+          <select id="filtro-fase-dep" class="filter-input">
+            <option value="DEFAULT_DEPOSIT_FILTER" selected>Fases de Depósito (Activas)</option>
+            <option value="PREPARANDO">Preparando</option>
+            <option value="PREPARANDO MODIFICADO">Preparando Modificado</option>
+            <option value="MODIFICADOS_AGRUPADOS">Pedidos Modificados (Agrupados)</option>
+          </select>
+          <select id="filtro-envio-dep" class="filter-input">
+            <option value="">Método Envío (Todos)</option>
+            <option value="DAC">DAC</option>
+            <option value="GESTION POS">GESTION POS</option>
+            <option value="PICK UP">PICK UP</option>
+          </select>
+          <input type="date" id="filtro-fecha-inicio-dep" class="filter-input" title="Fecha inicio filtro depósito">
+          <input type="date" id="filtro-fecha-fin-dep" class="filter-input" title="Fecha fin filtro depósito">
+          <input type="search" id="filtro-buscar-dep" placeholder="Buscar Pedidos..." class="filter-input flex-grow">
+        </div>
+        <div class="overflow-x-auto bg-white rounded-md shadow-md">
+          <table id="tabla-deposito" class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs text-white uppercase bg-custom-blue">
+              <tr>
+                <th scope="col" class="px-4 py-3">ID</th> <th scope="col" class="px-4 py-3">Cliente</th>
+                <th scope="col" class="px-4 py-3">Método Envío</th> <th scope="col" class="px-4 py-3">Fase</th>
+                <th scope="col" class="px-4 py-3">Fecha</th> <th scope="col" class="px-4 py-3 text-center">Ticket</th>
+                <th scope="col" class="px-4 py-3">Acción</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="mt-8">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-lg font-semibold text-slate-700">Tareas - Depósito</h4>
+                </div>
+            <div class="overflow-x-auto bg-white rounded-md shadow-md">
+                <table id="tabla-tareas-deposito" class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-white uppercase bg-custom-purple">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">ID</th> <th scope="col" class="px-4 py-3">Descripción</th>
+                            <th scope="col" class="px-4 py-3">Responsables</th> <th scope="col" class="px-4 py-3">Prioridad</th>
+                            <th scope="col" class="px-4 py-3">Vencimiento</th> <th scope="col" class="px-4 py-3">Estado</th>
+                            <th scope="col" class="px-4 py-3">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div id="modulo-admin" class="mb-8 border border-slate-300 rounded-lg shadow-sm" style="display:none;">
+    <div class="module-header flex justify-between items-center bg-slate-200 p-3 rounded-t-lg" data-module-id="modulo-admin-content">
+        <h3 class="text-xl font-semibold text-slate-700">Módulo de Administrador</h3>
+        <button class="module-toggle-btn text-xl font-bold text-slate-600 hover:text-slate-800">-</button>
+    </div>
+    <div id="modulo-admin-content" class="module-content p-4">
+        <div class="flex justify-between items-center mb-4">
+            <h4 class="text-lg font-semibold text-slate-700">Tareas - Admin</h4>
+            </div>
+        <div class="overflow-x-auto bg-white rounded-md shadow-md">
+            <table id="tabla-tareas-admin" class="w-full text-sm text-left text-slate-600">
+                <thead class="text-xs text-white uppercase bg-custom-purple"> <tr>
+                        <th scope="col" class="px-4 py-3">ID</th> <th scope="col" class="px-4 py-3">Descripción</th>
+                        <th scope="col" class="px-4 py-3">Responsables</th> <th scope="col" class="px-4 py-3">Prioridad</th>
+                        <th scope="col" class="px-4 py-3">Vencimiento</th> <th scope="col" class="px-4 py-3">Estado</th>
+                        <th scope="col" class="px-4 py-3">Módulo Asociado</th>
+                        <th scope="col" class="px-4 py-3">Acción</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+
+</div> 
+
+<div id="modal-bg" class="fixed inset-0 z-[1050] bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4"> 
+  <div id="modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-lg w-full p-7 relative max-h-[90vh] overflow-y-auto">
+    <button id="modal-close" title="Cerrar" class="absolute top-4 right-5 text-slate-400 hover:text-custom-red text-3xl leading-none">&times;</button>
+    <div id="modal-title" class="text-xl font-bold mb-5 text-custom-blue"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div id="task-modal-bg" class="fixed inset-0 z-[1060] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div id="task-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-xl w-full p-7 relative max-h-[90vh] overflow-y-auto">
+    <button id="task-modal-close" title="Cerrar" class="absolute top-4 right-5 text-slate-400 hover:text-custom-red text-3xl leading-none">&times;</button>
+    <h3 id="task-modal-title" class="text-2xl font-bold mb-6 text-custom-purple">Nueva Tarea</h3>
+    <form id="task-form">
+      <input type="hidden" id="task-id">
+      <input type="hidden" id="task-modulo-asociado">
+
+      <div class="mb-4">
+        <label for="task-descripcion" class="block text-sm font-medium text-slate-700 mb-1">Descripción <span class="text-red-500">*</span></label>
+        <textarea id="task-descripcion" class="task-modal-input w-full" rows="3" required></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label for="task-responsables" class="block text-sm font-medium text-slate-700 mb-1">Responsables <span class="text-red-500">*</span></label>
+          <div id="task-responsables-container" class="multi-select-container">
+            <div id="task-responsables-selected" class="multi-select-selected">Seleccionar...</div>
+            <div id="task-responsables-options" class="multi-select-options">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label for="task-prioridad" class="block text-sm font-medium text-slate-700 mb-1">Prioridad <span class="text-red-500">*</span></label>
+          <select id="task-prioridad" class="task-modal-input w-full" required>
+            <option value="Baja">Baja</option>
+            <option value="Media" selected>Media</option>
+            <option value="Alta">Alta</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label for="task-fecha-vencimiento" class="block text-sm font-medium text-slate-700 mb-1">Fecha y Hora de Vencimiento</label>
+          <div class="flex gap-2">
+            <input type="date" id="task-fecha-vencimiento" class="task-modal-input w-2/3">
+            <input type="time" id="task-hora-vencimiento" class="task-modal-input w-1/3">
+          </div>
+        </div>
+        <div>
+          <label for="task-estado" class="block text-sm font-medium text-slate-700 mb-1">Estado <span class="text-red-500">*</span></label>
+          <select id="task-estado" class="task-modal-input w-full" required>
+            <option value="Pendiente" selected>Pendiente</option>
+            <option value="En curso">En curso</option>
+            <option value="Completada">Completada</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="mt-8 flex justify-end gap-3">
+        <button type="button" id="task-modal-cancel" class="font-semibold py-2 px-5 rounded-lg shadow-md bg-slate-200 hover:bg-slate-300 text-slate-700 transition">Cancelar</button>
+        <button type="submit" id="task-modal-save" class="font-semibold py-2 px-5 rounded-lg shadow-md bg-custom-green text-white hover:bg-green-700 transition">Guardar Tarea</button>
+      </div>
+    </form>
+    <div id="task-details-extra-info" class="mt-6 pt-4 border-t border-slate-200 hidden">
+        <h4 class="text-lg font-semibold text-slate-700 mb-2">Comentarios</h4>
+        <div id="task-comments-list" class="mb-4 max-h-32 overflow-y-auto bg-slate-50 p-2 rounded"></div>
+        <div id="task-add-comment-section">
+            <textarea id="task-new-comment" class="task-modal-input w-full mb-2" rows="2" placeholder="Agregar un comentario..."></textarea>
+            <button id="task-add-comment-btn" class="bg-custom-blue text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-blue-700 transition">Agregar Comentario</button>
+        </div>
+        <h4 class="text-lg font-semibold text-slate-700 mt-6 mb-2">Historial de la Tarea</h4>
+        <div id="task-history-list" class="max-h-40 overflow-y-auto bg-slate-50 p-2 rounded text-sm"></div>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-modal-bg" class="fixed inset-0 z-[2000] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4"> <div id="confirm-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative"> <div id="confirm-modal-message" class="text-lg font-semibold mb-5 text-slate-700 text-center"></div> <div class="flex justify-center gap-4"> <button id="confirm-modal-cancel" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-red-500 text-white hover:bg-red-700 focus:ring-red-500">Cancelar</button> <button id="confirm-modal-ok" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-custom-green text-white hover:bg-green-700 focus:ring-custom-green">Confirmar</button> </div> </div> </div>
+<div id="attention-modal-bg" class="fixed inset-0 z-[2000] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4"> <div id="attention-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative"> <div id="attention-modal-message" class="text-lg font-semibold mb-5 text-slate-700 text-center"></div> <div class="flex justify-center"> <button id="attention-modal-ok" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-custom-green text-white hover:bg-green-700 focus:ring-custom-green">OK</button> </div> </div> </div>
+<div id="ticket-print-wrapper" class="hidden print:block"> <div id="ticket-print" class="hidden print:block"></div> </div>
+<div id="app-width-selector-wrapper" class="fixed bottom-4 left-4 z-[1000] bg-white p-2 rounded-lg shadow-md flex items-center gap-2" style="display: none;"> <label for="app-width-selector" class="text-xs font-medium text-slate-600 whitespace-nowrap">Resolución:</label> <select id="app-width-selector" class="text-xs p-1.5 rounded-md border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition bg-white"> <option value="max-w-6xl">Normal</option> <option value="max-w-7xl">Medio</option> <option value="max-w-screen-2xl">Ancho</option> <option value="max-w-full">Total</option> </select> </div>
+
+<script>
+'use strict';
+
+const dom = {
+    notiBadge: null, notiMessage: null, notiCloseBtn: null, notiOkBtn: null,
+    loginPanel: null, loginForm: null, loginUser: null, loginPass: null,
+    mainApp: null, logoutBtn: null, syncLog: null,
+    statTotal: null, statEspera: null, statProcesando: null, statPreparando: null, statCompletado: null,
+    statDac: null, statGp: null, statPickup: null, statModificados: null, 
+    filtrosVentas: null, filtroFase: null, filtroPago: null, filtroWoo: null, filtroBuscar: null,
+    filtroEnvioVentas: null, filtroFechaInicioVentas: null, filtroFechaFinVentas: null,   
+    refreshButton: null, 
+    
+    moduloVentas: null, moduloVentasContent: null, tablaVentasBody: null,
+    moduloDeposito: null, moduloDepositoContent: null, tablaDepositoBody: null,
+    moduloAdmin: null, moduloAdminContent: null, 
+    
+    modalBg: null, modalBox: null, modalClose: null,
+    modalTitle: null, modalContent: null, ticketPrint: null, ticketPrintWrapper: null,
+    confirmModalBg: null, confirmModalBox: null, confirmModalMessage: null,
+    confirmModalCancel: null, confirmModalOk: null, attentionModalBg: null,
+    attentionModalMessage: null, attentionModalOk: null, salesStatsWrapper: null,
+    productosDisplayTable: null, productosEditArea: null, modalEditProductosBtn: null,
+    appWidthSelector: null, appWidthSelectorWrapper: null,
+
+    btnAgregarTareaGlobal: null, 
+    tablaTareasVentasBody: null,
+    tablaTareasDepositoBody: null,
+    tablaTareasAdminBody: null, 
+    
+    taskModalBg: null, taskModalBox: null, taskModalClose: null, taskModalTitle: null,
+    taskForm: null, taskId: null, taskDescripcion: null, taskResponsablesContainer: null,
+    taskResponsablesSelected: null, taskResponsablesOptions: null, taskPrioridad: null,
+    taskFechaVencimiento: null, taskHoraVencimiento: null, 
+    taskEstado: null, /* taskTipoTarea: null, // Eliminado */ taskModalCancel: null,
+    taskModalSave: null, taskModuloAsociado: null,
+    taskDetailsExtraInfo: null, taskCommentsList: null, taskNewComment: null, 
+    taskAddCommentBtn: null, taskHistoryList: null, taskAddCommentSection: null,
+};
+
+function cacheDOMElements() {
+    for (const key in dom) {
+        const id = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        dom[key] = document.getElementById(id);
+    }
+    dom.tablaVentasBody = document.querySelector('#tabla-ventas tbody');
+    dom.tablaDepositoBody = document.querySelector('#tabla-deposito tbody');
+    dom.tablaTareasVentasBody = document.querySelector('#tabla-tareas-ventas tbody');
+    dom.tablaTareasDepositoBody = document.querySelector('#tabla-tareas-deposito tbody');
+    dom.tablaTareasAdminBody = document.querySelector('#tabla-tareas-admin tbody'); 
+    dom.taskAddCommentSection = document.getElementById('task-add-comment-section');
+}
+
+const BACKEND_URL = 'https://gestor-pedidos-api-online.onrender.com';
+const USERS = {
+  admin:    { pass: "admin123",   rol: "admin",    nombre: "Admin" },
+  ventas:   { pass: "ventas2024", rol: "ventas",   nombre: "Ventas" },
+  deposito: { pass: "deposito321",rol: "deposito", nombre: "Depósito" }
+};
+const OPCIONES_EMPAQUE = { "DAC": ["", "20x20", "30x30", "40x40", "50x50", "60x60"], "GESTION POS": ["", "S", "M", "L"] };
+const WOOCOMMERCE_TRANSLATE = { "pending": "Pendiente de pago", "on-hold": "En espera", "processing": "Procesando", "completed": "Completado" };
+const DEPARTAMENTO_MAP = { 'AR': 'Artigas', 'CA': 'Canelones', 'CL': 'Cerro Largo', 'CO': 'Colonia', 'DU': 'Durazno', 'FS': 'Flores', 'FD': 'Florida', 'LA': 'Lavalleja', 'MA': 'Maldonado', 'MO': 'Montevideo', 'PA': 'Paysandú', 'RN': 'Río Negro', 'RV': 'Rivera', 'RO': 'Rocha', 'SA': 'Salto', 'SJ': 'San José', 'SO': 'Soriano', 'TA': 'Tacuarembó', 'TT': 'Treinta y Tres', };
+const FIELDS_TO_TRACK_VENTAS = [ 'CLIENTE', 'DIRECCION', 'TELEFONO', 'EMAIL', 'NOTAS', 'METODO_ENVIO', 'ESTADO_PAGO', 'ENTREGADO', 'FACTURADO', 'AVISO_CLIENTE', 'FASE', 'TICKET_IMPRESO', 'FECHA_INGRESO_SISTEMA', 'BARRIO_LOCALIDAD', 'DEPARTAMENTO', 'ETIQUETA_EMITIDA', 'PRODUCTS', 'FASE_ANTERIOR_CANCELACION' ];
+const FIELDS_TO_TRACK_DEPOSITO = ['FASE', 'EMPAQUE'];
+const APP_WIDTH_CLASSES = ['max-w-6xl', 'max-w-7xl', 'max-w-screen-2xl', 'max-w-full'];
+
+let usuario = null;
+let pedidos = [];
+let tareas = []; // Se cargará desde el backend
+let pedidoActualIdx = null;
+let tareaActualId = null; 
+let printCount = {}; 
+let originalPedidoState = null;
+let notiTimeoutId = null; 
+
+function formatDateToDisplay(dateString) { if (!dateString) return ''; try { const [year, month, day] = dateString.split('-'); if (!year || !month || !day) return dateString; return `${day}/${month}/${String(year).slice(-2)}`; } catch (e) { return dateString; } }
+function formatDateToUTCMinus3(dateString, includeTime = true) { if (!dateString) return ''; try { let originalUtcDate; const customFormatMatch = String(dateString).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/); if (customFormatMatch) { const day = parseInt(customFormatMatch[1], 10); const month = parseInt(customFormatMatch[2], 10) - 1; const year = parseInt(customFormatMatch[3], 10); const hours = parseInt(customFormatMatch[4], 10); const minutes = parseInt(customFormatMatch[5], 10); const seconds = customFormatMatch[6] ? parseInt(customFormatMatch[6], 10) : 0; originalUtcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds)); } else { originalUtcDate = new Date(dateString); } if (isNaN(originalUtcDate.getTime())) { return dateString; } const dateInUTCMinus3 = new Date(originalUtcDate.getTime() - (3 * 60 * 60 * 1000)); const d = String(dateInUTCMinus3.getUTCDate()).padStart(2, '0'); const m = String(dateInUTCMinus3.getUTCMonth() + 1).padStart(2, '0'); const y = String(dateInUTCMinus3.getUTCFullYear()).slice(-2); if (includeTime) { const h = String(dateInUTCMinus3.getUTCHours()).padStart(2, '0'); const min = String(dateInUTCMinus3.getUTCMinutes()).padStart(2, '0'); return `${d}/${m}/${y} ${h}:${min}`; } else { return `${d}/${m}/${y}`; } } catch (e) { return dateString; } }
+function getDepartamentoFullName(code) { if (!code) return ''; const upperCode = String(code).toUpperCase().trim(); const key = upperCode.startsWith('UY-') ? upperCode.substring(3) : upperCode; return DEPARTAMENTO_MAP[key] || code; }
+function getMetodoEnvioDisplayName(metodo) { const normalizedMetodo = (metodo || "").trim().toUpperCase(); if (normalizedMetodo === "GESTION POS" || normalizedMetodo === "GESTIÓN POST") { return "GESTION POS"; } return metodo || ""; }
+function showNoti(msg, isSuccess = true) { if (!dom.notiBadge || !dom.notiMessage || !dom.notiCloseBtn || !dom.notiOkBtn) return; if (notiTimeoutId) clearTimeout(notiTimeoutId); dom.notiMessage.textContent = msg; dom.notiBadge.classList.remove('hidden', 'bg-blue-600', 'bg-red-600', 'bg-green-600'); dom.notiBadge.classList.add(isSuccess === null ? 'bg-blue-600' : (isSuccess ? 'bg-green-600' : 'bg-red-600')); dom.notiBadge.style.display = 'flex'; dom.notiOkBtn.classList.add('hidden'); dom.notiCloseBtn.onclick = hideNoti; notiTimeoutId = setTimeout(hideNoti, 3000); }
+function hideNoti() { if (dom.notiBadge) dom.notiBadge.style.display = 'none'; if (dom.notiOkBtn) dom.notiOkBtn.onclick = null; if (dom.notiCloseBtn) dom.notiCloseBtn.onclick = null; if (notiTimeoutId) { clearTimeout(notiTimeoutId); notiTimeoutId = null; } }
+function showAttentionModal(message) { return new Promise(resolve => { if (!dom.attentionModalBg || !dom.attentionModalMessage || !dom.attentionModalOk) { resolve(false); return; } dom.attentionModalMessage.textContent = message; dom.attentionModalBg.classList.remove('hidden'); dom.attentionModalBg.classList.add('flex'); const handleOk = () => { dom.attentionModalBg.classList.add('hidden'); dom.attentionModalBg.classList.remove('flex'); dom.attentionModalOk.removeEventListener('click', handleOk); resolve(true); }; dom.attentionModalOk.addEventListener('click', handleOk); }); }
+function mostrarSyncLog(text, ok) { if (!dom.syncLog) return; dom.syncLog.textContent = text; dom.syncLog.classList.remove('text-green-600', 'text-red-600', 'text-slate-500'); dom.syncLog.classList.add(ok === true ? 'text-green-600' : (ok === false ? 'text-red-600' : 'text-slate-500')); }
+function showConfirmationModal(message) { return new Promise(resolve => { if (!dom.confirmModalBg || !dom.confirmModalMessage || !dom.confirmModalOk || !dom.confirmModalCancel) { resolve(false); return; } dom.confirmModalMessage.textContent = message; dom.confirmModalBg.classList.remove('hidden'); dom.confirmModalBg.classList.add('flex'); const handleConfirm = () => { dom.confirmModalBg.classList.add('hidden'); dom.confirmModalBg.classList.remove('flex'); dom.confirmModalOk.removeEventListener('click', handleConfirm); dom.confirmModalCancel.removeEventListener('click', handleCancel); resolve(true); }; const handleCancel = () => { dom.confirmModalBg.classList.add('hidden'); dom.confirmModalBg.classList.remove('flex'); dom.confirmModalOk.removeEventListener('click', handleConfirm); dom.confirmModalCancel.removeEventListener('click', handleCancel); resolve(false); }; dom.confirmModalOk.addEventListener('click', handleConfirm); dom.confirmModalCancel.addEventListener('click', handleCancel); }); }
+function applyAppWidth(newWidthClass) { if (!dom.mainApp || !newWidthClass || !APP_WIDTH_CLASSES.includes(newWidthClass)) { console.warn("Invalid width class or mainApp element not found for applyAppWidth:", newWidthClass); return; } APP_WIDTH_CLASSES.forEach(cls => dom.mainApp.classList.remove(cls)); dom.mainApp.classList.add(newWidthClass); localStorage.setItem('appPreferredWidth', newWidthClass); console.log(`App width set to: ${newWidthClass}`);}
+
+function handleLogin(event) {
+  event.preventDefault();
+  const u = dom.loginUser.value;
+  const p = dom.loginPass.value;
+  if (USERS[u] && USERS[u].pass === p) {
+    usuario = USERS[u];
+    dom.mainApp.style.display = 'block';
+    dom.loginPanel.style.display = 'none';
+    if (dom.appWidthSelectorWrapper) dom.appWidthSelectorWrapper.style.display = 'flex'; 
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = usuario.rol === 'admin' ? 'block' : 'none';
+    });
+    renderizarTodo(); 
+    cargarPedidos();
+    cargarTareas(); 
+    showNoti(`Bienvenido ${usuario.nombre}!`, true);
+  } else {
+    showNoti("Usuario o contraseña incorrectos", false);
+  }
+}
+
+function logout() {
+  usuario = null;
+  pedidos = [];
+  tareas = []; 
+  pedidoActualIdx = null;
+  tareaActualId = null;
+  printCount = {};
+  if(dom.mainApp) dom.mainApp.style.display = 'none';
+  if(dom.loginPanel) dom.loginPanel.style.display = 'block';
+  if (dom.appWidthSelectorWrapper) dom.appWidthSelectorWrapper.style.display = 'none'; 
+  if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0]; 
+  if(dom.loginPass) dom.loginPass.value = ''; 
+  if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
+  if(dom.tablaDepositoBody) dom.tablaDepositoBody.innerHTML = '';
+  if(dom.tablaTareasVentasBody) dom.tablaTareasVentasBody.innerHTML = '';
+  if(dom.tablaTareasDepositoBody) dom.tablaTareasDepositoBody.innerHTML = '';
+  if(dom.tablaTareasAdminBody) dom.tablaTareasAdminBody.innerHTML = ''; 
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+  
+  if(dom.moduloVentas) dom.moduloVentas.style.display = 'none';
+  if(dom.moduloDeposito) dom.moduloDeposito.style.display = 'none';
+  if(dom.moduloAdmin) dom.moduloAdmin.style.display = 'none';
+
+  updateStats(); 
+  mostrarSyncLog('Sesión cerrada.', null);
+}
+
+async function cargarPedidos() { if (!usuario) return; mostrarSyncLog('Sincronizando pedidos...', null); try { const response = await fetch(BACKEND_URL + '/pedidos', { cache: "no-store" }); if (!response.ok) { const errorData = await response.json(); throw new Error(`Error HTTP: ${response.status} - ${errorData.error}`); } const data = await response.json(); pedidos = (Array.isArray(data) ? data : []).map(p => ({ ...p, FASE: p.FASE || "EN ESPERA", ID: String(p.ID || p.Id || p.id || Date.now()), CLIENTE: ((p.NOMBRE||"") + " " + (p.APELLIDO||"")).toUpperCase().trim(), MONTO: p.MONTO || p.Total || p.TOTAL || p.total || "", ESTADO_WOO: p.ESTADO || p.Estado || p.estado || "", METODO_ENVIO: p.METODO_ENVIO || p.Metodo_Envio || p["Método de Envío"] || "", FECHA: p.FECHA || "", TELEFONO: p.TELEFONO ? (String(p.TELEFONO).startsWith("0") ? String(p.TELEFONO) : "0" + String(p.TELEFONO)).replace(/^00+/, "0") : "", ESTADO_PAGO: p.ESTADO_PAGO || p.Estado_Pago || p["Estado de Pago"] || p.estado_pago || "", NOTAS: p.NOTAS || "", EMAIL: p.EMAIL || "", DIRECCION: p.DIRECCION || "", BARRIO_LOCALIDAD: p.BARRIO_LOCALIDAD || p.Barrio || p.Localidad || "", DEPARTAMENTO: p.DEPARTAMENTO || p.Departamento || "", PRODUCTS: p.PRODUCTS || p.PRODUCTOS || "", FACTURADO: p.FACTURADO === true || String(p.FACTURADO).toLowerCase() === "true", ENTREGADO: p.ENTREGADO === true || String(p.ENTREGADO).toLowerCase() === "true", AVISO_CLIENTE: p.AVISO_CLIENTE === true || String(p.AVISO_CLIENTE).toLowerCase() === "true", EMPAQUE: p.EMPAQUE || "", HISTORIAL: Array.isArray(p.HISTORIAL) ? p.HISTORIAL : [], TICKET_IMPRESO: p.TICKET_IMPRESO === true || String(p.TICKET_IMPRESO).toLowerCase() === "true", FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA || "", ETIQUETA_EMITIDA: p.ETIQUETA_EMITIDA === true || String(p.ETIQUETA_EMITIDA).toLowerCase() === "true", FASE_ANTERIOR_CANCELACION: p.FASE_ANTERIOR_CANCELACION || "" })); renderizarTodo(); const now = new Date(); const formattedDateTime = now.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }); mostrarSyncLog(`Pedidos sincronizados! ${formattedDateTime}`, true); } catch (err) { mostrarSyncLog('Error al cargar pedidos: ' + err.message, false); console.error("Error en cargarPedidos:", err); } }
+
+async function cargarTareas() {
+    if (!usuario) return;
+    mostrarSyncLog('Cargando tareas...', null);
+    try {
+        const response = await fetch(`${BACKEND_URL}/tareas`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error HTTP al cargar tareas: ${response.status} - ${errorData.error || response.statusText}`);
+        }
+        const data = await response.json();
+        tareas = Array.isArray(data) ? data : [];
+        console.log("Tareas cargadas desde backend:", tareas);
+        renderizarTareas();
+        mostrarSyncLog('Tareas sincronizadas.', true);
+    } catch (err) {
+        mostrarSyncLog(`Error al cargar tareas: ${err.message}`, false);
+        console.error("Error en cargarTareas:", err);
+        tareas = []; // Asegurar que tareas sea un array vacío en caso de error
+        renderizarTareas(); // Renderizar (vacío) incluso si hay error
+    }
+}
+
+function renderizarTodo() {
+  if (!usuario) return; 
+  updateStats(); 
+  const isAdmin = usuario.rol === "admin";
+  const isVentas = usuario.rol === "ventas";
+  const isDeposito = usuario.rol === "deposito";
+
+  if (dom.salesStatsWrapper) { dom.salesStatsWrapper.style.display = (isAdmin || isVentas) ? "grid" : "none"; }
+  
+  if(dom.moduloVentas) dom.moduloVentas.style.display = (isAdmin || isVentas) ? "block" : "none";
+  if(dom.moduloDeposito) dom.moduloDeposito.style.display = (isAdmin || isVentas || isDeposito) ? "block" : "none";
+  if(dom.moduloAdmin) dom.moduloAdmin.style.display = isAdmin ? "block" : "none";
+
+  if (dom.moduloVentas && dom.moduloVentas.style.display !== 'none' && dom.moduloVentasContent && !dom.moduloVentasContent.classList.contains('hidden')) {
+    renderVentas();
+  }
+  if (dom.moduloDeposito && dom.moduloDeposito.style.display !== 'none' && dom.moduloDepositoContent && !dom.moduloDepositoContent.classList.contains('hidden')) {
+    renderDeposito();
+  }
+  
+  renderizarTareas(); 
+}
+function isOrderActive(pedido) { if (!pedido || pedido.FASE === "CANCELADO") return false; const metodoEnvioNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); if (pedido.FASE !== "COMPLETADO" && pedido.FASE !== "COMPLETADO MODIFICADO") { return true; } if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") { return !pedido.ETIQUETA_EMITIDA || !pedido.FACTURADO || !pedido.AVISO_CLIENTE; } else if (metodoEnvioNorm === "PICK UP") { return !pedido.ENTREGADO || !pedido.FACTURADO || !pedido.AVISO_CLIENTE; } return false; }
+function updateStats() { if (!dom.statTotal || !pedidos) { const allStatIds = ['stat-total', 'stat-espera', 'stat-procesando', 'stat-preparando', 'stat-completado', 'stat-dac', 'stat-gp', 'stat-pickup', 'stat-modificados']; allStatIds.forEach(id => { const element = document.getElementById(id); if (element) { element.textContent = '0'; const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) parentBox.classList.add('hidden'); } }); if (!pedidos || pedidos.length === 0) return; } const pedidosActivosParaEstadisticasVentas = pedidos.filter(isOrderActive); const salesStatsData = { total: pedidosActivosParaEstadisticasVentas.length, espera: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "EN ESPERA").length, procesando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PROCESANDO").length, preparando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO").length, completado: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO").length, }; const fasesExcluidasParaStatsMetodoEnvioDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO", "CANCELADO"]; const pedidosParaEstadisticasMetodoEnvioDeposito = pedidos.filter(p => !fasesExcluidasParaStatsMetodoEnvioDeposito.includes(p.FASE) ); const depositStatsData = { dac: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "DAC").length, gp: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "GESTION POS").length, pickup: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "PICK UP").length, modificados: pedidos.filter(p => (p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO") && p.FASE !== "CANCELADO").length }; const salesStatElementsMap = { 'stat-total': salesStatsData.total, 'stat-espera': salesStatsData.espera, 'stat-procesando': salesStatsData.procesando, 'stat-preparando': salesStatsData.preparando, 'stat-completado': salesStatsData.completado }; for (const id in salesStatElementsMap) { const element = document.getElementById(id); const value = salesStatElementsMap[id]; if (element) { element.textContent = String(value); const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) { parentBox.classList.toggle('hidden', Number(value) === 0 && id !== 'stat-total'); } } } const depositStatElementsMap = { 'stat-dac': depositStatsData.dac, 'stat-gp': depositStatsData.gp, 'stat-pickup': depositStatsData.pickup, 'stat-modificados': depositStatsData.modificados }; for (const id in depositStatElementsMap) { const element = document.getElementById(id); const value = depositStatElementsMap[id]; if (element) { element.textContent = String(value); const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) { if (Number(value) === 0) { parentBox.classList.add('hidden'); } else { parentBox.classList.remove('hidden'); } } } } }
+function formatTimeAgoOrDate(dateString) { if (!dateString) return ''; let originalUtcDate; const customFormatMatch = String(dateString).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/); if (customFormatMatch) { const day = parseInt(customFormatMatch[1], 10); const month = parseInt(customFormatMatch[2], 10) - 1; const year = parseInt(customFormatMatch[3], 10); const hours = parseInt(customFormatMatch[4], 10); const minutes = parseInt(customFormatMatch[5], 10); const seconds = customFormatMatch[6] ? parseInt(customFormatMatch[6], 10) : 0; originalUtcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds)); } else { originalUtcDate = new Date(dateString); } if (isNaN(originalUtcDate.getTime())) { return dateString; } const now = new Date(); const diffMs = now.getTime() - originalUtcDate.getTime(); const diffHours = diffMs / (1000 * 60 * 60); if (diffHours >= 0 && diffHours < 24) { const diffMinutes = Math.round(diffMs / (1000 * 60)); if (diffMinutes < 1) return "Hace instantes"; if (diffMinutes < 60) return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`; return `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`; } else { return formatDateToUTCMinus3(dateString, true); } }
+function formatProductLineToHtmlRow(line) { if (!line || typeof line !== 'string') return ''; const trimmedLine = line.trim(); if (trimmedLine.toLowerCase().startsWith('sku') && trimmedLine.toLowerCase().includes('descripción') && trimmedLine.toLowerCase().includes('cant.')) return ''; if (trimmedLine.startsWith('---') && trimmedLine.includes('|')) return ''; if (trimmedLine === '' || trimmedLine.match(/^-+$/)) return ''; const parts = trimmedLine.split(' - '); let sku = '', description = '', quantity = ''; if (parts.length >= 3) { sku = parts[0].trim(); quantity = parts[parts.length - 1].trim(); description = parts.slice(1, -1).join(' - ').trim(); } else if (parts.length === 2) { const lastPart = parts[1].trim(); if (!isNaN(parseInt(lastPart)) && String(parseInt(lastPart)) === lastPart) { description = parts[0].trim(); quantity = lastPart; } else { description = trimmedLine; } } else if (parts.length === 1 && trimmedLine) { description = trimmedLine; } else { return ''; } return `<tr class="border-b border-slate-200 last:border-b-0"><td class="px-2 py-1 align-top">${sku}</td><td class="px-2 py-1 align-top">${description}</td><td class="px-2 py-1 align-top text-right">${quantity}</td></tr>`;}
+function aplicarFiltrosVentas(p) { const faseFiltro = dom.filtroFase ? dom.filtroFase.value : "ACTIVE_ONLY"; const pago = dom.filtroPago ? dom.filtroPago.value : ""; const envioVentas = dom.filtroEnvioVentas ? dom.filtroEnvioVentas.value : ""; const woo = dom.filtroWoo ? dom.filtroWoo.value : ""; const buscar = dom.filtroBuscar ? dom.filtroBuscar.value.toLowerCase().trim() : ""; const fechaInicioStr = dom.filtroFechaInicioVentas ? dom.filtroFechaInicioVentas.value : ""; const fechaFinStr = dom.filtroFechaFinVentas ? dom.filtroFechaFinVentas.value : ""; if (faseFiltro === "ACTIVE_ONLY") { if (!isOrderActive(p)) return false; } else if (faseFiltro === "COMPLETADOS_ACTIVOS") { if (!((p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") && isOrderActive(p))) return false; } else if (faseFiltro === "CANCELADO") { if (p.FASE !== "CANCELADO") return false; } else if (faseFiltro !== "ALL_PHASES" && faseFiltro && p.FASE !== faseFiltro) { return false; } if (pago === "confirmado" && p.ESTADO_PAGO !== "confirmado") return false; if (pago === "no_confirmado" && p.ESTADO_PAGO === "confirmado") return false; if (woo && (p.ESTADO_WOO !== woo)) return false; if (envioVentas && (p.METODO_ENVIO || "").trim().toUpperCase() !== envioVentas) return false; const orderDateStr = p.FECHA_INGRESO_SISTEMA || p.FECHA; if (fechaInicioStr || fechaFinStr) { if (!orderDateStr) return false; let orderDate = new Date(orderDateStr); if (isNaN(orderDate.getTime())) return false; orderDate = new Date(Date.UTC(orderDate.getUTCFullYear(), orderDate.getUTCMonth(), orderDate.getUTCDate())); if (fechaInicioStr) { const filtroFechaInicio = new Date(fechaInicioStr + "T00:00:00Z"); if (orderDate < filtroFechaInicio) return false; } if (fechaFinStr) { const filtroFechaFin = new Date(fechaFinStr + "T00:00:00Z"); if (orderDate > filtroFechaFin) return false; } } if (buscar) { const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); let encontrado = false; if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) { encontrado = true; } else { if ( (p.CLIENTE || "").toLowerCase().includes(buscar) || (String(p.ID) || "").toLowerCase().includes(buscar) || (p.TELEFONO || "").toLowerCase().includes(buscar) || (p.NOTAS || "").toLowerCase().includes(buscar) || (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) || deptoFullName.includes(buscar) || (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) ) { encontrado = true; } } if (!encontrado) return false; } return true;}
+function getBadgeClassForFase(fase) { const faseClasses = { "EN ESPERA": "bg-blue-500", "PROCESANDO": "bg-orange-500", "PREPARANDO": "bg-yellow-400", "PREPARANDO MODIFICADO": "bg-purple-400", "COMPLETADO": "bg-green-500", "COMPLETADO MODIFICADO": "bg-red-500", "URGENTE": "bg-red-600", "CANCELADO": "bg-custom-gray" }; return `${faseClasses[fase] || 'bg-slate-300 text-slate-700'} text-white`;}
+function formatMonto(montoStr) { if (montoStr === null || montoStr === undefined || montoStr === "") return ""; const montoNum = parseFloat(String(montoStr).replace(',', '.')); if (isNaN(montoNum)) return montoStr; return Math.round(montoNum).toString();}
+function renderVentas() { if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return; dom.tablaVentasBody.innerHTML = ""; pedidos.filter(aplicarFiltrosVentas).forEach(p => { const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); if (pedidoIdx === -1) return; const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase(); const montoFormateado = formatMonto(p.MONTO); const tr = document.createElement('tr'); tr.className = "bg-white border-b hover:bg-slate-50 transition"; tr.innerHTML = ` <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td> <td class="px-4 py-2">${p.CLIENTE || ""}</td> <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td> <td class="px-4 py-2">${montoFormateado}</td> <td class="px-4 py-2">${(p.ESTADO_PAGO || "").charAt(0).toUpperCase() + (p.ESTADO_PAGO || "").slice(1)}</td> <td class="px-4 py-2"><span class="text-slate-700">${wooTxt}</span></td> <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td> <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td> <td class="px-4 py-2"> <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="ventas">Ver/Editar</button> </td>`; dom.tablaVentasBody.appendChild(tr); });}
+
+function aplicarFiltrosDeposito(p) {
+  const fase = dom.filtroFaseDep ? dom.filtroFaseDep.value : "DEFAULT_DEPOSIT_FILTER";
+  const envio = dom.filtroEnvioDep ? dom.filtroEnvioDep.value : "";
+  const buscar = dom.filtroBuscarDep ? dom.filtroBuscarDep.value.toLowerCase() : "";
+  const fechaInicioStr = dom.filtroFechaInicioDep ? dom.filtroFechaInicioDep.value : "";
+  const fechaFinStr = dom.filtroFechaFinDep ? dom.filtroFechaFinDep.value : "";
+
+  if (p.FASE === "CANCELADO") return false; 
+  if (fase === "DEFAULT_DEPOSIT_FILTER") { if (!(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false; } 
+  else if (fase === "MODIFICADOS_AGRUPADOS") { if (!(p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false; } 
+  else if (fase && p.FASE !== fase) return false; 
+  else if (!fase && !(p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO")) return false; 
+  if (envio && (p.METODO_ENVIO || "").trim().toUpperCase() !== envio) return false; 
+  const orderDateStr = p.FECHA_INGRESO_SISTEMA || p.FECHA; 
+  if (fechaInicioStr || fechaFinStr) { if (!orderDateStr) return false; let orderDate = new Date(orderDateStr); if (isNaN(orderDate.getTime())) return false; orderDate = new Date(Date.UTC(orderDate.getUTCFullYear(), orderDate.getUTCMonth(), orderDate.getUTCDate())); if (fechaInicioStr) { const filtroFechaInicio = new Date(fechaInicioStr + "T00:00:00Z"); if (orderDate < filtroFechaInicio) return false; } if (fechaFinStr) { const filtroFechaFin = new Date(fechaFinStr + "T00:00:00Z"); if (orderDate > filtroFechaFin) return false; } } 
+  if (buscar) { const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); if (!((p.CLIENTE || "").toLowerCase().includes(buscar) || (String(p.ID)||"").toLowerCase().includes(buscar) || (p.TELEFONO || "").toLowerCase().includes(buscar) || (p.DIRECCION || "").toLowerCase().includes(buscar) || (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) || deptoFullName.includes(buscar) || (p.DEPARTAMENTO || "").toLowerCase().includes(buscar))) return false; } 
+  return true;
+}
+
+function renderDeposito() { if (!usuario || !(usuario.rol === "admin" || usuario.rol === "ventas" || usuario.rol === "deposito") || !dom.tablaDepositoBody) return; dom.tablaDepositoBody.innerHTML = ""; pedidos.filter(aplicarFiltrosDeposito).forEach(p => { const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); if (pedidoIdx === -1) return; const tr = document.createElement('tr'); let rowBgClass = p.FASE === 'COMPLETADO MODIFICADO' ? 'bg-red-100' : (p.FASE === 'PREPARANDO MODIFICADO' ? 'bg-purple-50' : ''); tr.className = `bg-white border-b hover:bg-slate-50 transition ${rowBgClass}`; tr.innerHTML = ` <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td> <td class="px-4 py-2">${p.CLIENTE || ""}</td> <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td> <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td> <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td> <td class="px-4 py-2 text-center">${p.TICKET_IMPRESO ? '🖨️' : ''}</td> <td class="px-4 py-2"> <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="deposito">Ver/Completar</button> </td>`; dom.tablaDepositoBody.appendChild(tr); });}
+function openModal(idx, modulo) { pedidoActualIdx = idx; const pedido = pedidos[pedidoActualIdx]; if (!pedido) { console.error("Pedido no encontrado:", idx); showNoti("Error: Pedido no encontrado.", false); return; } originalPedidoState = JSON.parse(JSON.stringify(pedido)); let content = ""; const montoFormateado = formatMonto(pedido.MONTO); dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>${modulo === 'ventas' ? ` - <b>$${montoFormateado}</b>` : ''}`; let productsTableHtml = ''; const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); if (productLines.length > 0) { productsTableHtml += `<table class="min-w-full text-left text-sm text-slate-700 border-collapse"><thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead><tbody>`; productLines.forEach(line => { const formattedRow = formatProductLineToHtmlRow(line); if (formattedRow) productsTableHtml += formattedRow; }); productsTableHtml += `</tbody></table>`; } else { productsTableHtml = `<p class="text-slate-500 text-sm italic">No hay productos registrados.</p>`; } const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); const metodoEnvioActualNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); const metodoEnvioDisplay = getMetodoEnvioDisplayName(pedido.METODO_ENVIO); if (modulo === 'ventas') { const puedeCancelar = pedido.FASE === 'EN ESPERA' || pedido.FASE === 'PROCESANDO'; const estaCancelado = pedido.FASE === 'CANCELADO'; content = ` <div class="mb-3"> <div class="flex justify-between items-center mb-1"> <label for="modal-productos" class="block text-sm font-medium text-slate-600">Productos:</label> <button id="modal-edit-productos-btn" class="bg-blue-500 text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 transition-colors flex-shrink-0">Editar</button> </div> <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div> <textarea class="modal-input w-full hidden" id="modal-productos" rows="8" style="font-family: monospace;">${pedido.PRODUCTS || ""}</textarea> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3"> <div><label for="modal-cliente" class="block text-sm font-medium text-slate-600 mb-1">Cliente:</label><input class="modal-input" id="modal-cliente" value="${pedido.CLIENTE || ""}"></div> <div><label for="modal-direccion" class="block text-sm font-medium text-slate-600 mb-1">Dirección:</label><input class="modal-input" id="modal-direccion" value="${pedido.DIRECCION || ""}"></div> <div><label for="modal-telefono" class="block text-sm font-medium text-slate-600 mb-1">Teléfono:</label><input class="modal-input" id="modal-telefono" value="${(pedido.TELEFONO || "")}"></div> <div><label for="modal-email" class="block text-sm font-medium text-slate-600 mb-1">Email:</label><input type="email" class="modal-input" id="modal-email" value="${pedido.EMAIL || ""}"></div> <div><label for="modal-barrio-localidad" class="block text-sm font-medium text-slate-600 mb-1">Barrio/Localidad:</label><input class="modal-input" id="modal-barrio-localidad" value="${pedido.BARRIO_LOCALIDAD || ""}"></div> <div><label for="modal-departamento" class="block text-sm font-medium text-slate-600 mb-1">Departamento:</label><input class="modal-input" id="modal-departamento" value="${deptoFullName}"></div> </div> <div class="mb-3"><label for="modal-notas" class="block text-sm font-medium text-slate-600 mb-1">Notas:</label><textarea class="modal-input" id="modal-notas" rows="2">${pedido.NOTAS || ""}</textarea></div> <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"> <div><label for="modal-metodo-envio" class="block text-sm font-medium text-slate-600 mb-1">Método de Envío:</label> <select id="modal-metodo-envio" class="modal-input"> <option value="">Seleccionar</option> <option value="DAC" ${metodoEnvioActualNorm === "DAC" ? " selected" : ""}>DAC</option> <option value="GESTION POS" ${metodoEnvioActualNorm === "GESTION POS" ? " selected" : ""}>GESTION POS</option> <option value="PICK UP" ${metodoEnvioActualNorm === "PICK UP" ? " selected" : ""}>PICK UP</option> </select> </div> <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label> <select id="modal-estado-pago" class="modal-input"> <option value="" ${pedido.ESTADO_PAGO !== "confirmado" ? " selected" : ""}>Seleccionar</option> <option value="confirmado" ${pedido.ESTADO_PAGO === "confirmado" ? " selected" : ""}>Confirmado</option> </select> </div> </div> <div class="mb-4 space-y-2"> <div id="entregado-checkbox-wrapper" class="${metodoEnvioActualNorm === 'PICK UP' ? '' : 'hidden'}"><div class="flex items-center"><input type="checkbox" id="modal-entregado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ENTREGADO ? "checked" : ""}><label for="modal-entregado" class="cursor-pointer">Entregado</label></div></div> <div id="etiqueta-emitida-checkbox-wrapper" class="${(metodoEnvioActualNorm === 'DAC' || metodoEnvioActualNorm === 'GESTION POS') ? '' : 'hidden'}"><div class="flex items-center"><input type="checkbox" id="modal-etiqueta-emitida" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ETIQUETA_EMITIDA ? "checked" : ""}><label for="modal-etiqueta-emitida" class="cursor-pointer">Etiqueta Emitida</label></div></div> <div class="flex items-center"><input type="checkbox" id="modal-facturado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.FACTURADO ? "checked" : ""}><label for="modal-facturado" class="cursor-pointer">Facturado</label></div> <div class="flex items-center"><input type="checkbox" id="modal-aviso-cliente" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.AVISO_CLIENTE ? "checked" : ""}><label for="modal-aviso-cliente" class="cursor-pointer">Aviso al cliente</label></div> </div> <div class="flex flex-col sm:flex-row gap-3 mt-4"> <button id="modal-save-venta" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-blue hover:bg-blue-700 focus:ring-custom-blue">Guardar Cambios</button> ${(pedido.FASE === 'COMPLETADO' || pedido.FASE === 'PREPARANDO') ? `<button id="modal-modificar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange">Modificar Pedido</button>` : ''} ${puedeCancelar ? `<button id="modal-cancelar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-red hover:bg-red-700 focus:ring-custom-red">Cancelar Pedido</button>` : ''} ${estaCancelado ? `<button id="modal-activar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-green hover:bg-green-700 focus:ring-custom-green">Activar Pedido</button>` : ''} </div> <div class="mt-6 pt-4 border-t border-slate-200"> <h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4> <div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm"> ${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ? pedido.HISTORIAL.map(entry => { const formattedTimestamp = formatDateToUTCMinus3(entry.timestamp, true); return `<div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0"><div class="font-medium text-slate-800">${entry.user} - ${formattedTimestamp}</div><ul class="list-disc list-inside text-slate-600 ml-4">${entry.changes.map(change => `<li>${formatChangeEntry(change)}</li>`).join('')}</ul></div>`; }).join('') : '<p class="text-slate-500">No hay historial.</p>'} </div> </div>`; } else { const isVentasUser = usuario && usuario.rol === 'ventas'; content = ` <div class="mb-2"><strong class="text-slate-700">Productos:</strong><div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div></div> <div class="space-y-1 text-sm mb-3"> <div><strong class="text-slate-600">Cliente:</strong> ${pedido.CLIENTE || ""}</div> <div><strong class="text-slate-600">Dirección:</strong> ${pedido.DIRECCION || ""}</div> <div><strong class="text-slate-600">Barrio/Localidad:</strong> ${pedido.BARRIO_LOCALIDAD || ""}</div> <div><strong class="text-slate-600">Departamento:</strong> ${deptoFullName}</div> <div><strong class="text-slate-600">Teléfono:</strong> ${pedido.TELEFONO || ""}</div> <div><strong class="text-slate-600">Email:</strong> ${pedido.EMAIL || ""}</div> <div><strong class="text-slate-600">Notas:</strong> ${pedido.NOTAS || ""}</div> <div><strong class="text-slate-600">Método de Envío:</strong> ${metodoEnvioDisplay}</div> </div>`; if (["DAC","GESTION POS"].includes(metodoEnvioActualNorm)) { let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActualNorm] || OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op => `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op||"Seleccionar"}</option>`).join(""); content += `<div class="mb-4"><label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label><select id="modal-tipo-empaque" class="modal-input" ${isVentasUser ? 'disabled' : ''}>${opcionesEmpaque}</select></div>`; } if (!isVentasUser) { const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500'; const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket"; const isCompleteButtonDisabled = (["DAC","GESTION POS"].includes(metodoEnvioActualNorm) && !pedido.EMPAQUE); content += `<div class="flex flex-col sm:flex-row gap-3 mt-4"><button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button><button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button></div>`; } else { content += `<p class="mt-4 text-sm text-slate-500 italic">(Modo solo lectura para Ventas)</p>`; } } dom.modalContent.innerHTML = content; dom.modalBg.classList.remove('hidden'); dom.modalBg.classList.add('flex'); if (modulo === 'ventas') { document.getElementById('modal-save-venta')?.addEventListener('click', () => guardarVenta(pedidoActualIdx)); document.getElementById('modal-modificar-pedido')?.addEventListener('click', () => modificarPedidoVentas(pedidoActualIdx)); document.getElementById('modal-cancelar-pedido')?.addEventListener('click', () => cancelarPedido(pedidoActualIdx)); document.getElementById('modal-activar-pedido')?.addEventListener('click', () => activarPedido(pedidoActualIdx)); const metodoEnvioSelect = document.getElementById('modal-metodo-envio'); const entregadoCheckboxWrapper = document.getElementById('entregado-checkbox-wrapper'); const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper'); const toggleCheckboxesVisibility = () => { const currentMetodoEnvioSelected = (metodoEnvioSelect.value || "").trim().toUpperCase(); if(entregadoCheckboxWrapper) entregadoCheckboxWrapper.classList.toggle('hidden', currentMetodoEnvioSelected !== 'PICK UP'); if(entregadoCheckboxWrapper?.classList.contains('hidden')) { const cb = document.getElementById('modal-entregado'); if(cb) cb.checked = false;} if(etiquetaEmitidaCheckboxWrapper) etiquetaEmitidaCheckboxWrapper.classList.toggle('hidden', !(currentMetodoEnvioSelected === 'DAC' || currentMetodoEnvioSelected === 'GESTION POS')); if(etiquetaEmitidaCheckboxWrapper?.classList.contains('hidden')) { const cb = document.getElementById('modal-etiqueta-emitida'); if(cb) cb.checked = false;} }; if (metodoEnvioSelect) { metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility); toggleCheckboxesVisibility(); } dom.productosDisplayTable = document.getElementById('productos-display-table'); dom.productosEditArea = document.getElementById('modal-productos'); dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn'); if (dom.productosDisplayTable && dom.productosEditArea && dom.modalEditProductosBtn) { dom.modalEditProductosBtn.addEventListener('click', () => { dom.productosDisplayTable.classList.add('hidden'); dom.productosEditArea.classList.remove('hidden'); dom.productosEditArea.removeAttribute('readonly'); dom.productosEditArea.focus(); dom.modalEditProductosBtn.classList.add('hidden'); }); dom.productosDisplayTable.classList.remove('hidden'); dom.productosEditArea.classList.add('hidden'); dom.productosEditArea.setAttribute('readonly', 'true'); dom.modalEditProductosBtn.classList.remove('hidden'); } } else { if (!(usuario && usuario.rol === 'ventas')) { document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx)); document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx)); const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque'); if (tipoEmpaqueSelect) { tipoEmpaqueSelect.addEventListener('change', function() { const currentPedido = pedidos[pedidoActualIdx]; if (currentPedido) currentPedido.EMPAQUE = this.value; const btnCompletar = document.getElementById('modal-complete-pedido'); if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POS"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase()); }); } } } document.querySelectorAll('#modal-box .modal-input').forEach(el => { el.classList.add('w-full', 'p-2', 'border', 'border-slate-300', 'rounded-md', 'focus:ring-blue-500', 'focus:border-blue-500', 'text-sm'); });}
+function closeModal() { dom.modalBg.classList.add('hidden'); dom.modalBg.classList.remove('flex'); dom.modalContent.innerHTML = ""; pedidoActualIdx = null; originalPedidoState = null; }
+function getChanges(oldObj, newObj, fieldsToTrack) { const changes = []; fieldsToTrack.forEach(field => { let oldValue = oldObj[field] || ''; let newValue = newObj[field] || ''; if (field === 'DEPARTAMENTO') { oldValue = getDepartamentoFullName(oldValue); newValue = getDepartamentoFullName(newValue); } oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : oldValue; newValue = typeof newObj[field] === 'boolean' ? newObj[field] : newValue; if (oldValue !== newValue) changes.push({ field: field, old: oldValue, new: newValue }); }); return changes;}
+function formatChangeEntry(change) { const fieldNameMap = { 'CLIENTE': 'el cliente', 'DIRECCION': 'la dirección', 'TELEFONO': 'el teléfono', 'EMAIL': 'el email', 'NOTAS': 'las notas', 'METODO_ENVIO': 'el método de envío', 'ESTADO_PAGO': 'el estado de pago', 'ENTREGADO': 'el estado de "Entregado"', 'FACTURADO': 'el estado de "Facturado"', 'AVISO_CLIENTE': 'el estado de "Aviso al Cliente"', 'FASE': 'la fase del pedido', 'EMPAQUE': 'el tipo de empaque', 'TICKET_IMPRESO': 'el estado de "Ticket Impreso"', 'FECHA_INGRESO_SISTEMA': 'la fecha de ingreso', 'BARRIO_LOCALIDAD': 'el barrio/localidad', 'DEPARTAMENTO': 'el departamento', 'ETIQUETA_EMITIDA': 'el estado de "Etiqueta Emitida"', 'PRODUCTS': 'los productos', 'FASE_ANTERIOR_CANCELACION': 'la fase anterior a la cancelación' }; const formatBool = (val) => val ? 'Sí' : 'No'; const oldF = typeof change.old === 'boolean' ? formatBool(change.old) : (change.old === '' ? '(vacío)' : change.old); const newF = typeof change.new === 'boolean' ? formatBool(change.new) : (change.new === '' ? '(vacío)' : change.new); const desc = fieldNameMap[change.field] || change.field; if (typeof change.old === 'boolean' || typeof change.new === 'boolean') { return change.new ? `Se marcó como "${desc.replace('el estado de "', '').replace('"', '')}".` : `Se desmarcó como "${desc.replace('el estado de "', '').replace('"', '')}".`; } if (change.field === 'FASE' && change.new === 'CANCELADO') { return `El pedido se <span class="text-red-500 font-semibold">CANCELÓ</span> (antes: ${oldF}).`; } if (change.field === 'FASE' && change.old === 'CANCELADO') { return `El pedido se <span class="text-green-500 font-semibold">ACTIVÓ</span> (ahora: ${newF}).`; } if (change.old === '' && change.new !== '') return `Se estableció ${desc} a "<span class="text-green-500">${newF}</span>".`; if (change.old !== '' && change.new === '') return `Se eliminó el valor de ${desc}: de "<span class="text-red-500">${oldF}</span>" a "(vacío)".`; return `El ${desc} cambió de "<span class="text-red-500">${oldF}</span>" a "<span class="text-green-500">${newF}</span>".`;}
+async function guardarFaseYDatos(pedido, skipHistory = false) { try { const updatedFields = { CLIENTE: pedido.CLIENTE, DIRECCION: pedido.DIRECCION, TELEFONO: pedido.TELEFONO, EMAIL: pedido.EMAIL, NOTAS: pedido.NOTAS, METODO_ENVIO: pedido.METODO_ENVIO, ESTADO_PAGO: pedido.ESTADO_PAGO, ENTREGADO: pedido.ENTREGADO, FACTURADO: pedido.FACTURADO, AVISO_CLIENTE: pedido.AVISO_CLIENTE, FASE: pedido.FASE, TICKET_IMPRESO: pedido.TICKET_IMPRESO, FECHA_INGRESO_SISTEMA: pedido.FECHA_INGRESO_SISTEMA, BARRIO_LOCALIDAD: pedido.BARRIO_LOCALIDAD, DEPARTAMENTO: pedido.DEPARTAMENTO, ETIQUETA_EMITIDA: pedido.ETIQUETA_EMITIDA, PRODUCTS: pedido.PRODUCTS, FASE_ANTERIOR_CANCELACION: pedido.FASE_ANTERIOR_CANCELACION }; const response = await fetch(`${BACKEND_URL}/set-fase/${pedido.ID}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ updatedFields: updatedFields, historial: pedido.HISTORIAL }) }); if (!response.ok) { const errData = await response.json(); throw new Error(`Servidor: ${response.status} - ${errData.error}`);} console.log("Backend:", await response.json()); return true; } catch (err) { console.error("Guardando datos:", err); showNoti(`Error: ${err.message}`, false); return false; } }
+async function guardarVenta(idx) { const p = pedidos[idx]; if (!p) return; const oldFase = p.FASE; const modalValues = { CLIENTE: dom.modalContent.querySelector('#modal-cliente')?.value || '', DIRECCION: dom.modalContent.querySelector('#modal-direccion')?.value || '', TELEFONO: dom.modalContent.querySelector('#modal-telefono')?.value || '', EMAIL: dom.modalContent.querySelector('#modal-email')?.value || '', BARRIO_LOCALIDAD: dom.modalContent.querySelector('#modal-barrio-localidad')?.value || '', DEPARTAMENTO: dom.modalContent.querySelector('#modal-departamento')?.value || '', NOTAS: dom.modalContent.querySelector('#modal-notas')?.value || '', METODO_ENVIO: dom.modalContent.querySelector('#modal-metodo-envio')?.value || '', ESTADO_PAGO: dom.modalContent.querySelector('#modal-estado-pago')?.value || '', ENTREGADO: dom.modalContent.querySelector('#entregado-checkbox-wrapper')?.classList.contains('hidden') ? false : (dom.modalContent.querySelector('#modal-entregado')?.checked || false), ETIQUETA_EMITIDA: dom.modalContent.querySelector('#etiqueta-emitida-checkbox-wrapper')?.classList.contains('hidden') ? false : (dom.modalContent.querySelector('#modal-etiqueta-emitida')?.checked || false), FACTURADO: dom.modalContent.querySelector('#modal-facturado')?.checked || false, AVISO_CLIENTE: dom.modalContent.querySelector('#modal-aviso-cliente')?.checked || false, PRODUCTS: dom.modalContent.querySelector('#modal-productos')?.value || '' }; Object.assign(p, modalValues, { TICKET_IMPRESO: p.TICKET_IMPRESO, FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA, FASE_ANTERIOR_CANCELACION: p.FASE_ANTERIOR_CANCELACION }); if (oldFase !== "COMPLETADO" && oldFase !== "COMPLETADO MODIFICADO" && oldFase !== "PREPARANDO MODIFICADO" && oldFase !== "CANCELADO") { if (p.FASE === "EN ESPERA") p.FASE = "PROCESANDO"; if (p.METODO_ENVIO && p.ESTADO_PAGO === "confirmado" && p.FASE !== "COMPLETADO") p.FASE = "PREPARANDO"; } const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_VENTAS.filter(f => f !== 'FASE' && f !== 'EMPAQUE' && f !== 'FASE_ANTERIOR_CANCELACION')); if (changes.length > 0) { p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes }); if (oldFase === "PREPARANDO" || oldFase === "COMPLETADO") { showAttentionModal("¡Atención! Has guardado cambios en un pedido que Depósito está gestionando. Para que vean las modificaciones, usa el botón 'Modificar Pedido'."); } } if (await guardarFaseYDatos(p)) { showNoti("Pedido guardado!", true); renderizarTodo(); closeModal(); } }
+async function modificarPedidoVentas(idx) { const p = pedidos[idx]; if (!p) return; const confirmMsg = `¿Seguro que quieres modificar este pedido? Se marcará como '${p.FASE === 'COMPLETADO' ? 'COMPLETADO MODIFICADO':'PREPARANDO MODIFICADO'}' y se limpiará el empaque.`; if (!await showConfirmationModal(confirmMsg)) { showNoti("Modificación cancelada.", null); return; } const oldFase = p.FASE, oldEmpaque = p.EMPAQUE; p.FASE = p.FASE === "COMPLETADO" ? "COMPLETADO MODIFICADO" : (p.FASE === "PREPARANDO" ? "PREPARANDO MODIFICADO" : p.FASE); if (p.FASE === oldFase) { showNoti("No se puede modificar esta fase.", false); return;} p.EMPAQUE = ''; const changes = []; if (oldFase !== p.FASE) changes.push({ field: 'FASE', old: oldFase, new: p.FASE }); if (oldEmpaque !== p.EMPAQUE) changes.push({ field: 'EMPAQUE', old: oldEmpaque, new: p.EMPAQUE }); if (changes.length > 0) p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes }); if (await guardarFaseYDatos(p)) { showNoti("Pedido modificado!", true); renderizarTodo(); closeModal(); } }
+async function cancelarPedido(idx) { const p = pedidos[idx]; if (!p || !(p.FASE === 'EN ESPERA' || p.FASE === 'PROCESANDO')) { showNoti("Solo se pueden cancelar pedidos en 'EN ESPERA' o 'PROCESANDO'.", false); return; } if (!await showConfirmationModal(`¿Seguro que quieres CANCELAR el pedido #${p.ID}?`)) { showNoti("Cancelación de pedido abortada.", null); return; } const oldFase = p.FASE; p.FASE_ANTERIOR_CANCELACION = oldFase; p.FASE = "CANCELADO"; p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: [{ field: 'FASE', old: oldFase, new: 'CANCELADO' }] }); if (await guardarFaseYDatos(p)) { showNoti(`Pedido #${p.ID} cancelado.`, true); renderizarTodo(); closeModal(); } }
+async function activarPedido(idx) { const p = pedidos[idx]; if (!p || p.FASE !== 'CANCELADO') { showNoti("Solo se pueden activar pedidos que están 'CANCELADO'.", false); return; } if (!await showConfirmationModal(`¿Seguro que quieres ACTIVAR el pedido #${p.ID}? Volverá a la fase 'EN ESPERA'.`)) { showNoti("Activación de pedido abortada.", null); return; } const oldFase = p.FASE; p.FASE = "EN ESPERA"; p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: [{ field: 'FASE', old: oldFase, new: p.FASE }] }); if (await guardarFaseYDatos(p)) { showNoti(`Pedido #${p.ID} activado y puesto 'EN ESPERA'.`, true); renderizarTodo(); closeModal(); } }
+async function completarPedido(idx) { const p = pedidos[idx]; if (!p) return; if (["DAC","GESTION POS"].includes((p.METODO_ENVIO || "").trim().toUpperCase())) { const empaqueSel = dom.modalContent.querySelector('#modal-tipo-empaque'); const val = empaqueSel ? empaqueSel.value : p.EMPAQUE; if (!val) { showNoti("Debe seleccionar empaque.", false); return; } p.EMPAQUE = val; } const oldFase = p.FASE; p.FASE = "COMPLETADO"; const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_DEPOSITO); if (changes.length > 0) p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes }); if (await guardarFaseYDatos(p)) { showNoti("Pedido completado!", true); renderizarTodo(); } closeModal(); }
+function imprimirTicket(idx) { const p = pedidos[idx]; if (!p) return; let prodsHtml = ""; if (p.PRODUCTS) { (p.PRODUCTS || "").split('\n').filter(l => l.trim() !== '').forEach(l => { const fr = formatProductLineToHtmlRow(l); if (fr) prodsHtml += fr; }); } let displayFecha = p.FECHA || ""; if (p.FECHA) { displayFecha = formatDateToUTCMinus3(p.FECHA, true); } dom.ticketPrint.innerHTML = `<div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;"><div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div><div><b>Pedido #${p.ID||""}</b></div><div><b>Cliente:</b> ${p.CLIENTE||""}</div><div><b>Dirección:</b> ${p.DIRECCION||""}</div><div><b>Barrio/Loc:</b> ${p.BARRIO_LOCALIDAD||""}</div><div><b>Depto:</b> ${getDepartamentoFullName(p.DEPARTAMENTO||"")}</div><div><b>Tel:</b> ${p.TELEFONO||""}</div><div><b>Envío:</b> ${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</div><div><b>Fecha:</b> ${displayFecha}</div>${prodsHtml ? `<table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;"><thead><tr><th>SKU</th><th>Desc.</th><th style="text-align:right;">Cant.</th></tr></thead><tbody>${prodsHtml}</tbody></table>` : '<div>No hay productos.</div>'}<div><b>Notas:</b> ${p.NOTAS||"Ninguna"}</div><div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias</div></div>`; setTimeout(() => { window.print(); printCount[p.ID] = true; const btn = dom.modalContent.querySelector('#modal-print-ticket'); if (btn) { btn.textContent = "Reimprimir Ticket"; btn.classList.remove('bg-blue-500','hover:bg-blue-600','focus:ring-blue-500'); btn.classList.add('bg-custom-orange','hover:bg-orange-700','focus:ring-custom-orange');} if (p.TICKET_IMPRESO !== true) { p.TICKET_IMPRESO = true; guardarFaseYDatos(p); } }, 250); }
+
+
+// ===================== GESTIÓN DE TAREAS ====================
+
+async function cargarTareas() {
+    if (!usuario) return;
+    mostrarSyncLog('Cargando tareas...', null);
+    try {
+        const response = await fetch(`${BACKEND_URL}/tareas`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`HTTP ${response.status} - ${errorData.error || response.statusText}`);
+        }
+        const data = await response.json();
+        tareas = Array.isArray(data) ? data : [];
+        console.log("Tareas cargadas desde backend:", tareas);
+        renderizarTareas();
+        mostrarSyncLog('Tareas sincronizadas.', true);
+    } catch (err) {
+        mostrarSyncLog(`Error al cargar tareas: ${err.message}`, false);
+        console.error("Error en cargarTareas:", err);
+        tareas = []; 
+        renderizarTareas(); 
+    }
+}
+
+function renderizarTareas() {
+    if (!usuario) return;
+
+    if (dom.tablaTareasVentasBody) {
+        dom.tablaTareasVentasBody.innerHTML = "";
+        const tareasVisiblesVentas = tareas.filter(tarea => 
+            tarea.responsables && tarea.responsables.includes('ventas')
+        );
+        tareasVisiblesVentas.forEach(tarea => dom.tablaTareasVentasBody.appendChild(crearFilaTareaHtml(tarea)));
+    }
+
+    if (dom.tablaTareasDepositoBody) {
+        dom.tablaTareasDepositoBody.innerHTML = "";
+        const tareasVisiblesDeposito = tareas.filter(tarea => 
+            tarea.responsables && tarea.responsables.includes('deposito')
+        );
+        tareasVisiblesDeposito.forEach(tarea => dom.tablaTareasDepositoBody.appendChild(crearFilaTareaHtml(tarea)));
+    }
+    
+    if (dom.tablaTareasAdminBody && usuario.rol === 'admin') {
+        dom.tablaTareasAdminBody.innerHTML = "";
+        const tareasVisiblesAdmin = tareas.filter(tarea => 
+            tarea.responsables && tarea.responsables.includes('admin')
+        );
+        tareasVisiblesAdmin.forEach(tarea => dom.tablaTareasAdminBody.appendChild(crearFilaTareaHtml(tarea, true)));
+    }
+}
+
+function getPrioridadClass(prioridad) {
+    if (prioridad === "Alta") return "bg-priority-high text-white";
+    if (prioridad === "Media") return "bg-priority-medium text-slate-800";
+    if (prioridad === "Baja") return "bg-priority-low text-white";
+    return "bg-slate-200 text-slate-700";
+}
+
+function getEstadoTareaClass(estado) {
+    if (estado === "Pendiente") return "bg-yellow-400 text-slate-800";
+    if (estado === "En curso") return "bg-blue-500 text-white";
+    if (estado === "Completada") return "bg-green-500 text-white";
+    return "bg-slate-200 text-slate-700";
+}
+
+function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
+    const tr = document.createElement('tr');
+    tr.className = "bg-white border-b hover:bg-slate-50 transition";
+    const responsablesNombres = Array.isArray(tarea.responsables) ? tarea.responsables.map(rol => USERS[rol]?.nombre || rol).join(', ') : (USERS[tarea.responsables]?.nombre || tarea.responsables || 'N/A');
+    
+    let fechaVencimientoDisplay = 'N/A';
+    if (tarea.fecha_vencimiento) {
+        fechaVencimientoDisplay = formatDateToDisplay(tarea.fecha_vencimiento);
+        if (tarea.hora_vencimiento) {
+            fechaVencimientoDisplay += ` ${tarea.hora_vencimiento}`;
+        }
+    }
+    
+    let moduloAsociadoDisplay = tarea.modulo_asociado || 'General'; 
+
+    tr.innerHTML = `
+        <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${tarea.ID_TAREA || tarea.id_tarea}</td>
+        <td class="px-4 py-2">${(tarea.DESCRIPCION || tarea.descripcion || "").toUpperCase()}</td>
+        <td class="px-4 py-2">${responsablesNombres}</td>
+        <td class="px-4 py-2"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPrioridadClass(tarea.PRIORIDAD || tarea.prioridad)}">${tarea.PRIORIDAD || tarea.prioridad}</span></td>
+        <td class="px-4 py-2">${fechaVencimientoDisplay}</td>
+        <td class="px-4 py-2"><span class="inline-block px-3 py-1 rounded-md text-xs font-semibold ${getEstadoTareaClass(tarea.ESTADO_TAREA || tarea.estado_tarea)}">${tarea.ESTADO_TAREA || tarea.estado_tarea}</span></td>
+        ${esVistaAdmin ? `<td class="px-4 py-2">${moduloAsociadoDisplay}</td>` : ''}
+        <td class="px-4 py-2">
+            <button class="font-semibold py-1 px-2 rounded-md text-xs bg-custom-blue text-white hover:bg-blue-700 mr-1" onclick="abrirModalTarea('${tarea.ID_TAREA || tarea.id_tarea}', true)">Ver/Editar</button>
+            ${usuario && usuario.rol === 'admin' ? `<button class="font-semibold py-1 px-2 rounded-md text-xs bg-custom-red text-white hover:bg-red-700" onclick="eliminarTarea('${tarea.ID_TAREA || tarea.id_tarea}')">Eliminar</button>` : ''}
+        </td>
+    `;
+    return tr;
+}
+
+function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = null) {
+    tareaActualId = idTarea;
+    dom.taskForm.reset();
+    dom.taskId.value = idTarea || `T${Date.now()}`; 
+    
+    const tareaExistente = esEdicion && idTarea ? tareas.find(t => (t.ID_TAREA || t.id_tarea) === idTarea) : null;
+    dom.taskModuloAsociado.value = moduloContexto || (tareaExistente ? tareaExistente.MODULO_ASOCIADO || tareaExistente.modulo_asociado : 'Admin');
+    
+    const responsablesOptionsHtml = Object.values(USERS).map(u => 
+        `<label class="flex items-center space-x-2"><input type="checkbox" name="task_responsables_opt" value="${u.rol}" class="form-checkbox h-4 w-4 text-custom-purple rounded"><span>${u.nombre}</span></label>`
+    ).join('');
+    dom.taskResponsablesOptions.innerHTML = responsablesOptionsHtml;
+    updateSelectedResponsablesDisplay();
+
+    let tarea = null;
+    let puedeEditarCamposSensibles = false; 
+    const esAdmin = usuario && usuario.rol === 'admin';
+
+    if (esEdicion && idTarea) {
+        tarea = tareaExistente;
+        if (tarea) {
+            dom.taskModalTitle.textContent = "Editar Tarea";
+            dom.taskDescripcion.value = tarea.DESCRIPCION || tarea.descripcion; 
+            document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
+                const responsables = tarea.RESPONSABLES || tarea.responsables;
+                if (responsables && responsables.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+            });
+            updateSelectedResponsablesDisplay();
+            dom.taskPrioridad.value = tarea.PRIORIDAD || tarea.prioridad;
+            dom.taskFechaVencimiento.value = tarea.FECHA_VENCIMIENTO || tarea.fecha_vencimiento || '';
+            dom.taskHoraVencimiento.value = tarea.HORA_VENCIMIENTO || tarea.hora_vencimiento || ''; 
+            dom.taskEstado.value = tarea.ESTADO_TAREA || tarea.estado_tarea;
+            // dom.taskTipoTarea.value = tarea.tipo_tarea || 'Unica'; // Eliminado
+            dom.taskModuloAsociado.value = tarea.MODULO_ASOCIADO || tarea.modulo_asociado || ''; 
+            
+            puedeEditarCamposSensibles = (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol)) || (tarea.responsables && tarea.responsables.includes(usuario.rol)) || esAdmin;
+
+            dom.taskDetailsExtraInfo.classList.remove('hidden');
+            renderizarComentariosTarea(idTarea);
+            renderizarHistorialTarea(idTarea);
+        } else {
+            showNoti("Error: Tarea no encontrada para editar.", false);
+            return;
+        }
+    } else { 
+        dom.taskModalTitle.textContent = "Nueva Tarea";
+        puedeEditarCamposSensibles = esAdmin; 
+        dom.taskDetailsExtraInfo.classList.add('hidden'); 
+        if (!moduloContexto) dom.taskModuloAsociado.value = 'Admin'; 
+    }
+
+    dom.taskEstado.disabled = !puedeEditarCamposSensibles;
+    if (dom.taskAddCommentSection) dom.taskAddCommentSection.style.display = puedeEditarCamposSensibles ? 'block' : 'none';
+    
+    const noPuedeEditarGeneral = !esAdmin && esEdicion && !puedeEditarCamposSensibles;
+    dom.taskDescripcion.readOnly = noPuedeEditarGeneral; 
+    dom.taskPrioridad.disabled = noPuedeEditarGeneral;
+    dom.taskFechaVencimiento.readOnly = noPuedeEditarGeneral;
+    dom.taskHoraVencimiento.readOnly = noPuedeEditarGeneral;
+    // dom.taskTipoTarea.disabled = noPuedeEditarGeneral; // Eliminado
+    
+    document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
+        checkbox.disabled = !esAdmin && esEdicion;
+    });
+    if(!esAdmin && esEdicion) {
+        dom.taskResponsablesSelected.style.pointerEvents = 'none';
+        dom.taskResponsablesSelected.style.backgroundColor = '#f3f4f6'; 
+    } else {
+        dom.taskResponsablesSelected.style.pointerEvents = 'auto';
+        dom.taskResponsablesSelected.style.backgroundColor = '#fff';
+    }
+
+    dom.taskModalSave.disabled = !esAdmin && esEdicion && !puedeEditarCamposSensibles;
+
+
+    dom.taskModalBg.classList.remove('hidden');
+    dom.taskModalBg.classList.add('flex');
+}
+
+function cerrarModalTarea() {
+    dom.taskModalBg.classList.add('hidden');
+    dom.taskModalBg.classList.remove('flex');
+    tareaActualId = null;
+}
+
+async function guardarTarea(event) {
+    event.preventDefault();
+    const id = dom.taskId.value;
+    const descripcion = dom.taskDescripcion.value.trim().toUpperCase(); 
+    const responsablesSeleccionados = Array.from(document.querySelectorAll('input[name="task_responsables_opt"]:checked')).map(cb => cb.value);
+    const prioridad = dom.taskPrioridad.value;
+    const fecha_vencimiento = dom.taskFechaVencimiento.value;
+    const hora_vencimiento = dom.taskHoraVencimiento.value; 
+    const estado_tarea_nuevo = dom.taskEstado.value;
+    let moduloAsociado = dom.taskModuloAsociado.value;
+
+    if (!descripcion || responsablesSeleccionados.length === 0) {
+        showNoti("Descripción y al menos un responsable son obligatorios.", false);
+        return;
+    }
+    if (!moduloAsociado) { 
+        if (responsablesSeleccionados.length === 1 && responsablesSeleccionados[0] === 'admin') {
+            moduloAsociado = 'Admin';
+        } else if (responsablesSeleccionados.includes('ventas')) {
+            moduloAsociado = 'Ventas'; 
+        } else if (responsablesSeleccionados.includes('deposito')) {
+            moduloAsociado = 'Deposito';
+        } else {
+            moduloAsociado = 'General'; 
+        }
+    }
+
+    const existingTaskIndex = tareas.findIndex(t => (t.ID_TAREA || t.id_tarea) === id);
+    let tareaOriginal = null;
+    let esNuevaTarea = true;
+
+    if (existingTaskIndex > -1) { 
+        esNuevaTarea = false;
+        tareaOriginal = JSON.parse(JSON.stringify(tareas[existingTaskIndex])); 
+    }
+
+    const puedeModificarEstado = (tareaOriginal && (tareaOriginal.RESPONSABLES || tareaOriginal.responsables) && (tareaOriginal.RESPONSABLES || tareaOriginal.responsables).includes(usuario.rol)) || usuario.rol === 'admin' || esNuevaTarea;
+
+    if (!esNuevaTarea && (tareaOriginal.ESTADO_TAREA || tareaOriginal.estado_tarea) !== estado_tarea_nuevo && !puedeModificarEstado) {
+        showNoti("No tienes permiso para cambiar el estado de esta tarea.", false);
+        dom.taskEstado.value = tareaOriginal.ESTADO_TAREA || tareaOriginal.estado_tarea; 
+        return;
+    }
+    
+    const tareaData = {
+        ID_TAREA: id, // Usar mayúsculas para consistencia con el backend map
+        DESCRIPCION: descripcion, 
+        RESPONSABLES: responsablesSeleccionados,
+        PRIORIDAD: prioridad,
+        FECHA_VENCIMIENTO: fecha_vencimiento,
+        HORA_VENCIMIENTO: hora_vencimiento, 
+        ESTADO_TAREA: estado_tarea_nuevo,
+        // TIPO_TAREA: "Unica", // Ya no es necesario, se asume
+        MODULO_ASOCIADO: moduloAsociado,
+        FECHA_CREACION: esNuevaTarea ? new Date().toISOString() : (tareaOriginal.FECHA_CREACION || tareaOriginal.fecha_creacion),
+        CREADOR: esNuevaTarea ? usuario.nombre : (tareaOriginal.CREADOR || tareaOriginal.creador),
+        COMENTARIOS: esNuevaTarea ? [] : (tareaOriginal.COMENTARIOS || tareaOriginal.comentarios || []),
+        HISTORIAL_TAREA: esNuevaTarea ? [] : (tareaOriginal.HISTORIAL_TAREA || tareaOriginal.historial_tarea || [])
+    };
+
+    let endpoint = `${BACKEND_URL}/tareas`;
+    let method = 'POST';
+
+    if (!esNuevaTarea) {
+        endpoint = `${BACKEND_URL}/tareas/${id}`;
+        method = 'PUT';
+        const changes = getTaskChanges(tareaOriginal, tareaData);
+        if (changes.length > 0) {
+            tareaData.HISTORIAL_TAREA.push({
+                usuario: usuario.nombre,
+                accion: "Modificación",
+                detalle: changes.map(c => `Campo '${c.field}' cambiado de '${c.old}' a '${c.new}'`).join('; '),
+                timestamp: new Date().toISOString()
+            });
+        }
+    } else {
+         tareaData.HISTORIAL_TAREA.push({
+            usuario: usuario.nombre,
+            accion: "Creación",
+            detalle: "Tarea creada.",
+            timestamp: new Date().toISOString()
+        });
+    }
+
+    try {
+        const response = await fetch(endpoint, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tareaData)
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error HTTP al guardar tarea: ${response.status} - ${errorData.error || response.statusText}`);
+        }
+        const tareaGuardada = await response.json();
+        
+        if (esNuevaTarea) {
+            tareas.push(tareaGuardada); // Añadir la tarea devuelta por el backend (puede tener campos procesados)
+        } else {
+            tareas[existingTaskIndex] = tareaGuardada;
+        }
+        showNoti(`Tarea ${esNuevaTarea ? 'agregada' : 'actualizada'} exitosamente.`, true);
+        renderizarTareas();
+        cerrarModalTarea();
+    } catch (err) {
+        showNoti(`Error al guardar tarea: ${err.message}`, false);
+        console.error("Error en guardarTarea:", err);
+    }
+}
+
+
+function getTaskChanges(oldTask, newTask) {
+    const changes = [];
+    const fieldsToCompare = ['DESCRIPCION', 'RESPONSABLES', 'PRIORIDAD', 'FECHA_VENCIMIENTO', 'HORA_VENCIMIENTO', 'ESTADO_TAREA', 'MODULO_ASOCIADO'];
+    fieldsToCompare.forEach(field => {
+        let oldValue = field === 'RESPONSABLES' ? ((oldTask[field] || oldTask[field.toLowerCase()]) || []).sort().join(', ') : (oldTask[field] || oldTask[field.toLowerCase()] || '');
+        let newValue = field === 'RESPONSABLES' ? (newTask[field] || []).sort().join(', ') : (newTask[field] || '');
+        
+        if (field === 'DESCRIPCION' && typeof oldValue === 'string') { oldValue = oldValue.toUpperCase(); }
+        // newTask.DESCRIPCION ya está en mayúsculas
+        
+        if (String(oldValue) !== String(newValue)) { 
+            changes.push({ field: field.toLowerCase(), old: oldValue || '(vacío)', new: newValue || '(vacío)' });
+        }
+    });
+    return changes;
+}
+
+
+async function eliminarTarea(idTarea) {
+    if (!usuario || usuario.rol !== 'admin') {
+        showNoti("No tienes permiso para eliminar tareas.", false);
+        return;
+    }
+    const confirmed = await showConfirmationModal(`¿Seguro que quieres eliminar la tarea ${idTarea}? Esta acción no se puede deshacer.`);
+    if (confirmed) {
+        try {
+            const response = await fetch(`${BACKEND_URL}/tareas/${idTarea}`, { method: 'DELETE' });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Error HTTP al eliminar tarea: ${response.status} - ${errorData.error || response.statusText}`);
+            }
+            tareas = tareas.filter(t => (t.ID_TAREA || t.id_tarea) !== idTarea);
+            renderizarTareas();
+            showNoti(`Tarea ${idTarea} eliminada.`, true);
+        } catch (err) {
+            showNoti(`Error al eliminar tarea: ${err.message}`, false);
+            console.error("Error en eliminarTarea:", err);
+        }
+    } else {
+        showNoti("Eliminación cancelada.", null);
+    }
+}
+
+function renderizarComentariosTarea(idTarea) {
+    const tarea = tareas.find(t => (t.ID_TAREA || t.id_tarea) === idTarea);
+    if (!dom.taskCommentsList || !tarea) return;
+    const comentarios = tarea.COMENTARIOS || tarea.comentarios || [];
+    dom.taskCommentsList.innerHTML = (comentarios.length > 0) 
+        ? comentarios.map(c => `<div class="text-xs mb-1 p-1 bg-slate-100 rounded"><strong>${c.usuario}</strong> (${formatDateToUTCMinus3(c.timestamp)}): ${c.texto}</div>`).join('')
+        : '<p class="text-xs text-slate-500 italic">No hay comentarios.</p>';
+}
+
+function renderizarHistorialTarea(idTarea) {
+    const tarea = tareas.find(t => (t.ID_TAREA || t.id_tarea) === idTarea);
+    if (!dom.taskHistoryList || !tarea) return;
+    const historial = tarea.HISTORIAL_TAREA || tarea.historial_tarea || [];
+     dom.taskHistoryList.innerHTML = (historial.length > 0)
+        ? historial.slice().reverse().map(h => `<div class="text-xs mb-1 p-1 bg-slate-100 rounded"><strong>${h.usuario}</strong> (${formatDateToUTCMinus3(h.timestamp)}): ${h.accion} - ${h.detalle}</div>`).join('')
+        : '<p class="text-xs text-slate-500 italic">No hay historial para esta tarea.</p>';
+}
+
+async function agregarComentarioTarea() {
+    if (!tareaActualId || !dom.taskNewComment) return;
+    const tareaIndex = tareas.findIndex(t => (t.ID_TAREA || t.id_tarea) === tareaActualId);
+    if (tareaIndex === -1) { showNoti("Error: Tarea no encontrada.", false); return; }
+    
+    let tarea = tareas[tareaIndex];
+
+    const puedeComentar = ( (tarea.RESPONSABLES || tarea.responsables) && (tarea.RESPONSABLES || tarea.responsables).includes(usuario.rol)) || usuario.rol === 'admin';
+    if (!puedeComentar) { showNoti("No tienes permiso para agregar comentarios a esta tarea.", false); return; }
+    
+    const textoComentario = dom.taskNewComment.value.trim();
+    if (!textoComentario) { showNoti("El comentario no puede estar vacío.", false); return; }
+
+    const nuevoComentario = { usuario: usuario.nombre, texto: textoComentario, timestamp: new Date().toISOString() };
+    const nuevaEntradaHistorial = { usuario: usuario.nombre, accion: "Comentario agregado", detalle: `"${textoComentario}"`, timestamp: new Date().toISOString() };
+
+    // Actualizar localmente primero para UI optimista
+    const comentariosActualizados = [...(tarea.COMENTARIOS || tarea.comentarios || []), nuevoComentario];
+    const historialActualizado = [...(tarea.HISTORIAL_TAREA || tarea.historial_tarea || []), nuevaEntradaHistorial];
+    
+    // Crear un objeto de tarea actualizado para enviar al backend
+    // Asegurándose de usar las claves que el backend espera (mayúsculas)
+    const tareaActualizadaParaBackend = {
+        ...tarea, // Copia todas las propiedades existentes
+        COMENTARIOS: comentariosActualizados,
+        HISTORIAL_TAREA: historialActualizado
+    };
+    // Eliminar claves en minúscula si existen para evitar duplicados o confusión
+    delete tareaActualizadaParaBackend.comentarios;
+    delete tareaActualizadaParaBackend.historial_tarea;
+
+
+    try {
+        const response = await fetch(`${BACKEND_URL}/tareas/${tareaActualId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(tareaActualizadaParaBackend)
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error HTTP al agregar comentario: ${response.status} - ${errorData.error || response.statusText}`);
+        }
+        // Actualizar el array local 'tareas' con la respuesta del servidor (que debería ser la tarea completa actualizada)
+        tareas[tareaIndex] = await response.json(); 
+        
+        renderizarComentariosTarea(tareaActualId);
+        renderizarHistorialTarea(tareaActualId); 
+        dom.taskNewComment.value = '';
+        showNoti("Comentario agregado y tarea actualizada.", true);
+    } catch (err) {
+        showNoti(`Error al guardar comentario: ${err.message}`, false);
+        console.error("Error en agregarComentarioTarea:", err);
+        // Si falla el backend, podríamos considerar revertir los cambios locales,
+        // pero por ahora la UI se actualizó optimistamente.
+    }
+}
+
+
+function setupMultiSelectResponsables() {
+    if (!dom.taskResponsablesSelected || !dom.taskResponsablesOptions || !dom.taskResponsablesContainer) return;
+    dom.taskResponsablesSelected.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        const esAdmin = usuario && usuario.rol === 'admin';
+        const tareaExistente = tareaActualId && tareas.find(t => (t.ID_TAREA || t.id_tarea) === tareaActualId);
+        const puedeAbrirDropdown = esAdmin || !tareaExistente;
+
+        if (puedeAbrirDropdown) {
+            dom.taskResponsablesOptions.style.display = dom.taskResponsablesOptions.style.display === 'block' ? 'none' : 'block';
+        }
+    });
+    dom.taskResponsablesOptions.addEventListener('change', (e) => { if (e.target.type === 'checkbox') { updateSelectedResponsablesDisplay(); } });
+    document.addEventListener('click', (e) => { if (dom.taskResponsablesContainer && !dom.taskResponsablesContainer.contains(e.target) && dom.taskResponsablesOptions.style.display === 'block') { dom.taskResponsablesOptions.style.display = 'none'; } });
+}
+
+function updateSelectedResponsablesDisplay() {
+    if (!dom.taskResponsablesSelected) return;
+    const seleccionados = Array.from(document.querySelectorAll('input[name="task_responsables_opt"]:checked'))
+                               .map(cb => USERS[cb.value]?.nombre || cb.value);
+    if (seleccionados.length > 0) {
+        dom.taskResponsablesSelected.textContent = seleccionados.join(', ');
+    } else {
+        dom.taskResponsablesSelected.textContent = 'Seleccionar...';
+    }
+}
+
+function setupCollapsibleModules() {
+    document.querySelectorAll('.module-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const contentId = header.dataset.moduleId;
+            const contentElement = document.getElementById(contentId);
+            const toggleBtn = header.querySelector('.module-toggle-btn');
+            if (contentElement) {
+                contentElement.classList.toggle('hidden');
+                if (toggleBtn) {
+                    toggleBtn.textContent = contentElement.classList.contains('hidden') ? '+' : '-';
+                }
+                if (!contentElement.classList.contains('hidden')) {
+                    if (contentId === 'modulo-ventas-content') renderVentas();
+                    else if (contentId === 'modulo-deposito-content') renderDeposito();
+                }
+            }
+        });
+    });
+}
+
+
+function setupEventListeners() {
+  dom.loginForm?.addEventListener('submit', handleLogin);
+  dom.logoutBtn?.addEventListener('click', logout);
+  dom.refreshButton?.addEventListener('click', () => { cargarPedidos(); cargarTareas(); }); 
+  
+  [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas, dom.filtroFechaInicioVentas, dom.filtroFechaFinVentas].forEach(el => el?.addEventListener('change', renderizarTodo));
+  dom.filtroBuscar?.addEventListener('input', renderizarTodo);
+  [dom.filtroFaseDep, dom.filtroEnvioDep, dom.filtroFechaInicioDep, dom.filtroFechaFinDep].forEach(el => el?.addEventListener('change', renderizarTodo));
+  dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
+  
+  dom.modalClose?.addEventListener('click', closeModal);
+  dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
+  dom.confirmModalCancel?.addEventListener('click', () => { dom.confirmModalBg.classList.add('hidden'); dom.confirmModalBg.classList.remove('flex'); if (dom.confirmModalOk._promiseResolve) dom.confirmModalOk._promiseResolve(false); });
+  dom.attentionModalOk?.addEventListener('click', () => { dom.attentionModalBg.classList.add('hidden'); dom.attentionModalBg.classList.remove('flex'); if (dom.attentionModalOk._promiseResolve) dom.attentionModalOk._promiseResolve(true); });
+  dom.notiCloseBtn?.addEventListener('click', hideNoti); dom.notiOkBtn?.addEventListener('click', hideNoti); dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
+  if (dom.attentionModalBg) { dom.attentionModalBg.addEventListener('click', (e) => { if (e.target === dom.attentionModalBg) e.stopPropagation(); }); dom.attentionModalBox?.addEventListener('click', (e) => e.stopPropagation()); }
+  dom.tablaVentasBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
+  dom.tablaDepositoBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
+  if (dom.appWidthSelector) { dom.appWidthSelector.addEventListener('change', (event) => { applyAppWidth(event.target.value); }); }
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { if (dom.taskModalBg && !dom.taskModalBg.classList.contains('hidden')) { cerrarModalTarea(); } else if (dom.modalBg && !dom.modalBg.classList.contains('hidden')) { closeModal(); } else if (dom.confirmModalBg && !dom.confirmModalBg.classList.contains('hidden')) { dom.confirmModalCancel.click(); } else if (dom.attentionModalBg && !dom.attentionModalBg.classList.contains('hidden')) { dom.attentionModalOk.click(); } } else if (event.key === 'F5') { event.preventDefault(); cargarPedidos(); cargarTareas(); showNoti("Datos actualizados (F5)", true); } });
+
+  dom.btnAgregarTareaGlobal?.addEventListener('click', () => abrirModalTarea(null, false, 'Admin')); 
+  
+  dom.taskModalClose?.addEventListener('click', cerrarModalTarea);
+  dom.taskModalCancel?.addEventListener('click', cerrarModalTarea);
+  dom.taskModalBg?.addEventListener('click', (e) => { if (e.target === dom.taskModalBg) cerrarModalTarea(); });
+  dom.taskForm?.addEventListener('submit', guardarTarea);
+  dom.taskAddCommentBtn?.addEventListener('click', agregarComentarioTarea);
+
+  setupMultiSelectResponsables();
+  setupCollapsibleModules(); 
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  cacheDOMElements(); 
+  const savedWidth = localStorage.getItem('appPreferredWidth');
+  if (savedWidth && APP_WIDTH_CLASSES.includes(savedWidth)) { applyAppWidth(savedWidth); if (dom.appWidthSelector) dom.appWidthSelector.value = savedWidth; } 
+  else if (dom.mainApp && dom.appWidthSelector) { const defaultHtmlWidth = APP_WIDTH_CLASSES.find(cls => dom.mainApp.classList.contains(cls)) || 'max-w-6xl'; applyAppWidth(defaultHtmlWidth); dom.appWidthSelector.value = defaultHtmlWidth; }
+  setupEventListeners(); 
+  logout(); 
+});
+
+document.head.insertAdjacentHTML('beforeend', `
+  <style>
+    .task-modal-input { width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; line-height: 1.25rem; color: #374151; background-color: #fff; transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; }
+    .task-modal-input:focus { border-color: #a855f7; outline: 0; box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.25); }
+    .task-modal-input[type="checkbox"] { width: auto; }
+    .task-modal-input:disabled, .task-modal-input[readonly] { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
+    #task-add-comment-section button:disabled { background-color: #9ca3af; cursor: not-allowed; }
+    .module-header .module-toggle-btn { transition: transform 0.2s ease-in-out; }
+    .module-content.hidden + .module-header .module-toggle-btn { /* transform: rotate(-90deg); */ /* Opcional si quieres rotar el ícono */ }
+  </style>
+`);
+
+</script>
+</body>
+</html>
