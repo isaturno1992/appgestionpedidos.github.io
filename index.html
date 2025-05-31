@@ -111,7 +111,8 @@
           <option value="max-w-full">Total</option>
         </select>
       </div>
-      <div class="flex items-center gap-3"> <div class="relative">
+      <div class="flex items-center gap-3">
+        <div class="relative">
             <button id="notification-bell-btn" title="Notificaciones" class="p-2 rounded-full hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-custom-blue focus:ring-opacity-50 transition relative">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600">
                     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
@@ -124,7 +125,7 @@
                     Notificaciones
                 </div>
                 <ul id="notifications-list" class="max-h-80 overflow-y-auto">
-                    </ul>
+                </ul>
                 <div id="no-notifications-message" class="p-4 text-center text-sm text-slate-500 hidden">
                     No tienes notificaciones nuevas.
                 </div>
@@ -422,12 +423,6 @@
 <div id="confirm-modal-bg" class="fixed inset-0 z-[2000] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4"> <div id="confirm-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative"> <div id="confirm-modal-message" class="text-lg font-semibold mb-5 text-slate-700 text-center"></div> <div class="flex justify-center gap-4"> <button id="confirm-modal-cancel" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-red-500 text-white hover:bg-red-700 focus:ring-red-500">Cancelar</button> <button id="confirm-modal-ok" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-custom-green text-white hover:bg-green-700 focus:ring-custom-green">Confirmar</button> </div> </div> </div>
 <div id="attention-modal-bg" class="fixed inset-0 z-[2000] bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4"> <div id="attention-modal-box" class="animate-pop bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative"> <div id="attention-modal-message" class="text-lg font-semibold mb-5 text-slate-700 text-center"></div> <div class="flex justify-center"> <button id="attention-modal-ok" class="font-semibold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md bg-custom-green text-white hover:bg-green-700 focus:ring-custom-green">OK</button> </div> </div> </div>
 <div id="ticket-print-wrapper" class="hidden print:block"> <div id="ticket-print" class="hidden print:block"></div> </div>
-<div id="app-width-selector-wrapper-floating" class="fixed bottom-4 left-4 z-[1000] bg-white p-2 rounded-lg shadow-md flex items-center gap-2" style="display: none;"> <label for="app-width-selector-floating" class="text-xs font-medium text-slate-600 whitespace-nowrap">Resolución:</label> <select id="app-width-selector-floating" class="text-xs p-1.5 rounded-md border border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition bg-white"> <option value="max-w-6xl">Normal</option>
-        <option value="max-w-7xl">Medio</option>
-        <option value="max-w-screen-2xl">Ancho</option>
-        <option value="max-w-full">Total</option>
-    </select>
-</div>
 
 <script>
 'use strict';
@@ -453,8 +448,7 @@ const dom = {
     confirmModalCancel: null, confirmModalOk: null, attentionModalBg: null,
     attentionModalMessage: null, attentionModalOk: null, salesStatsWrapper: null,
     productosDisplayTable: null, productosEditArea: null, modalEditProductosBtn: null,
-    appWidthSelectorMain: null, appWidthSelectorWrapperMain: null, 
-    appWidthSelectorFloating: null, appWidthSelectorWrapperFloating: null, 
+    appWidthSelectorMain: null, appWidthSelectorWrapperMain: null,
 
     btnAgregarTareaGlobal: null,
     tablaTareasVentasBody: null,
@@ -462,8 +456,8 @@ const dom = {
     tablaTareasAdminBody: null,
 
     taskModalBg: null, taskModalBox: null, taskModalClose: null, taskModalTitle: null,
-    taskForm: null, taskId: null, 
-    taskTitulo: null, 
+    taskForm: null, taskId: null,
+    taskTitulo: null,
     taskDescripcion: null, taskResponsablesContainer: null,
     taskResponsablesSelected: null, taskResponsablesOptions: null, taskPrioridad: null,
     taskFechaVencimiento: null, taskHoraVencimiento: null,
@@ -472,7 +466,6 @@ const dom = {
     taskDetailsExtraInfo: null, taskCommentsList: null, taskNewComment: null,
     taskAddCommentBtn: null, taskHistoryList: null, taskAddCommentSection: null,
 
-    // Notification Elements
     notificationBellBtn: null, notificationDot: null, notificationsDropdown: null,
     notificationsList: null, noNotificationsMessage: null,
 };
@@ -483,7 +476,6 @@ function cacheDOMElements() {
         const id = key.replace(/([A-Z])/g, '-$1').toLowerCase();
         dom[key] = document.getElementById(id);
     }
-    // Query selectors for table bodies as they don't have IDs
     dom.tablaVentasBody = document.querySelector('#tabla-ventas tbody');
     dom.tablaDepositoBody = document.querySelector('#tabla-deposito tbody');
     dom.tablaTareasVentasBody = document.querySelector('#tabla-tareas-ventas tbody');
@@ -493,7 +485,7 @@ function cacheDOMElements() {
 }
 
 // Constants
-const BACKEND_URL = 'https://gestor-pedidos-api-online.onrender.com'; 
+const BACKEND_URL = 'https://gestor-pedidos-api-online.onrender.com';
 const USERS = {
   admin:    { pass: "admin123",   rol: "admin",    nombre: "Admin" },
   ventas:   { pass: "ventas2024", rol: "ventas",   nombre: "Ventas" },
@@ -537,12 +529,10 @@ function applyAppWidth(newWidthClass) {
     localStorage.setItem('appPreferredWidth', newWidthClass);
     console.log(`App width set to: ${newWidthClass}`);
     if (dom.appWidthSelectorMain) dom.appWidthSelectorMain.value = newWidthClass;
-    if (dom.appWidthSelectorFloating) dom.appWidthSelectorFloating.value = newWidthClass;
 }
 
-// --- Utility Function for Task JSON Fields (Client-side) ---
 function parseTaskJSONFields(record) {
-    if (!record) return record; 
+    if (!record) return record;
     const fieldsToParse = ['RESPONSABLES', 'COMENTARIOS', 'HISTORIAL_TAREA', 'NOTIFICACIONES_COMENTARIO'];
     const parsedRecord = { ...record };
 
@@ -569,8 +559,39 @@ function parseTaskJSONFields(record) {
     return parsedRecord;
 }
 
+function excelSerialToDate(serial) {
+    if (typeof serial !== 'number' || isNaN(serial)) {
+        return null;
+    }
+    // Excel epoch: Dec 30, 1899. JS epoch: Jan 1, 1970. Difference: 25569 days.
+    const excelEpochOffset = 25569;
+    const datePart = Math.floor(serial);
+    const timePart = serial - datePart;
 
-// --- Authentication & Initialization ---
+    // Convert date part to UTC date components
+    const dateMilliseconds = (datePart - excelEpochOffset) * 86400 * 1000;
+    const dateAtUtcMidnight = new Date(dateMilliseconds);
+
+    let hours = 0;
+    let minutes = 0;
+    if (timePart > 1e-9) { // Epsilon for floating point precision
+        let totalSecondsInDay = Math.round(timePart * 86400);
+        hours = Math.floor(totalSecondsInDay / 3600);
+        totalSecondsInDay %= 3600;
+        minutes = Math.floor(totalSecondsInDay / 60);
+    }
+
+    // Return an object with UTC components. The consumer will format this to local.
+    return {
+        year: dateAtUtcMidnight.getUTCFullYear(),
+        month: dateAtUtcMidnight.getUTCMonth(), // 0-indexed
+        day: dateAtUtcMidnight.getUTCDate(),
+        hours: hours,
+        minutes: minutes
+    };
+}
+
+
 function handleLogin(event) {
   event.preventDefault();
   const u = dom.loginUser.value;
@@ -579,14 +600,12 @@ function handleLogin(event) {
     usuario = USERS[u];
     dom.mainApp.style.display = 'block';
     dom.loginPanel.style.display = 'none';
-    if (dom.appWidthSelectorWrapperMain) dom.appWidthSelectorWrapperMain.style.display = 'flex'; 
-    if (dom.appWidthSelectorWrapperFloating) dom.appWidthSelectorWrapperFloating.style.display = 'flex'; 
-
+    if (dom.appWidthSelectorWrapperMain) dom.appWidthSelectorWrapperMain.style.display = 'flex';
     if(dom.btnAgregarTareaGlobal) dom.btnAgregarTareaGlobal.style.display = 'block';
 
-    cargarPedidos(); // This will call renderizarTodo internally
-    cargarTareas();  // This will call renderizarTareas and then renderNotifications
-    
+    cargarPedidos();
+    cargarTareas();
+
     if (syncIntervalId) clearInterval(syncIntervalId);
     syncIntervalId = setInterval(() => {
         console.log("Sincronización automática de datos...");
@@ -610,8 +629,7 @@ function logout() {
   printCount = {};
   if(dom.mainApp) dom.mainApp.style.display = 'none';
   if(dom.loginPanel) dom.loginPanel.style.display = 'block';
-  if (dom.appWidthSelectorWrapperMain) dom.appWidthSelectorWrapperMain.style.display = 'none'; 
-  if (dom.appWidthSelectorWrapperFloating) dom.appWidthSelectorWrapperFloating.style.display = 'none'; 
+  if (dom.appWidthSelectorWrapperMain) dom.appWidthSelectorWrapperMain.style.display = 'none';
   if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0];
   if(dom.loginPass) dom.loginPass.value = '';
   if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
@@ -626,14 +644,13 @@ function logout() {
   if(dom.moduloAdmin) dom.moduloAdmin.style.display = 'none';
 
   updateStats();
-  renderNotifications(); // Clear notifications on logout
+  renderNotifications();
   mostrarSyncLog('Sesión cerrada.', null);
 }
 
-// --- Data Fetching & Rendering ---
 async function cargarPedidos() { if (!usuario) return; mostrarSyncLog('Sincronizando pedidos...', null); try { const response = await fetch(BACKEND_URL + '/pedidos', { cache: "no-store" }); if (!response.ok) { const errorData = await response.json(); throw new Error(`Error HTTP: ${response.status} - ${errorData.error}`); } const data = await response.json(); pedidos = (Array.isArray(data) ? data : []).map(p => ({ ...p, FASE: p.FASE || "EN ESPERA", ID: String(p.ID || p.Id || p.id || Date.now()), CLIENTE: ((p.NOMBRE||"") + " " + (p.APELLIDO||"")).toUpperCase().trim(), MONTO: p.MONTO || p.Total || p.TOTAL || p.total || "", ESTADO_WOO: p.ESTADO || p.Estado || p.estado || "", METODO_ENVIO: p.METODO_ENVIO || p.Metodo_Envio || p["Método de Envío"] || "", FECHA: p.FECHA || "", TELEFONO: p.TELEFONO ? (String(p.TELEFONO).startsWith("0") ? String(p.TELEFONO) : "0" + String(p.TELEFONO)).replace(/^00+/, "0") : "", ESTADO_PAGO: p.ESTADO_PAGO || p.Estado_Pago || p["Estado de Pago"] || p.estado_pago || "", NOTAS: p.NOTAS || "", EMAIL: p.EMAIL || "", DIRECCION: p.DIRECCION || "", BARRIO_LOCALIDAD: p.BARRIO_LOCALIDAD || p.Barrio || p.Localidad || "", DEPARTAMENTO: p.DEPARTAMENTO || p.Departamento || "", PRODUCTS: p.PRODUCTS || p.PRODUCTOS || "", FACTURADO: p.FACTURADO === true || String(p.FACTURADO).toLowerCase() === "true", ENTREGADO: p.ENTREGADO === true || String(p.ENTREGADO).toLowerCase() === "true", AVISO_CLIENTE: p.AVISO_CLIENTE === true || String(p.AVISO_CLIENTE).toLowerCase() === "true", EMPAQUE: p.EMPAQUE || "", HISTORIAL: Array.isArray(p.HISTORIAL) ? p.HISTORIAL : [], TICKET_IMPRESO: p.TICKET_IMPRESO === true || String(p.TICKET_IMPRESO).toLowerCase() === "true", FECHA_INGRESO_SISTEMA: p.FECHA_INGRESO_SISTEMA || "", ETIQUETA_EMITIDA: p.ETIQUETA_EMITIDA === true || String(p.ETIQUETA_EMITIDA).toLowerCase() === "true", FASE_ANTERIOR_CANCELACION: p.FASE_ANTERIOR_CANCELACION || "" })); renderizarTodo(); const now = new Date(); const formattedDateTime = now.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }); mostrarSyncLog(`Pedidos sincronizados! ${formattedDateTime}`, true); } catch (err) { mostrarSyncLog('Error al cargar pedidos: ' + err.message, false); console.error("Error en cargarPedidos:", err); } }
 
-function renderizarTodo() { // Renders main content sections and calls specific renderers
+function renderizarTodo() {
   if (!usuario) return;
   updateStats();
   const isAdmin = usuario.rol === "admin";
@@ -652,7 +669,7 @@ function renderizarTodo() { // Renders main content sections and calls specific 
   if (dom.moduloDeposito && dom.moduloDeposito.style.display !== 'none' && dom.moduloDepositoContent && !dom.moduloDepositoContent.classList.contains('hidden')) {
     renderDeposito();
   }
-  renderizarTareas(); // This will also call renderNotifications
+  renderizarTareas();
 }
 function isOrderActive(pedido) { if (!pedido || pedido.FASE === "CANCELADO") return false; const metodoEnvioNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); if (pedido.FASE !== "COMPLETADO" && pedido.FASE !== "COMPLETADO MODIFICADO") { return true; } if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") { return !pedido.ETIQUETA_EMITIDA || !pedido.FACTURADO || !pedido.AVISO_CLIENTE; } else if (metodoEnvioNorm === "PICK UP") { return !pedido.ENTREGADO || !pedido.FACTURADO || !pedido.AVISO_CLIENTE; } return false; }
 function updateStats() { if (!dom.statTotal || !pedidos) { const allStatIds = ['stat-total', 'stat-espera', 'stat-procesando', 'stat-preparando', 'stat-completado', 'stat-dac', 'stat-gp', 'stat-pickup', 'stat-modificados']; allStatIds.forEach(id => { const element = document.getElementById(id); if (element) { element.textContent = '0'; const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) parentBox.classList.add('hidden'); } }); if (!pedidos || pedidos.length === 0) return; } const pedidosActivosParaEstadisticasVentas = pedidos.filter(isOrderActive); const salesStatsData = { total: pedidosActivosParaEstadisticasVentas.length, espera: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "EN ESPERA").length, procesando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PROCESANDO").length, preparando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO").length, completado: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO").length, }; const fasesExcluidasParaStatsMetodoEnvioDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO", "CANCELADO"]; const pedidosParaEstadisticasMetodoEnvioDeposito = pedidos.filter(p => !fasesExcluidasParaStatsMetodoEnvioDeposito.includes(p.FASE) ); const depositStatsData = { dac: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "DAC").length, gp: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "GESTION POS").length, pickup: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "PICK UP").length, modificados: pedidos.filter(p => (p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO") && p.FASE !== "CANCELADO").length }; const salesStatElementsMap = { 'stat-total': salesStatsData.total, 'stat-espera': salesStatsData.espera, 'stat-procesando': salesStatsData.procesando, 'stat-preparando': salesStatsData.preparando, 'stat-completado': salesStatsData.completado }; for (const id in salesStatElementsMap) { const element = document.getElementById(id); const value = salesStatElementsMap[id]; if (element) { element.textContent = String(value); const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) { parentBox.classList.toggle('hidden', Number(value) === 0 && id !== 'stat-total'); } } } const depositStatElementsMap = { 'stat-dac': depositStatsData.dac, 'stat-gp': depositStatsData.gp, 'stat-pickup': depositStatsData.pickup, 'stat-modificados': depositStatsData.modificados }; for (const id in depositStatElementsMap) { const element = document.getElementById(id); const value = depositStatElementsMap[id]; if (element) { element.textContent = String(value); const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) { if (Number(value) === 0) { parentBox.classList.add('hidden'); } else { parentBox.classList.remove('hidden'); } } } } }
@@ -695,9 +712,6 @@ async function activarPedido(idx) { const p = pedidos[idx]; if (!p || p.FASE !==
 async function completarPedido(idx) { const p = pedidos[idx]; if (!p) return; if (["DAC","GESTION POS"].includes((p.METODO_ENVIO || "").trim().toUpperCase())) { const empaqueSel = dom.modalContent.querySelector('#modal-tipo-empaque'); const val = empaqueSel ? empaqueSel.value : p.EMPAQUE; if (!val) { showNoti("Debe seleccionar empaque.", false); return; } p.EMPAQUE = val; } const oldFase = p.FASE; p.FASE = "COMPLETADO"; const changes = getChanges(originalPedidoState, p, FIELDS_TO_TRACK_DEPOSITO); if (changes.length > 0) p.HISTORIAL.push({ timestamp: new Date().toISOString(), user: usuario.nombre, changes: changes }); if (await guardarFaseYDatos(p)) { showNoti("Pedido completado!", true); renderizarTodo(); } closeModal(); }
 function imprimirTicket(idx) { const p = pedidos[idx]; if (!p) return; let prodsHtml = ""; if (p.PRODUCTS) { (p.PRODUCTS || "").split('\n').filter(l => l.trim() !== '').forEach(l => { const fr = formatProductLineToHtmlRow(l); if (fr) prodsHtml += fr; }); } let displayFecha = p.FECHA || ""; if (p.FECHA) { displayFecha = formatDateToUTCMinus3(p.FECHA, true); } dom.ticketPrint.innerHTML = `<div style="font-family:monospace; max-width:79mm; padding: 5mm; box-sizing: border-box;"><div style="text-align:center; font-weight:bold; font-size:12pt; margin-bottom:3mm;">COMPROBANTE</div><div><b>Pedido #${p.ID||""}</b></div><div><b>Cliente:</b> ${p.CLIENTE||""}</div><div><b>Dirección:</b> ${p.DIRECCION||""}</div><div><b>Barrio/Loc:</b> ${p.BARRIO_LOCALIDAD||""}</div><div><b>Depto:</b> ${getDepartamentoFullName(p.DEPARTAMENTO||"")}</div><div><b>Tel:</b> ${p.TELEFONO||""}</div><div><b>Envío:</b> ${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</div><div><b>Fecha:</b> ${displayFecha}</div>${prodsHtml ? `<table class="ticket-table" style="width:100%; margin:8px 0; font-size:9pt;"><thead><tr><th>SKU</th><th>Desc.</th><th style="text-align:right;">Cant.</th></tr></thead><tbody>${prodsHtml}</tbody></table>` : '<div>No hay productos.</div>'}<div><b>Notas:</b> ${p.NOTAS||"Ninguna"}</div><div style="text-align:center; font-size:8pt; margin-top:5mm;">Gracias</div></div>`; setTimeout(() => { window.print(); printCount[p.ID] = true; const btn = dom.modalContent.querySelector('#modal-print-ticket'); if (btn) { btn.textContent = "Reimprimir Ticket"; btn.classList.remove('bg-blue-500','hover:bg-blue-600','focus:ring-blue-500'); btn.classList.add('bg-custom-orange','hover:bg-orange-700','focus:ring-custom-orange');} if (p.TICKET_IMPRESO !== true) { p.TICKET_IMPRESO = true; guardarFaseYDatos(p); } }, 250); }
 
-
-// ===================== GESTIÓN DE TAREAS ====================
-
 async function cargarTareas() {
     if (!usuario) return;
     mostrarSyncLog('Cargando tareas...', null);
@@ -710,17 +724,17 @@ async function cargarTareas() {
         const data = await response.json();
         tareas = Array.isArray(data) ? data.map(t => parseTaskJSONFields(t)) : [];
         console.log("Tareas cargadas desde backend:", tareas);
-        renderizarTareas(); // This will call renderNotifications
+        renderizarTareas();
         mostrarSyncLog('Tareas sincronizadas.', true);
     } catch (err) {
         mostrarSyncLog(`Error al cargar tareas: ${err.message}`, false);
         console.error("Error en cargarTareas:", err);
-        tareas = []; 
-        renderizarTareas(); 
+        tareas = [];
+        renderizarTareas();
     }
 }
 
-function renderizarTareas() { // Renders task tables and then updates notifications
+function renderizarTareas() {
     if (!usuario) return;
 
     if (dom.tablaTareasVentasBody) {
@@ -746,7 +760,7 @@ function renderizarTareas() { // Renders task tables and then updates notificati
         );
         tareasVisiblesAdmin.forEach(tarea => dom.tablaTareasAdminBody.appendChild(crearFilaTareaHtml(tarea, true)));
     }
-    renderNotifications(); // Update notification bell and dropdown
+    renderNotifications();
 }
 
 function getPrioridadClass(prioridad) {
@@ -766,19 +780,55 @@ function getEstadoTareaClass(estado) {
 function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
     const tr = document.createElement('tr');
     tr.className = "bg-white border-b hover:bg-slate-50 transition";
-    const responsables = tarea.RESPONSABLES; 
+    const responsables = tarea.RESPONSABLES;
     const responsablesNombres = Array.isArray(responsables) ? responsables.map(rol => USERS[rol]?.nombre || rol).join(', ') : (USERS[responsables]?.nombre || responsables || 'N/A');
 
     let fechaVencimientoDisplay = 'N/A';
-    const fechaVenc = tarea.FECHA_VENCIMIENTO;
-    const horaVenc = tarea.HORA_VENCIMIENTO;
+    const valFecha = tarea.FECHA_VENCIMIENTO;
+    const valHora = tarea.HORA_VENCIMIENTO; // Puede ser string "HH:MM" o número (serial de hora)
+    let fechaObj = null;
+    let horaString = '';
 
-    if (fechaVenc) {
-        fechaVencimientoDisplay = formatDateToDisplay(fechaVenc);
-        if (horaVenc) {
-            fechaVencimientoDisplay += ` ${horaVenc}`;
+    if (typeof valFecha === 'number') { // Fecha es serial numérico
+        const dateTimeParts = excelSerialToDate(valFecha); // Devuelve {year, month, day, hours, minutes}
+        if (dateTimeParts) {
+            fechaVencimientoDisplay = formatDateToDisplay(`${dateTimeParts.year}-${(dateTimeParts.month + 1).toString().padStart(2, '0')}-${dateTimeParts.day.toString().padStart(2, '0')}`);
+            // La hora ya está en dateTimeParts.hours y dateTimeParts.minutes
+            horaString = `${dateTimeParts.hours.toString().padStart(2, '0')}:${dateTimeParts.minutes.toString().padStart(2, '0')}`;
+
+            // Si valHora también es un serial de hora (fraccional), podría usarse para refinar, pero excelSerialToDate ya debería manejar la parte fraccional de valFecha
+            if (typeof valHora === 'number' && valHora > 0 && valHora < 1 && (valFecha % 1 === 0 || Math.abs(valFecha % 1) < 1e-9)) {
+                // Si la fecha era un entero y la hora es un serial fraccional separado
+                const timeSerialDateTime = excelSerialToDate(valHora);
+                 if (timeSerialDateTime) {
+                   horaString = `${timeSerialDateTime.hours.toString().padStart(2, '0')}:${timeSerialDateTime.minutes.toString().padStart(2, '0')}`;
+                }
+            } else if (typeof valHora === 'string' && valHora.match(/^\d{1,2}:\d{2}$/) && (valFecha % 1 === 0 || Math.abs(valFecha % 1) < 1e-9) ) {
+                // Si la fecha era serial entero y la hora es string
+                const parts = valHora.split(':');
+                horaString = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+            }
+        } else {
+            fechaVencimientoDisplay = String(valFecha); // Fallback si la conversión falla
+        }
+    } else if (typeof valFecha === 'string' && valFecha.match(/^\d{4}-\d{2}-\d{2}$/)) { // Fecha es YYYY-MM-DD
+        fechaVencimientoDisplay = formatDateToDisplay(valFecha);
+        if (typeof valHora === 'string' && valHora.match(/^\d{1,2}:\d{2}$/)) {
+            const parts = valHora.split(':');
+            horaString = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+        }
+    } else if (valFecha) { // Otro tipo de valor, intentar mostrarlo
+        fechaVencimientoDisplay = String(valFecha);
+         if (typeof valHora === 'string' && valHora.match(/^\d{1,2}:\d{2}$/)) {
+             const parts = valHora.split(':');
+             horaString = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
         }
     }
+
+    if (fechaVencimientoDisplay !== 'N/A' && horaString && horaString !== "00:00") { // No mostrar 00:00 si no hay hora real
+        fechaVencimientoDisplay += ` ${horaString}`;
+    }
+
 
     let moduloAsociadoDisplay = tarea.MODULO_ASOCIADO || 'General';
     const idTarea = tarea.ID_TAREA;
@@ -789,8 +839,8 @@ function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
     if (tarea.NOTIFICACIONES_COMENTARIO && tarea.NOTIFICACIONES_COMENTARIO[usuario.rol]) {
         unreadIndicatorHtml = '<span class="unread-indicator" title="Nuevo comentario"></span>';
     }
-    
-    const tituloParaMostrar = (tarea.TITULO || "").toUpperCase();
+
+    const tituloParaMostrar = (tarea.TITULO || "Tarea sin título").toUpperCase();
 
     tr.innerHTML = `
         <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${idTarea} ${unreadIndicatorHtml}</td>
@@ -840,21 +890,50 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     let esResponsableAsignado = false;
 
     if (esEdicion && idTarea) {
-        tarea = tareaExistente; 
+        tarea = tareaExistente;
         if (tarea) {
             dom.taskModalTitle.textContent = "Editar Tarea";
-            dom.taskTitulo.value = tarea.TITULO || ""; 
-            dom.taskDescripcion.value = tarea.DESCRIPCION || ""; 
+            dom.taskTitulo.value = tarea.TITULO || "";
+            dom.taskDescripcion.value = tarea.DESCRIPCION || "";
             document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
-                if (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(checkbox.value)) { 
+                if (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(checkbox.value)) {
                     checkbox.checked = true;
                 }
             });
             dom.taskPrioridad.value = tarea.PRIORIDAD;
-            dom.taskFechaVencimiento.value = tarea.FECHA_VENCIMIENTO || '';
-            dom.taskHoraVencimiento.value = tarea.HORA_VENCIMIENTO || '';
+
+            let fechaParaInput = '';
+            let horaParaInput = '';
+            const valFechaModal = tarea.FECHA_VENCIMIENTO;
+            const valHoraModal = tarea.HORA_VENCIMIENTO;
+
+            if (typeof valFechaModal === 'number') {
+                const dateTimeParts = excelSerialToDate(valFechaModal);
+                if (dateTimeParts) {
+                    fechaParaInput = `${dateTimeParts.year}-${(dateTimeParts.month + 1).toString().padStart(2, '0')}-${dateTimeParts.day.toString().padStart(2, '0')}`;
+                    if (valFechaModal % 1 !== 0 && Math.abs(valFechaModal % 1) > 1e-9) { // Hora en serial de fecha
+                        horaParaInput = `${dateTimeParts.hours.toString().padStart(2, '0')}:${dateTimeParts.minutes.toString().padStart(2, '0')}`;
+                    } else if (typeof valHoraModal === 'number' && valHoraModal > 0 && valHoraModal < 1) { // Hora como serial separado
+                        const timeSerialDateTime = excelSerialToDate(valHoraModal);
+                        if(timeSerialDateTime) horaParaInput = `${timeSerialDateTime.hours.toString().padStart(2, '0')}:${timeSerialDateTime.minutes.toString().padStart(2, '0')}`;
+                    } else if (typeof valHoraModal === 'string' && valHoraModal.match(/^\d{1,2}:\d{2}$/)) {
+                        const parts = valHoraModal.split(':');
+                        horaParaInput = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+                    }
+                }
+            } else if (typeof valFechaModal === 'string' && valFechaModal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                fechaParaInput = valFechaModal;
+                if (typeof valHoraModal === 'string' && valHoraModal.match(/^\d{1,2}:\d{2}$/)) {
+                     const parts = valHoraModal.split(':');
+                     horaParaInput = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+                }
+            }
+
+            dom.taskFechaVencimiento.value = fechaParaInput;
+            dom.taskHoraVencimiento.value = horaParaInput;
             dom.taskEstado.value = tarea.ESTADO_TAREA;
             dom.taskModuloAsociado.value = tarea.MODULO_ASOCIADO || '';
+
 
             if (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol)) {
                 esResponsableAsignado = true;
@@ -863,25 +942,25 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
             dom.taskDetailsExtraInfo.classList.remove('hidden');
             renderizarComentariosTarea(idTarea);
             renderizarHistorialTarea(idTarea);
-            
+
             if (tarea.NOTIFICACIONES_COMENTARIO && tarea.NOTIFICACIONES_COMENTARIO[usuario.rol]) {
                 const updatedNotif = { ...tarea.NOTIFICACIONES_COMENTARIO, [usuario.rol]: false };
                 const taskIndex = tareas.findIndex(t => t.ID_TAREA === idTarea);
                 if (taskIndex > -1) {
-                    tareas[taskIndex].NOTIFICACIONES_COMENTARIO = updatedNotif; // Optimistic client update
+                    tareas[taskIndex].NOTIFICACIONES_COMENTARIO = updatedNotif;
                 }
                 actualizarTareaEnBackend({ ID_TAREA: tarea.ID_TAREA, NOTIFICACIONES_COMENTARIO: updatedNotif }, tarea.ID_TAREA)
-                    .then(() => renderNotifications()); // Update bell after backend confirmation
+                    .then(() => renderNotifications());
             }
 
         } else {
             showNoti("Error: Tarea no encontrada para editar.", false);
             return;
         }
-    } else { 
+    } else {
         dom.taskModalTitle.textContent = "Nueva Tarea";
-        dom.taskTitulo.value = ""; 
-        dom.taskDescripcion.value = ""; 
+        dom.taskTitulo.value = "";
+        dom.taskDescripcion.value = "";
         dom.taskDetailsExtraInfo.classList.add('hidden');
         if (usuario.rol === 'ventas' || usuario.rol === 'deposito') {
             const currentUserCheckbox = dom.taskResponsablesOptions.querySelector(`input[value="${usuario.rol}"]`);
@@ -901,7 +980,7 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     dom.taskEstado.disabled = !puedeEditarEstado;
     if (dom.taskAddCommentSection) dom.taskAddCommentSection.style.display = puedeComentar ? 'block' : 'none';
 
-    dom.taskTitulo.readOnly = !puedeEditarGeneral; 
+    dom.taskTitulo.readOnly = !puedeEditarGeneral;
     dom.taskDescripcion.readOnly = !puedeEditarGeneral;
     dom.taskPrioridad.disabled = !puedeEditarGeneral;
     dom.taskFechaVencimiento.readOnly = !puedeEditarGeneral;
@@ -925,7 +1004,7 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
         dom.taskResponsablesSelected.style.backgroundColor = '#fff';
     }
 
-    dom.taskModalSave.style.display = (esAdmin || esNuevaTarea || esResponsableAsignado) ? 'inline-flex' : 'none'; 
+    dom.taskModalSave.style.display = (esAdmin || esNuevaTarea || esResponsableAsignado) ? 'inline-flex' : 'none';
     dom.taskModalSave.disabled = false;
 
     dom.taskModalBg.classList.remove('hidden');
@@ -950,22 +1029,22 @@ async function actualizarTareaEnBackend(tareaData, idTareaOriginal) {
         const response = await fetch(`${BACKEND_URL}/tareas/${idParaEndpoint}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tareaData) 
+            body: JSON.stringify(tareaData)
         });
 
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(`HTTP ${response.status} - ${errorData.error || response.statusText}`);
         }
-        const tareaGuardada = await response.json(); 
+        const tareaGuardada = await response.json();
 
         const index = tareas.findIndex(t => (t.ID_TAREA) === idParaEndpoint);
         if (index > -1) {
-            tareas[index] = parseTaskJSONFields(tareaGuardada); 
+            tareas[index] = parseTaskJSONFields(tareaGuardada);
         } else {
             tareas.push(parseTaskJSONFields(tareaGuardada));
         }
-        renderizarTareas(); 
+        renderizarTareas();
         return true;
     } catch (err) {
         showNoti(`Error al actualizar tarea: ${err.message}`, false);
@@ -979,16 +1058,16 @@ async function guardarTarea(event) {
     event.preventDefault();
 
     const id = dom.taskId.value;
-    const titulo = dom.taskTitulo.value.trim(); 
-    const descripcion = dom.taskDescripcion.value.trim(); 
+    const titulo = dom.taskTitulo.value.trim();
+    const descripcion = dom.taskDescripcion.value.trim();
     const responsablesSeleccionados = Array.from(document.querySelectorAll('input[name="task_responsables_opt"]:checked')).map(cb => cb.value);
     const prioridad = dom.taskPrioridad.value;
-    const fecha_vencimiento = dom.taskFechaVencimiento.value;
-    const hora_vencimiento = dom.taskHoraVencimiento.value;
+    const fecha_vencimiento = dom.taskFechaVencimiento.value; // YYYY-MM-DD
+    const hora_vencimiento = dom.taskHoraVencimiento.value;   // HH:MM
     const estado_tarea_nuevo = dom.taskEstado.value;
     let moduloAsociado = dom.taskModuloAsociado.value;
 
-    if (!titulo) { 
+    if (!titulo) {
         showNoti("El Título es obligatorio.", false);
         return;
     }
@@ -1020,9 +1099,9 @@ async function guardarTarea(event) {
 
     const tareaData = {
         ID_TAREA: id,
-        TITULO: titulo, 
+        TITULO: titulo,
         DESCRIPCION: descripcion,
-        RESPONSABLES: responsablesSeleccionados, 
+        RESPONSABLES: responsablesSeleccionados,
         PRIORIDAD: prioridad,
         FECHA_VENCIMIENTO: fecha_vencimiento,
         HORA_VENCIMIENTO: hora_vencimiento,
@@ -1030,30 +1109,37 @@ async function guardarTarea(event) {
         MODULO_ASOCIADO: moduloAsociado,
         FECHA_CREACION: esNuevaTarea ? new Date().toISOString() : tareaOriginal.FECHA_CREACION,
         CREADOR: esNuevaTarea ? usuario.nombre : tareaOriginal.CREADOR,
-        COMENTARIOS: esNuevaTarea ? [] : (tareaOriginal.COMENTARIOS || []), 
-        HISTORIAL_TAREA: esNuevaTarea ? [] : (tareaOriginal.HISTORIAL_TAREA || []), 
-        NOTIFICACIONES_COMENTARIO: esNuevaTarea ? {} : (tareaOriginal.NOTIFICACIONES_COMENTARIO || {}) 
+        COMENTARIOS: esNuevaTarea ? [] : (tareaOriginal.COMENTARIOS || []),
+        HISTORIAL_TAREA: esNuevaTarea ? [] : (tareaOriginal.HISTORIAL_TAREA || []),
+        NOTIFICACIONES_COMENTARIO: esNuevaTarea ? {} : (tareaOriginal.NOTIFICACIONES_COMENTARIO || {})
     };
 
     if (esNuevaTarea) {
         tareaData.HISTORIAL_TAREA.push({
             usuario: usuario.nombre,
             accion: "Creación",
-            detalle: `Tarea "${titulo}" creada.`, 
+            detalle: `Tarea "${titulo}" creada.`,
             timestamp: new Date().toISOString()
         });
+        responsablesSeleccionados.forEach(rolResp => {
+            if (rolResp !== usuario.rol) {
+                if (!tareaData.NOTIFICACIONES_COMENTARIO) tareaData.NOTIFICACIONES_COMENTARIO = {};
+                tareaData.NOTIFICACIONES_COMENTARIO[rolResp] = true;
+            }
+        });
+
         try {
             const response = await fetch(`${BACKEND_URL}/tareas`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(tareaData) 
+                body: JSON.stringify(tareaData)
             });
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(`Error HTTP al crear tarea: ${response.status} - ${errorData.error || response.statusText}`);
             }
-            const tareaCreada = await response.json(); 
-            tareas.push(parseTaskJSONFields(tareaCreada)); 
+            const tareaCreada = await response.json();
+            tareas.push(parseTaskJSONFields(tareaCreada));
             showNoti("Tarea agregada exitosamente.", true);
             renderizarTareas();
             cerrarModalTarea();
@@ -1061,10 +1147,10 @@ async function guardarTarea(event) {
             showNoti(`Error al agregar tarea: ${err.message}`, false);
             console.error("Error en guardarTarea (nueva):", err);
         }
-    } else { 
+    } else {
         const changes = getTaskChanges(tareaOriginal, tareaData);
         if (changes.length > 0) {
-            if (!tareaData.HISTORIAL_TAREA) tareaData.HISTORIAL_TAREA = []; 
+            if (!tareaData.HISTORIAL_TAREA) tareaData.HISTORIAL_TAREA = [];
             tareaData.HISTORIAL_TAREA.push({
                 usuario: usuario.nombre,
                 accion: "Modificación",
@@ -1084,7 +1170,7 @@ async function guardarTarea(event) {
 function getTaskChanges(oldTask, newTask) {
     const changes = [];
     const fieldsToCompare = ['TITULO', 'DESCRIPCION', 'RESPONSABLES', 'PRIORIDAD', 'FECHA_VENCIMIENTO', 'HORA_VENCIMIENTO', 'ESTADO_TAREA', 'MODULO_ASOCIADO'];
-    
+
     const safeOldTask = {
         RESPONSABLES: [], COMENTARIOS: [], HISTORIAL_TAREA: [], NOTIFICACIONES_COMENTARIO: {},
         ...oldTask
@@ -1098,14 +1184,14 @@ function getTaskChanges(oldTask, newTask) {
         let oldValue = safeOldTask[field];
         let newValue = safeNewTask[field];
 
-        if (field === 'RESPONSABLES') { 
+        if (field === 'RESPONSABLES') {
             oldValue = (Array.isArray(oldValue) ? oldValue : []).sort().join(', ');
             newValue = (Array.isArray(newValue) ? newValue : []).sort().join(', ');
-        } else { 
+        } else {
             oldValue = oldValue === undefined || oldValue === null ? '' : String(oldValue);
             newValue = newValue === undefined || newValue === null ? '' : String(newValue);
         }
-        
+
         if (oldValue !== newValue) {
             changes.push({ field: field.toLowerCase(), old: oldValue || '(vacío)', new: newValue || '(vacío)' });
         }
@@ -1129,7 +1215,7 @@ async function eliminarTarea(idTarea) {
         return;
     }
 
-    const confirmed = await showConfirmationModal(`¿Seguro que quieres eliminar la tarea ${idTarea} (${tareaAEliminar.TITULO || tareaAEliminar.DESCRIPCION})? Esta acción no se puede deshacer.`);
+    const confirmed = await showConfirmationModal(`¿Seguro que quieres eliminar la tarea "${tareaAEliminar.TITULO || idTarea}"? Esta acción no se puede deshacer.`);
     if (confirmed) {
         try {
             const response = await fetch(`${BACKEND_URL}/tareas/${idTarea}`, { method: 'DELETE' });
@@ -1139,7 +1225,7 @@ async function eliminarTarea(idTarea) {
             }
             tareas = tareas.filter(t => t.ID_TAREA !== idTarea);
             renderizarTareas();
-            showNoti(`Tarea ${idTarea} eliminada.`, true);
+            showNoti(`Tarea "${tareaAEliminar.TITULO || idTarea}" eliminada.`, true);
         } catch (err) {
             showNoti(`Error al eliminar tarea: ${err.message}`, false);
             console.error("Error en eliminarTarea:", err);
@@ -1151,8 +1237,8 @@ async function eliminarTarea(idTarea) {
 
 function renderizarComentariosTarea(idTarea) {
     const tarea = tareas.find(t => t.ID_TAREA === idTarea);
-    if (!dom.taskCommentsList || !tarea || !tarea.COMENTARIOS) return; 
-    const comentarios = tarea.COMENTARIOS; 
+    if (!dom.taskCommentsList || !tarea || !tarea.COMENTARIOS) return;
+    const comentarios = tarea.COMENTARIOS;
     dom.taskCommentsList.innerHTML = (comentarios.length > 0)
         ? comentarios.map(c => {
             let textoComentario = c.texto;
@@ -1170,8 +1256,8 @@ function renderizarComentariosTarea(idTarea) {
 
 function renderizarHistorialTarea(idTarea) {
     const tarea = tareas.find(t => t.ID_TAREA === idTarea);
-    if (!dom.taskHistoryList || !tarea || !tarea.HISTORIAL_TAREA) return; 
-    const historial = tarea.HISTORIAL_TAREA; 
+    if (!dom.taskHistoryList || !tarea || !tarea.HISTORIAL_TAREA) return;
+    const historial = tarea.HISTORIAL_TAREA;
      dom.taskHistoryList.innerHTML = (historial.length > 0)
         ? historial.slice().reverse().map(h => `<div class="text-xs mb-1 p-1 bg-slate-100 rounded"><strong>${h.usuario}</strong> (${formatDateToUTCMinus3(h.timestamp)}): ${h.accion} - ${h.detalle}</div>`).join('')
         : '<p class="text-xs text-slate-500 italic">No hay historial para esta tarea.</p>';
@@ -1182,8 +1268,8 @@ async function agregarComentarioTarea() {
     const tareaIndex = tareas.findIndex(t => t.ID_TAREA === tareaActualId);
     if (tareaIndex === -1) { showNoti("Error: Tarea no encontrada.", false); return; }
 
-    let tarea = tareas[tareaIndex]; 
-    const responsablesTarea = tarea.RESPONSABLES; 
+    let tarea = tareas[tareaIndex];
+    const responsablesTarea = tarea.RESPONSABLES;
     const puedeComentar = (responsablesTarea && responsablesTarea.includes(usuario.rol)) || usuario.rol === 'admin';
 
     if (!puedeComentar) { showNoti("No tienes permiso para agregar comentarios a esta tarea.", false); return; }
@@ -1196,8 +1282,8 @@ async function agregarComentarioTarea() {
 
     const comentariosActualizados = [...(tarea.COMENTARIOS || []), nuevoComentario];
     const historialActualizado = [...(tarea.HISTORIAL_TAREA || []), nuevaEntradaHistorial];
-    
-    let notificacionesComentarioActualizadas = { ...(tarea.NOTIFICACIONES_COMENTARIO || {}) }; 
+
+    let notificacionesComentarioActualizadas = { ...(tarea.NOTIFICACIONES_COMENTARIO || {}) };
     if (tarea.RESPONSABLES && Array.isArray(tarea.RESPONSABLES)) {
         tarea.RESPONSABLES.forEach(rolResp => {
             if (rolResp !== usuario.rol) {
@@ -1211,13 +1297,13 @@ async function agregarComentarioTarea() {
             const rolMencionado = mencion.substring(1).toLowerCase();
             if (USERS[rolMencionado] && rolMencionado !== usuario.rol) {
                 notificacionesComentarioActualizadas[rolMencionado] = true;
-                showNoti(`Se mencionó a ${USERS[rolMencionado].nombre} en la tarea ${tarea.ID_TAREA}.`, null);
+                showNoti(`Se mencionó a ${USERS[rolMencionado].nombre} en la tarea "${tarea.TITULO || tarea.ID_TAREA}".`, null);
             }
         });
     }
-    
+
     const tareaParaActualizar = {
-        ...tarea, 
+        ...tarea,
         COMENTARIOS: comentariosActualizados,
         HISTORIAL_TAREA: historialActualizado,
         NOTIFICACIONES_COMENTARIO: notificacionesComentarioActualizadas
@@ -1225,8 +1311,8 @@ async function agregarComentarioTarea() {
 
     const actualizacionExitosa = await actualizarTareaEnBackend(tareaParaActualizar, tareaActualId);
     if (actualizacionExitosa) {
-        renderizarComentariosTarea(tareaActualId); 
-        renderizarHistorialTarea(tareaActualId);   
+        renderizarComentariosTarea(tareaActualId);
+        renderizarHistorialTarea(tareaActualId);
         dom.taskNewComment.value = '';
         showNoti("Comentario agregado y tarea actualizada.", true);
     } else {
@@ -1234,14 +1320,12 @@ async function agregarComentarioTarea() {
     }
 }
 
-// --- Notification Center Functions ---
 function renderNotifications() {
     if (!usuario || !dom.notificationsList || !dom.notificationBellBtn || !dom.notificationDot || !dom.noNotificationsMessage) {
-        // Ensure bell and dropdown are hidden if elements aren't ready or no user
         if (dom.notificationDot) dom.notificationDot.classList.add('hidden');
         if (dom.notificationsDropdown) dom.notificationsDropdown.classList.add('hidden');
         if (dom.notificationsList) dom.notificationsList.innerHTML = '';
-        if (dom.noNotificationsMessage) dom.noNotificationsMessage.classList.remove('hidden');
+        if (dom.noNotificationsMessage && dom.noNotificationsMessage.classList) dom.noNotificationsMessage.classList.remove('hidden');
         return;
     }
 
@@ -1250,33 +1334,47 @@ function renderNotifications() {
     const relevantNotifications = [];
 
     tareas.forEach(tarea => {
-        // Ensure NOTIFICACIONES_COMENTARIO is an object before accessing its properties
         const userNotifications = tarea.NOTIFICACIONES_COMENTARIO || {};
         if (userNotifications[usuario.rol]) {
             hasUnreadNotifications = true;
+            let message = "";
+            let notificationTimestamp = tarea.FECHA_CREACION || new Date(0).toISOString();
 
-            let message = `Nueva actividad en Tarea ${tarea.ID_TAREA} (${tarea.TITULO || 'Sin título'})`;
-            let latestTimestamp = tarea.FECHA_CREACION || new Date(0).toISOString(); // Fallback timestamp
+            const esTareaRecienCreadaYAsignada =
+                tarea.CREADOR !== usuario.nombre &&
+                (tarea.COMENTARIOS || []).length === 0 &&
+                (new Date().getTime() - new Date(tarea.FECHA_CREACION).getTime()) < (5 * 60 * 1000);
 
-            if (tarea.COMENTARIOS && tarea.COMENTARIOS.length > 0) {
-                // Find the latest comment relevant to this notification (could be any unread)
-                // For simplicity, we'll use the last comment of the task for timestamp and context
-                // A more complex logic could find the *specific* unread comment.
+
+            if (esTareaRecienCreadaYAsignada) {
+                message = `Nueva tarea asignada: "${tarea.TITULO || 'Tarea sin título'}" (ID: ${tarea.ID_TAREA})`;
+                notificationTimestamp = tarea.FECHA_CREACION;
+            } else if (tarea.COMENTARIOS && tarea.COMENTARIOS.length > 0) {
                 const lastComment = tarea.COMENTARIOS[tarea.COMENTARIOS.length - 1];
-                latestTimestamp = lastComment.timestamp;
+                notificationTimestamp = lastComment.timestamp;
 
-                // Only generate specific message if the last comment is not by the current user
-                // and the notification flag is for this user.
                 if (lastComment.usuario !== usuario.nombre) {
-                    const mentionRegex = new RegExp(`@${usuario.nombre}|@${usuario.rol}`, 'i');
-                    if (mentionRegex.test(lastComment.texto)) {
-                        message = `${lastComment.usuario} te mencionó en Tarea ${tarea.ID_TAREA} (${tarea.TITULO || 'Sin título'})`;
+                    const mentionRegex = new RegExp(`@${usuario.rol}`, 'i');
+                    const mentionNameRegex = new RegExp(`@${usuario.nombre}`, 'i');
+
+                    if (mentionRegex.test(lastComment.texto) || mentionNameRegex.test(lastComment.texto)) {
+                        message = `${lastComment.usuario} te mencionó en "${tarea.TITULO || 'Tarea sin título'}" (ID: ${tarea.ID_TAREA})`;
                     } else {
-                        message = `Nuevo comentario de ${lastComment.usuario} en Tarea ${tarea.ID_TAREA} (${tarea.TITULO || 'Sin título'})`;
+                        message = `Nuevo comentario de ${lastComment.usuario} en "${tarea.TITULO || 'Tarea sin título'}" (ID: ${tarea.ID_TAREA})`;
+                    }
+                } else {
+                     if (tarea.CREADOR !== usuario.nombre) {
+                         message = `Nueva actividad en "${tarea.TITULO || 'Tarea sin título'}" (ID: ${tarea.ID_TAREA})`;
                     }
                 }
+            } else if (tarea.CREADOR !== usuario.nombre) {
+                 message = `Nueva tarea asignada: "${tarea.TITULO || 'Tarea sin título'}" (ID: ${tarea.ID_TAREA})`;
             }
-            relevantNotifications.push({ tarea, message, timestamp: latestTimestamp });
+
+
+            if (message) {
+                relevantNotifications.push({ tarea, message, timestamp: notificationTimestamp });
+            }
         }
     });
 
@@ -1296,7 +1394,6 @@ function renderNotifications() {
             li.addEventListener('click', () => {
                 dom.notificationsDropdown.classList.add('hidden');
                 abrirModalTarea(tarea.ID_TAREA, true);
-                // `abrirModalTarea` handles marking as read and triggers re-render of notifications via `renderizarTareas`
             });
             dom.notificationsList.appendChild(li);
         });
@@ -1318,7 +1415,7 @@ function setupMultiSelectResponsables() {
              puedeAbrirDropdown = true;
         } else if (esNuevaTareaLocal && (usuario.rol === 'ventas')) {
             puedeAbrirDropdown = true;
-        } else if (tareaExistente && !esAdmin) { 
+        } else if (tareaExistente && !esAdmin) {
             puedeAbrirDropdown = false;
         }
 
@@ -1361,123 +1458,6 @@ function setupCollapsibleModules() {
     });
 }
 
-
-function setupEventListeners() {
-  dom.loginForm?.addEventListener('submit', handleLogin);
-  dom.logoutBtn?.addEventListener('click', logout);
-  dom.refreshButton?.addEventListener('click', () => { cargarPedidos(); cargarTareas(); });
-
-  [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas, dom.filtroFechaInicioVentas, dom.filtroFechaFinVentas].forEach(el => el?.addEventListener('change', renderizarTodo));
-  dom.filtroBuscar?.addEventListener('input', renderizarTodo);
-  [dom.filtroFaseDep, dom.filtroEnvioDep, dom.filtroFechaInicioDep, dom.filtroFechaFinDep].forEach(el => el?.addEventListener('change', renderizarTodo));
-  dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
-
-  dom.modalClose?.addEventListener('click', closeModal);
-  dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
-  dom.confirmModalCancel?.addEventListener('click', () => { dom.confirmModalBg.classList.add('hidden'); dom.confirmModalBg.classList.remove('flex'); if (dom.confirmModalOk._promiseResolve) dom.confirmModalOk._promiseResolve(false); });
-  dom.attentionModalOk?.addEventListener('click', () => { dom.attentionModalBg.classList.add('hidden'); dom.attentionModalBg.classList.remove('flex'); if (dom.attentionModalOk._promiseResolve) dom.attentionModalOk._promiseResolve(true); });
-  dom.notiCloseBtn?.addEventListener('click', hideNoti); dom.notiOkBtn?.addEventListener('click', hideNoti); dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
-  if (dom.attentionModalBg) { dom.attentionModalBg.addEventListener('click', (e) => { if (e.target === dom.attentionModalBg) e.stopPropagation(); }); dom.attentionModalBox?.addEventListener('click', (e) => e.stopPropagation()); }
-  dom.tablaVentasBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
-  dom.tablaDepositoBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
-
-    if (dom.appWidthSelectorMain) {
-        dom.appWidthSelectorMain.addEventListener('change', (event) => {
-            applyAppWidth(event.target.value);
-        });
-    }
-    if (dom.appWidthSelectorFloating) {
-        dom.appWidthSelectorFloating.addEventListener('change', (event) => {
-            applyAppWidth(event.target.value);
-        });
-    }
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      if (dom.notificationsDropdown && !dom.notificationsDropdown.classList.contains('hidden')) { dom.notificationsDropdown.classList.add('hidden');}
-      else if (dom.taskModalBg && !dom.taskModalBg.classList.contains('hidden')) { cerrarModalTarea(); }
-      else if (dom.modalBg && !dom.modalBg.classList.contains('hidden')) { closeModal(); }
-      else if (dom.confirmModalBg && !dom.confirmModalBg.classList.contains('hidden')) { dom.confirmModalCancel.click(); }
-      else if (dom.attentionModalBg && !dom.attentionModalBg.classList.contains('hidden')) { dom.attentionModalOk.click(); }
-    } else if (event.key === 'F5') {
-        event.preventDefault();
-        cargarPedidos();
-        cargarTareas();
-        showNoti("Datos actualizados (F5)", true);
-    }
-  });
-
-  dom.btnAgregarTareaGlobal?.addEventListener('click', () => {
-    let moduloDefecto = 'Admin';
-    if (usuario && usuario.rol === 'ventas') moduloDefecto = 'Ventas';
-    else if (usuario && usuario.rol === 'deposito') moduloDefecto = 'Deposito';
-    abrirModalTarea(null, false, moduloDefecto);
-  });
-
-  dom.taskModalClose?.addEventListener('click', cerrarModalTarea);
-  dom.taskModalCancel?.addEventListener('click', cerrarModalTarea);
-  dom.taskModalBg?.addEventListener('click', (e) => { if (e.target === dom.taskModalBg) cerrarModalTarea(); });
-  dom.taskForm?.addEventListener('submit', guardarTarea);
-  dom.taskAddCommentBtn?.addEventListener('click', agregarComentarioTarea);
-
-  dom.taskEstado?.addEventListener('change', async (event) => {
-    if (!tareaActualId || !usuario) return;
-    const tarea = tareas.find(t => t.ID_TAREA === tareaActualId);
-    if (!tarea) return;
-
-    const esResponsableAsignado = (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol));
-    const esAdmin = usuario.rol === 'admin';
-
-    if ((esResponsableAsignado || esAdmin) && tarea.ESTADO_TAREA !== event.target.value) {
-        console.log(`Cambio de estado detectado por usuario ${usuario.rol}. Guardando...`);
-        
-        const estadoAnterior = tarea.ESTADO_TAREA; 
-        
-        const tareaDataParaActualizar = { 
-            ...tarea, 
-            ESTADO_TAREA: event.target.value, 
-            HISTORIAL_TAREA: [ 
-                ...(tarea.HISTORIAL_TAREA || []), 
-                {
-                    usuario: usuario.nombre,
-                    accion: "Cambio de estado",
-                    detalle: `Estado cambiado de "${estadoAnterior}" a "${event.target.value}"`,
-                    timestamp: new Date().toISOString()
-                }
-            ]
-        };
-
-        const actualizacionExitosa = await actualizarTareaEnBackend(tareaDataParaActualizar, tareaActualId);
-        if (actualizacionExitosa) {
-            showNoti("Estado de tarea actualizado.", true);
-        } else {
-            event.target.value = estadoAnterior; 
-        }
-    }
-  });
-
-  // Notification Bell Event Listeners
-  dom.notificationBellBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dom.notificationsDropdown?.classList.toggle('hidden');
-      if (dom.notificationsDropdown && !dom.notificationsDropdown.classList.contains('hidden')) {
-          renderNotifications(); // Refresh list when opening
-      }
-  });
-
-  document.addEventListener('click', (e) => {
-      if (dom.notificationBellBtn && dom.notificationsDropdown) {
-          if (!dom.notificationBellBtn.contains(e.target) && !dom.notificationsDropdown.contains(e.target)) {
-              dom.notificationsDropdown.classList.add('hidden');
-          }
-      }
-  });
-
-  setupMultiSelectResponsables();
-  setupCollapsibleModules();
-}
-
-// --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', () => {
   cacheDOMElements();
   const savedWidth = localStorage.getItem('appPreferredWidth');
@@ -1487,8 +1467,118 @@ document.addEventListener('DOMContentLoaded', () => {
       const defaultHtmlWidth = APP_WIDTH_CLASSES.find(cls => dom.mainApp.classList.contains(cls)) || 'max-w-6xl';
       applyAppWidth(defaultHtmlWidth);
   }
+
+  function setupEventListeners() {
+    dom.loginForm?.addEventListener('submit', handleLogin);
+    dom.logoutBtn?.addEventListener('click', logout);
+    dom.refreshButton?.addEventListener('click', () => { cargarPedidos(); cargarTareas(); });
+
+    [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas, dom.filtroFechaInicioVentas, dom.filtroFechaFinVentas].forEach(el => el?.addEventListener('change', renderizarTodo));
+    dom.filtroBuscar?.addEventListener('input', renderizarTodo);
+    [dom.filtroFaseDep, dom.filtroEnvioDep, dom.filtroFechaInicioDep, dom.filtroFechaFinDep].forEach(el => el?.addEventListener('change', renderizarTodo));
+    dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
+
+    dom.modalClose?.addEventListener('click', closeModal);
+    dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
+    dom.confirmModalCancel?.addEventListener('click', () => { dom.confirmModalBg.classList.add('hidden'); dom.confirmModalBg.classList.remove('flex'); if (dom.confirmModalOk._promiseResolve) dom.confirmModalOk._promiseResolve(false); });
+    dom.attentionModalOk?.addEventListener('click', () => { dom.attentionModalBg.classList.add('hidden'); dom.attentionModalBg.classList.remove('flex'); if (dom.attentionModalOk._promiseResolve) dom.attentionModalOk._promiseResolve(true); });
+    dom.notiCloseBtn?.addEventListener('click', hideNoti); dom.notiOkBtn?.addEventListener('click', hideNoti); dom.notiBadge?.addEventListener('click', (e) => e.stopPropagation());
+    if (dom.attentionModalBg) { dom.attentionModalBg.addEventListener('click', (e) => { if (e.target === dom.attentionModalBg) e.stopPropagation(); }); dom.attentionModalBox?.addEventListener('click', (e) => e.stopPropagation()); }
+    dom.tablaVentasBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
+    dom.tablaDepositoBody?.addEventListener('click', (e) => { if (e.target.matches('button[data-idx]')) openModal(parseInt(e.target.dataset.idx), e.target.dataset.module); });
+
+    if (dom.appWidthSelectorMain) {
+        dom.appWidthSelectorMain.addEventListener('change', (event) => {
+            applyAppWidth(event.target.value);
+        });
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+        if (dom.notificationsDropdown && !dom.notificationsDropdown.classList.contains('hidden')) { dom.notificationsDropdown.classList.add('hidden');}
+        else if (dom.taskModalBg && !dom.taskModalBg.classList.contains('hidden')) { cerrarModalTarea(); }
+        else if (dom.modalBg && !dom.modalBg.classList.contains('hidden')) { closeModal(); }
+        else if (dom.confirmModalBg && !dom.confirmModalBg.classList.contains('hidden')) { dom.confirmModalCancel.click(); }
+        else if (dom.attentionModalBg && !dom.attentionModalBg.classList.contains('hidden')) { dom.attentionModalOk.click(); }
+        } else if (event.key === 'F5') {
+            event.preventDefault();
+            cargarPedidos();
+            cargarTareas();
+            showNoti("Datos actualizados (F5)", true);
+        }
+    });
+
+    dom.btnAgregarTareaGlobal?.addEventListener('click', () => {
+        let moduloDefecto = 'Admin';
+        if (usuario && usuario.rol === 'ventas') moduloDefecto = 'Ventas';
+        else if (usuario && usuario.rol === 'deposito') moduloDefecto = 'Deposito';
+        abrirModalTarea(null, false, moduloDefecto);
+    });
+
+    dom.taskModalClose?.addEventListener('click', cerrarModalTarea);
+    dom.taskModalCancel?.addEventListener('click', cerrarModalTarea);
+    dom.taskModalBg?.addEventListener('click', (e) => { if (e.target === dom.taskModalBg) cerrarModalTarea(); });
+    dom.taskForm?.addEventListener('submit', guardarTarea);
+    dom.taskAddCommentBtn?.addEventListener('click', agregarComentarioTarea);
+
+    dom.taskEstado?.addEventListener('change', async (event) => {
+        if (!tareaActualId || !usuario) return;
+        const tarea = tareas.find(t => t.ID_TAREA === tareaActualId);
+        if (!tarea) return;
+
+        const esResponsableAsignado = (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol));
+        const esAdmin = usuario.rol === 'admin';
+
+        if ((esResponsableAsignado || esAdmin) && tarea.ESTADO_TAREA !== event.target.value) {
+            console.log(`Cambio de estado detectado por usuario ${usuario.rol}. Guardando...`);
+
+            const estadoAnterior = tarea.ESTADO_TAREA;
+
+            const tareaDataParaActualizar = {
+                ...tarea,
+                ESTADO_TAREA: event.target.value,
+                HISTORIAL_TAREA: [
+                    ...(tarea.HISTORIAL_TAREA || []),
+                    {
+                        usuario: usuario.nombre,
+                        accion: "Cambio de estado",
+                        detalle: `Estado cambiado de "${estadoAnterior}" a "${event.target.value}"`,
+                        timestamp: new Date().toISOString()
+                    }
+                ]
+            };
+
+            const actualizacionExitosa = await actualizarTareaEnBackend(tareaDataParaActualizar, tareaActualId);
+            if (actualizacionExitosa) {
+                showNoti("Estado de tarea actualizado.", true);
+            } else {
+                event.target.value = estadoAnterior;
+            }
+        }
+    });
+
+    dom.notificationBellBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dom.notificationsDropdown?.classList.toggle('hidden');
+        if (dom.notificationsDropdown && !dom.notificationsDropdown.classList.contains('hidden')) {
+            renderNotifications();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (dom.notificationBellBtn && dom.notificationsDropdown) {
+            if (!dom.notificationBellBtn.contains(e.target) && !dom.notificationsDropdown.contains(e.target)) {
+                dom.notificationsDropdown.classList.add('hidden');
+            }
+        }
+    });
+
+    setupMultiSelectResponsables();
+    setupCollapsibleModules();
+  }
+
   setupEventListeners();
-  logout(); // Initial state setup
+  logout();
 });
 
 // --- Additional Styles ---
