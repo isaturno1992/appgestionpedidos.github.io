@@ -840,7 +840,7 @@ function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
         unreadIndicatorHtml = '<span class="unread-indicator" title="Nuevo comentario"></span>';
     }
 
-    const tituloParaMostrar = (tarea.TITULO || "Tarea sin título").toUpperCase();
+    const tituloParaMostrar = String(tarea.TITULO || "Tarea sin título").toUpperCase();
 
     tr.innerHTML = `
         <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${idTarea} ${unreadIndicatorHtml}</td>
