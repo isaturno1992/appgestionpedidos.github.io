@@ -85,14 +85,21 @@
     <div class="mb-4">
       <label for="login-user" class="block mb-1.5 font-medium text-slate-700">Usuario</label>
       <select id="login-user" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+        <option value="superadmin">Super Administrador</option>
         <option value="admin">Admin</option>
         <option value="ventas">Ventas</option>
         <option value="deposito">Depósito</option>
       </select>
     </div>
-    <div class="mb-6">
+    <div class="mb-6 relative">
       <label for="login-pass" class="block mb-1.5 font-medium text-slate-700">Contraseña</label>
-      <input type="password" id="login-pass" autocomplete="current-password" placeholder="Contraseña" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+      <input type="password" id="login-pass" autocomplete="current-password" placeholder="Contraseña" class="w-full p-2.5 pr-10 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+      <button type="button" id="toggle-pass-btn" class="absolute right-3 top-[38px] text-slate-500 hover:text-slate-700 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
     </div>
     <button type="submit" class="w-full bg-custom-green text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 shadow-md">Entrar</button>
   </form>
@@ -215,10 +222,24 @@
           </table>
         </div>
 
-        <div class="mt-8">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="text-lg font-semibold text-slate-700">Tareas - Ventas</h4>
+        <div class="mt-8 pt-4 border-t border-slate-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <h4 class="text-lg font-semibold text-slate-700 whitespace-nowrap">Tareas - Ventas</h4>
+                <!-- Filtros Tareas Ventas -->
+                <div class="flex flex-wrap gap-2 items-center task-filters" data-module="ventas">
+                    <input type="search" class="filter-input task-search flex-grow sm:flex-grow-0" placeholder="Buscar Tarea...">
+                    <select class="filter-input task-status">
+                        <option value="ACTIVAS" selected>Activas (No eliminadas)</option>
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En curso">En curso</option>
+                        <option value="Completada">Completada</option>
+                        <option value="Eliminada">Eliminadas</option>
+                    </select>
+                    <input type="date" class="filter-input task-date-start" title="Fecha inicio (Creación)">
+                    <input type="date" class="filter-input task-date-end" title="Fecha fin (Creación)">
                 </div>
+            </div>
             <div class="overflow-x-auto bg-white rounded-md shadow-md">
                 <table id="tabla-tareas-ventas" class="w-full text-sm text-left text-slate-600">
                     <thead class="text-xs text-white uppercase bg-custom-purple">
@@ -289,10 +310,24 @@
           </table>
         </div>
 
-        <div class="mt-8">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="text-lg font-semibold text-slate-700">Tareas - Depósito</h4>
+        <div class="mt-8 pt-4 border-t border-slate-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <h4 class="text-lg font-semibold text-slate-700 whitespace-nowrap">Tareas - Depósito</h4>
+                <!-- Filtros Tareas Deposito -->
+                <div class="flex flex-wrap gap-2 items-center task-filters" data-module="deposito">
+                    <input type="search" class="filter-input task-search flex-grow sm:flex-grow-0" placeholder="Buscar Tarea...">
+                    <select class="filter-input task-status">
+                        <option value="ACTIVAS" selected>Activas (No eliminadas)</option>
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En curso">En curso</option>
+                        <option value="Completada">Completada</option>
+                        <option value="Eliminada">Eliminadas</option>
+                    </select>
+                    <input type="date" class="filter-input task-date-start" title="Fecha inicio (Creación)">
+                    <input type="date" class="filter-input task-date-end" title="Fecha fin (Creación)">
                 </div>
+            </div>
             <div class="overflow-x-auto bg-white rounded-md shadow-md">
                 <table id="tabla-tareas-deposito" class="w-full text-sm text-left text-slate-600">
                     <thead class="text-xs text-white uppercase bg-custom-purple">
@@ -318,11 +353,66 @@
         <button class="module-toggle-btn text-xl font-bold text-slate-600 hover:text-slate-800">-</button>
     </div>
     <div id="modulo-admin-content" class="module-content p-4">
-        <div class="flex justify-between items-center mb-4">
-            <h4 class="text-lg font-semibold text-slate-700">Tareas - Admin</h4>
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+            <h4 class="text-lg font-semibold text-slate-700 whitespace-nowrap">Tareas - Admin</h4>
+            <!-- Filtros Tareas Admin -->
+            <div class="flex flex-wrap gap-2 items-center task-filters" data-module="admin">
+                <input type="search" class="filter-input task-search flex-grow sm:flex-grow-0" placeholder="Buscar Tarea...">
+                <select class="filter-input task-status">
+                    <option value="ACTIVAS" selected>Activas (No eliminadas)</option>
+                    <option value="">Todos los estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En curso">En curso</option>
+                    <option value="Completada">Completada</option>
+                    <option value="Eliminada">Eliminadas</option>
+                </select>
+                <input type="date" class="filter-input task-date-start" title="Fecha inicio (Creación)">
+                <input type="date" class="filter-input task-date-end" title="Fecha fin (Creación)">
             </div>
+        </div>
         <div class="overflow-x-auto bg-white rounded-md shadow-md">
             <table id="tabla-tareas-admin" class="w-full text-sm text-left text-slate-600">
+                <thead class="text-xs text-white uppercase bg-custom-purple"> <tr>
+                        <th scope="col" class="px-4 py-3">ID</th>
+                        <th scope="col" class="px-4 py-3">Título</th> <th scope="col" class="px-4 py-3">Responsables</th>
+                        <th scope="col" class="px-4 py-3">Prioridad</th>
+                        <th scope="col" class="px-4 py-3">Vencimiento</th>
+                        <th scope="col" class="px-4 py-3">Estado</th>
+                        <th scope="col" class="px-4 py-3">Módulo Asociado</th>
+                        <th scope="col" class="px-4 py-3">Acción</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+  
+  <div id="modulo-superadmin" class="mb-8 border border-slate-300 rounded-lg shadow-sm" style="display:none;">
+    <div class="module-header flex justify-between items-center bg-slate-200 p-3 rounded-t-lg" data-module-id="modulo-superadmin-content">
+        <h3 class="text-xl font-semibold text-slate-700">Módulo de Super Administrador</h3>
+        <button class="module-toggle-btn text-xl font-bold text-slate-600 hover:text-slate-800">-</button>
+    </div>
+    <div id="modulo-superadmin-content" class="module-content p-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+            <h4 class="text-lg font-semibold text-slate-700 whitespace-nowrap">Tareas - Super Admin</h4>
+            <!-- Filtros Tareas Superadmin -->
+            <div class="flex flex-wrap gap-2 items-center task-filters" data-module="superadmin">
+                <input type="search" class="filter-input task-search flex-grow sm:flex-grow-0" placeholder="Buscar Tarea...">
+                <select class="filter-input task-status">
+                    <option value="ACTIVAS" selected>Activas (No eliminadas)</option>
+                    <option value="">Todos los estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En curso">En curso</option>
+                    <option value="Completada">Completada</option>
+                    <option value="Eliminada">Eliminadas</option>
+                </select>
+                <input type="date" class="filter-input task-date-start" title="Fecha inicio (Creación)">
+                <input type="date" class="filter-input task-date-end" title="Fecha fin (Creación)">
+            </div>
+        </div>
+        <div class="overflow-x-auto bg-white rounded-md shadow-md">
+            <table id="tabla-tareas-superadmin" class="w-full text-sm text-left text-slate-600">
                 <thead class="text-xs text-white uppercase bg-custom-purple"> <tr>
                         <th scope="col" class="px-4 py-3">ID</th>
                         <th scope="col" class="px-4 py-3">Título</th> <th scope="col" class="px-4 py-3">Responsables</th>
@@ -398,6 +488,7 @@
             <option value="Pendiente" selected>Pendiente</option>
             <option value="En curso">En curso</option>
             <option value="Completada">Completada</option>
+            <option value="Eliminada">Eliminada</option>
           </select>
         </div>
       </div>
@@ -436,11 +527,13 @@ const dom = {
     statDac: null, statGp: null, statPickup: null, statModificados: null,
     filtrosVentas: null, filtroFase: null, filtroPago: null, filtroWoo: null, filtroBuscar: null,
     filtroEnvioVentas: null, filtroFechaInicioVentas: null, filtroFechaFinVentas: null,
+    filtroFaseDep: null, filtroEnvioDep: null, filtroFechaInicioDep: null, filtroFechaFinDep: null, filtroBuscarDep: null,
     refreshButton: null,
 
     moduloVentas: null, moduloVentasContent: null, tablaVentasBody: null,
     moduloDeposito: null, moduloDepositoContent: null, tablaDepositoBody: null,
     moduloAdmin: null, moduloAdminContent: null,
+    moduloSuperadmin: null, moduloSuperadminContent: null, tablaTareasSuperadminBody: null,
 
     modalBg: null, modalBox: null, modalClose: null,
     modalTitle: null, modalContent: null, ticketPrint: null, ticketPrintWrapper: null,
@@ -481,12 +574,14 @@ function cacheDOMElements() {
     dom.tablaTareasVentasBody = document.querySelector('#tabla-tareas-ventas tbody');
     dom.tablaTareasDepositoBody = document.querySelector('#tabla-tareas-deposito tbody');
     dom.tablaTareasAdminBody = document.querySelector('#tabla-tareas-admin tbody');
+    dom.tablaTareasSuperadminBody = document.querySelector('#tabla-tareas-superadmin tbody');
     dom.taskAddCommentSection = document.getElementById('task-add-comment-section');
 }
 
 // Constants
 const BACKEND_URL = 'https://gestor-pedidos-api-online.onrender.com';
 const USERS = {
+  superadmin: { pass: "superadmin123", rol: "superadmin", nombre: "Super Administrador" },
   admin:    { pass: "admin123",   rol: "admin",    nombre: "Admin" },
   ventas:   { pass: "ventas2024", rol: "ventas",   nombre: "Ventas" },
   deposito: { pass: "deposito321",rol: "deposito", nombre: "Depósito" }
@@ -563,28 +658,25 @@ function excelSerialToDate(serial) {
     if (typeof serial !== 'number' || isNaN(serial)) {
         return null;
     }
-    // Excel epoch: Dec 30, 1899. JS epoch: Jan 1, 1970. Difference: 25569 days.
     const excelEpochOffset = 25569;
     const datePart = Math.floor(serial);
     const timePart = serial - datePart;
 
-    // Convert date part to UTC date components
     const dateMilliseconds = (datePart - excelEpochOffset) * 86400 * 1000;
     const dateAtUtcMidnight = new Date(dateMilliseconds);
 
     let hours = 0;
     let minutes = 0;
-    if (timePart > 1e-9) { // Epsilon for floating point precision
+    if (timePart > 1e-9) { 
         let totalSecondsInDay = Math.round(timePart * 86400);
         hours = Math.floor(totalSecondsInDay / 3600);
         totalSecondsInDay %= 3600;
         minutes = Math.floor(totalSecondsInDay / 60);
     }
 
-    // Return an object with UTC components. The consumer will format this to local.
     return {
         year: dateAtUtcMidnight.getUTCFullYear(),
-        month: dateAtUtcMidnight.getUTCMonth(), // 0-indexed
+        month: dateAtUtcMidnight.getUTCMonth(), 
         day: dateAtUtcMidnight.getUTCDate(),
         hours: hours,
         minutes: minutes
@@ -631,17 +723,25 @@ function logout() {
   if(dom.loginPanel) dom.loginPanel.style.display = 'block';
   if (dom.appWidthSelectorWrapperMain) dom.appWidthSelectorWrapperMain.style.display = 'none';
   if(dom.loginUser) dom.loginUser.value = Object.keys(USERS)[0];
-  if(dom.loginPass) dom.loginPass.value = '';
+  if(dom.loginPass) {
+      dom.loginPass.value = '';
+      dom.loginPass.type = 'password';
+  }
+  const togglePassBtn = document.getElementById('toggle-pass-btn');
+  if(togglePassBtn) togglePassBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+
   if(dom.tablaVentasBody) dom.tablaVentasBody.innerHTML = '';
   if(dom.tablaDepositoBody) dom.tablaDepositoBody.innerHTML = '';
   if(dom.tablaTareasVentasBody) dom.tablaTareasVentasBody.innerHTML = '';
   if(dom.tablaTareasDepositoBody) dom.tablaTareasDepositoBody.innerHTML = '';
   if(dom.tablaTareasAdminBody) dom.tablaTareasAdminBody.innerHTML = '';
+  if(dom.tablaTareasSuperadminBody) dom.tablaTareasSuperadminBody.innerHTML = '';
   if(dom.btnAgregarTareaGlobal) dom.btnAgregarTareaGlobal.style.display = 'none';
 
   if(dom.moduloVentas) dom.moduloVentas.style.display = 'none';
   if(dom.moduloDeposito) dom.moduloDeposito.style.display = 'none';
   if(dom.moduloAdmin) dom.moduloAdmin.style.display = 'none';
+  if(dom.moduloSuperadmin) dom.moduloSuperadmin.style.display = 'none';
 
   updateStats();
   renderNotifications();
@@ -653,7 +753,8 @@ async function cargarPedidos() { if (!usuario) return; mostrarSyncLog('Sincroniz
 function renderizarTodo() {
   if (!usuario) return;
   updateStats();
-  const isAdmin = usuario.rol === "admin";
+  const isSuperAdmin = usuario.rol === "superadmin";
+  const isAdmin = usuario.rol === "admin" || isSuperAdmin;
   const isVentas = usuario.rol === "ventas";
   const isDeposito = usuario.rol === "deposito";
 
@@ -662,6 +763,7 @@ function renderizarTodo() {
   if(dom.moduloVentas) dom.moduloVentas.style.display = (isAdmin || isVentas) ? "block" : "none";
   if(dom.moduloDeposito) dom.moduloDeposito.style.display = (isAdmin || isVentas || isDeposito) ? "block" : "none";
   if(dom.moduloAdmin) dom.moduloAdmin.style.display = isAdmin ? "block" : "none";
+  if(dom.moduloSuperadmin) dom.moduloSuperadmin.style.display = isSuperAdmin ? "block" : "none";
 
   if (dom.moduloVentas && dom.moduloVentas.style.display !== 'none' && dom.moduloVentasContent && !dom.moduloVentasContent.classList.contains('hidden')) {
     renderVentas();
@@ -671,6 +773,7 @@ function renderizarTodo() {
   }
   renderizarTareas();
 }
+
 function isOrderActive(pedido) { if (!pedido || pedido.FASE === "CANCELADO") return false; const metodoEnvioNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); if (pedido.FASE !== "COMPLETADO" && pedido.FASE !== "COMPLETADO MODIFICADO") { return true; } if (metodoEnvioNorm === "DAC" || metodoEnvioNorm === "GESTION POS") { return !pedido.ETIQUETA_EMITIDA || !pedido.FACTURADO || !pedido.AVISO_CLIENTE; } else if (metodoEnvioNorm === "PICK UP") { return !pedido.ENTREGADO || !pedido.FACTURADO || !pedido.AVISO_CLIENTE; } return false; }
 function updateStats() { if (!dom.statTotal || !pedidos) { const allStatIds = ['stat-total', 'stat-espera', 'stat-procesando', 'stat-preparando', 'stat-completado', 'stat-dac', 'stat-gp', 'stat-pickup', 'stat-modificados']; allStatIds.forEach(id => { const element = document.getElementById(id); if (element) { element.textContent = '0'; const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) parentBox.classList.add('hidden'); } }); if (!pedidos || pedidos.length === 0) return; } const pedidosActivosParaEstadisticasVentas = pedidos.filter(isOrderActive); const salesStatsData = { total: pedidosActivosParaEstadisticasVentas.length, espera: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "EN ESPERA").length, procesando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PROCESANDO").length, preparando: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "PREPARANDO" || p.FASE === "PREPARANDO MODIFICADO").length, completado: pedidosActivosParaEstadisticasVentas.filter(p => p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO").length, }; const fasesExcluidasParaStatsMetodoEnvioDeposito = ["EN ESPERA", "PROCESANDO", "COMPLETADO", "CANCELADO"]; const pedidosParaEstadisticasMetodoEnvioDeposito = pedidos.filter(p => !fasesExcluidasParaStatsMetodoEnvioDeposito.includes(p.FASE) ); const depositStatsData = { dac: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "DAC").length, gp: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "GESTION POS").length, pickup: pedidosParaEstadisticasMetodoEnvioDeposito.filter(p => (p.METODO_ENVIO || "").trim().toUpperCase() === "PICK UP").length, modificados: pedidos.filter(p => (p.FASE === "PREPARANDO MODIFICADO" || p.FASE === "COMPLETADO MODIFICADO") && p.FASE !== "CANCELADO").length }; const salesStatElementsMap = { 'stat-total': salesStatsData.total, 'stat-espera': salesStatsData.espera, 'stat-procesando': salesStatsData.procesando, 'stat-preparando': salesStatsData.preparando, 'stat-completado': salesStatsData.completado }; for (const id in salesStatElementsMap) { const element = document.getElementById(id); const value = salesStatElementsMap[id]; if (element) { element.textContent = String(value); const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) { parentBox.classList.toggle('hidden', Number(value) === 0 && id !== 'stat-total'); } } } const depositStatElementsMap = { 'stat-dac': depositStatsData.dac, 'stat-gp': depositStatsData.gp, 'stat-pickup': depositStatsData.pickup, 'stat-modificados': depositStatsData.modificados }; for (const id in depositStatElementsMap) { const element = document.getElementById(id); const value = depositStatElementsMap[id]; if (element) { element.textContent = String(value); const parentBox = element.closest('.stat-box-animate-pop'); if (parentBox) { if (Number(value) === 0) { parentBox.classList.add('hidden'); } else { parentBox.classList.remove('hidden'); } } } } }
 function formatTimeAgoOrDate(dateString) { if (!dateString) return ''; let originalUtcDate; const customFormatMatch = String(dateString).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/); if (customFormatMatch) { const day = parseInt(customFormatMatch[1], 10); const month = parseInt(customFormatMatch[2], 10) - 1; const year = parseInt(customFormatMatch[3], 10); const hours = parseInt(customFormatMatch[4], 10); const minutes = parseInt(customFormatMatch[5], 10); const seconds = customFormatMatch[6] ? parseInt(customFormatMatch[6], 10) : 0; originalUtcDate = new Date(Date.UTC(year, month, day, hours, minutes, seconds)); } else { originalUtcDate = new Date(dateString); } if (isNaN(originalUtcDate.getTime())) { return dateString; } const now = new Date(); const diffMs = now.getTime() - originalUtcDate.getTime(); const diffHours = diffMs / (1000 * 60 * 60); if (diffHours >= 0 && diffHours < 24) { const diffMinutes = Math.round(diffMs / (1000 * 60)); if (diffMinutes < 1) return "Hace instantes"; if (diffMinutes < 60) return `Hace ${diffMinutes} minuto${diffMinutes === 1 ? '' : 's'}`; return `Hace ${Math.round(diffHours)} hora${Math.round(diffHours) === 1 ? '' : 's'}`; } else { return formatDateToUTCMinus3(dateString, true); } }
@@ -678,7 +781,7 @@ function formatProductLineToHtmlRow(line) { if (!line || typeof line !== 'string
 function aplicarFiltrosVentas(p) { const faseFiltro = dom.filtroFase ? dom.filtroFase.value : "ACTIVE_ONLY"; const pago = dom.filtroPago ? dom.filtroPago.value : ""; const envioVentas = dom.filtroEnvioVentas ? dom.filtroEnvioVentas.value : ""; const woo = dom.filtroWoo ? dom.filtroWoo.value : ""; const buscar = dom.filtroBuscar ? dom.filtroBuscar.value.toLowerCase().trim() : ""; const fechaInicioStr = dom.filtroFechaInicioVentas ? dom.filtroFechaInicioVentas.value : ""; const fechaFinStr = dom.filtroFechaFinVentas ? dom.filtroFechaFinVentas.value : ""; if (faseFiltro === "ACTIVE_ONLY") { if (!isOrderActive(p)) return false; } else if (faseFiltro === "COMPLETADOS_ACTIVOS") { if (!((p.FASE === "COMPLETADO" || p.FASE === "COMPLETADO MODIFICADO") && isOrderActive(p))) return false; } else if (faseFiltro === "CANCELADO") { if (p.FASE !== "CANCELADO") return false; } else if (faseFiltro !== "ALL_PHASES" && faseFiltro && p.FASE !== faseFiltro) { return false; } if (pago === "confirmado" && p.ESTADO_PAGO !== "confirmado") return false; if (pago === "no_confirmado" && p.ESTADO_PAGO === "confirmado") return false; if (woo && (p.ESTADO_WOO !== woo)) return false; if (envioVentas && (p.METODO_ENVIO || "").trim().toUpperCase() !== envioVentas) return false; const orderDateStr = p.FECHA_INGRESO_SISTEMA || p.FECHA; if (fechaInicioStr || fechaFinStr) { if (!orderDateStr) return false; let orderDate = new Date(orderDateStr); if (isNaN(orderDate.getTime())) return false; orderDate = new Date(Date.UTC(orderDate.getUTCFullYear(), orderDate.getUTCMonth(), orderDate.getUTCDate())); if (fechaInicioStr) { const filtroFechaInicio = new Date(fechaInicioStr + "T00:00:00Z"); if (orderDate < filtroFechaInicio) return false; } if (fechaFinStr) { const filtroFechaFin = new Date(fechaFinStr + "T00:00:00Z"); if (orderDate > filtroFechaFin) return false; } } if (buscar) { const deptoFullName = getDepartamentoFullName(p.DEPARTAMENTO || "").toLowerCase(); let encontrado = false; if (/^\d+$/.test(buscar) && (String(p.ID) || "").toLowerCase().startsWith(buscar)) { encontrado = true; } else { if ( (p.CLIENTE || "").toLowerCase().includes(buscar) || (String(p.ID) || "").toLowerCase().includes(buscar) || (p.TELEFONO || "").toLowerCase().includes(buscar) || (p.NOTAS || "").toLowerCase().includes(buscar) || (p.BARRIO_LOCALIDAD || "").toLowerCase().includes(buscar) || deptoFullName.includes(buscar) || (p.DEPARTAMENTO || "").toLowerCase().includes(buscar) ) { encontrado = true; } } if (!encontrado) return false; } return true;}
 function getBadgeClassForFase(fase) { const faseClasses = { "EN ESPERA": "bg-blue-500", "PROCESANDO": "bg-orange-500", "PREPARANDO": "bg-yellow-400", "PREPARANDO MODIFICADO": "bg-purple-400", "COMPLETADO": "bg-green-500", "COMPLETADO MODIFICADO": "bg-red-500", "URGENTE": "bg-red-600", "CANCELADO": "bg-custom-gray" }; return `${faseClasses[fase] || 'bg-slate-300 text-slate-700'} text-white`;}
 function formatMonto(montoStr) { if (montoStr === null || montoStr === undefined || montoStr === "") return ""; const montoNum = parseFloat(String(montoStr).replace(',', '.')); if (isNaN(montoNum)) return montoStr; return Math.round(montoNum).toString();}
-function renderVentas() { if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return; dom.tablaVentasBody.innerHTML = ""; pedidos.filter(aplicarFiltrosVentas).forEach(p => { const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); if (pedidoIdx === -1) return; const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase(); const montoFormateado = formatMonto(p.MONTO); const tr = document.createElement('tr'); tr.className = "bg-white border-b hover:bg-slate-50 transition"; tr.innerHTML = ` <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td> <td class="px-4 py-2">${p.CLIENTE || ""}</td> <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td> <td class="px-4 py-2">${montoFormateado}</td> <td class="px-4 py-2">${(p.ESTADO_PAGO || "").charAt(0).toUpperCase() + (p.ESTADO_PAGO || "").slice(1)}</td> <td class="px-4 py-2"><span class="text-slate-700">${wooTxt}</span></td> <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td> <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td> <td class="px-4 py-2"> <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="ventas">Ver/Editar</button> </td>`; dom.tablaVentasBody.appendChild(tr); });}
+function renderVentas() { if (!usuario || (usuario.rol !== "admin" && usuario.rol !== "superadmin" && usuario.rol !== "ventas") || !dom.tablaVentasBody) return; dom.tablaVentasBody.innerHTML = ""; pedidos.filter(aplicarFiltrosVentas).forEach(p => { const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); if (pedidoIdx === -1) return; const wooTxt = WOOCOMMERCE_TRANSLATE[p.ESTADO_WOO] || (p.ESTADO_WOO || "").toUpperCase(); const montoFormateado = formatMonto(p.MONTO); const tr = document.createElement('tr'); tr.className = "bg-white border-b hover:bg-slate-50 transition"; tr.innerHTML = ` <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td> <td class="px-4 py-2">${p.CLIENTE || ""}</td> <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td> <td class="px-4 py-2">${montoFormateado}</td> <td class="px-4 py-2">${(p.ESTADO_PAGO || "").charAt(0).toUpperCase() + (p.ESTADO_PAGO || "").slice(1)}</td> <td class="px-4 py-2"><span class="text-slate-700">${wooTxt}</span></td> <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td> <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td> <td class="px-4 py-2"> <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="ventas">Ver/Editar</button> </td>`; dom.tablaVentasBody.appendChild(tr); });}
 
 function aplicarFiltrosDeposito(p) {
   const fase = dom.filtroFaseDep ? dom.filtroFaseDep.value : "DEFAULT_DEPOSIT_FILTER";
@@ -699,7 +802,7 @@ function aplicarFiltrosDeposito(p) {
   return true;
 }
 
-function renderDeposito() { if (!usuario || !(usuario.rol === "admin" || usuario.rol === "ventas" || usuario.rol === "deposito") || !dom.tablaDepositoBody) return; dom.tablaDepositoBody.innerHTML = ""; pedidos.filter(aplicarFiltrosDeposito).forEach(p => { const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); if (pedidoIdx === -1) return; const tr = document.createElement('tr'); let rowBgClass = p.FASE === 'COMPLETADO MODIFICADO' ? 'bg-red-100' : (p.FASE === 'PREPARANDO MODIFICADO' ? 'bg-purple-50' : ''); tr.className = `bg-white border-b hover:bg-slate-50 transition ${rowBgClass}`; tr.innerHTML = ` <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td> <td class="px-4 py-2">${p.CLIENTE || ""}</td> <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td> <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td> <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td> <td class="px-4 py-2 text-center">${p.TICKET_IMPRESO ? '🖨️' : ''}</td> <td class="px-4 py-2"> <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="deposito">Ver/Completar</button> </td>`; dom.tablaDepositoBody.appendChild(tr); });}
+function renderDeposito() { if (!usuario || !(usuario.rol === "admin" || usuario.rol === "superadmin" || usuario.rol === "ventas" || usuario.rol === "deposito") || !dom.tablaDepositoBody) return; dom.tablaDepositoBody.innerHTML = ""; pedidos.filter(aplicarFiltrosDeposito).forEach(p => { const pedidoIdx = pedidos.findIndex(origP => origP.ID === p.ID); if (pedidoIdx === -1) return; const tr = document.createElement('tr'); let rowBgClass = p.FASE === 'COMPLETADO MODIFICADO' ? 'bg-red-100' : (p.FASE === 'PREPARANDO MODIFICADO' ? 'bg-purple-50' : ''); tr.className = `bg-white border-b hover:bg-slate-50 transition ${rowBgClass}`; tr.innerHTML = ` <td class="px-4 py-2 font-medium text-slate-900 whitespace-nowrap">${p.ID || ""}</td> <td class="px-4 py-2">${p.CLIENTE || ""}</td> <td class="px-4 py-2">${getMetodoEnvioDisplayName(p.METODO_ENVIO)}</td> <td class="px-4 py-2"><span class="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-center min-w-[100px] shadow-sm ${getBadgeClassForFase(p.FASE)}">${p.FASE || "EN ESPERA"}</span></td> <td class="px-4 py-2">${formatTimeAgoOrDate(p.FECHA_INGRESO_SISTEMA || p.FECHA || "")}</td> <td class="px-4 py-2 text-center">${p.TICKET_IMPRESO ? '🖨️' : ''}</td> <td class="px-4 py-2"> <button class="font-semibold py-1.5 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 bg-custom-green hover:bg-green-700 focus:ring-custom-green" data-idx="${pedidoIdx}" data-module="deposito">Ver/Completar</button> </td>`; dom.tablaDepositoBody.appendChild(tr); });}
 function openModal(idx, modulo) { pedidoActualIdx = idx; const pedido = pedidos[pedidoActualIdx]; if (!pedido) { console.error("Pedido no encontrado:", idx); showNoti("Error: Pedido no encontrado.", false); return; } originalPedidoState = JSON.parse(JSON.stringify(pedido)); let content = ""; const montoFormateado = formatMonto(pedido.MONTO); dom.modalTitle.innerHTML = `<b>Pedido #${pedido.ID || ""}</b>${modulo === 'ventas' ? ` - <b>$${montoFormateado}</b>` : ''}`; let productsTableHtml = ''; const productLines = (pedido.PRODUCTS || "").split('\n').filter(line => line.trim() !== ''); if (productLines.length > 0) { productsTableHtml += `<table class="min-w-full text-left text-sm text-slate-700 border-collapse"><thead><tr><th class="px-2 py-1 border-b-2 border-slate-300">SKU</th><th class="px-2 py-1 border-b-2 border-slate-300">Descripción</th><th class="px-2 py-1 border-b-2 border-slate-300 text-right">Cant.</th></tr></thead><tbody>`; productLines.forEach(line => { const formattedRow = formatProductLineToHtmlRow(line); if (formattedRow) productsTableHtml += formattedRow; }); productsTableHtml += `</tbody></table>`; } else { productsTableHtml = `<p class="text-slate-500 text-sm italic">No hay productos registrados.</p>`; } const deptoFullName = getDepartamentoFullName(pedido.DEPARTAMENTO || ""); const metodoEnvioActualNorm = (pedido.METODO_ENVIO || "").trim().toUpperCase(); const metodoEnvioDisplay = getMetodoEnvioDisplayName(pedido.METODO_ENVIO); if (modulo === 'ventas') { const puedeCancelar = pedido.FASE === 'EN ESPERA' || pedido.FASE === 'PROCESANDO'; const estaCancelado = pedido.FASE === 'CANCELADO'; content = ` <div class="mb-3"> <div class="flex justify-between items-center mb-1"> <label for="modal-productos" class="block text-sm font-medium text-slate-600">Productos:</label> <button id="modal-edit-productos-btn" class="bg-blue-500 text-white px-3 py-1 rounded-md text-xs font-semibold hover:bg-blue-600 transition-colors flex-shrink-0">Editar</button> </div> <div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div> <textarea class="modal-input w-full hidden" id="modal-productos" rows="8" style="font-family: monospace;">${pedido.PRODUCTS || ""}</textarea> </div> <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3"> <div><label for="modal-cliente" class="block text-sm font-medium text-slate-600 mb-1">Cliente:</label><input class="modal-input" id="modal-cliente" value="${pedido.CLIENTE || ""}"></div> <div><label for="modal-direccion" class="block text-sm font-medium text-slate-600 mb-1">Dirección:</label><input class="modal-input" id="modal-direccion" value="${pedido.DIRECCION || ""}"></div> <div><label for="modal-telefono" class="block text-sm font-medium text-slate-600 mb-1">Teléfono:</label><input class="modal-input" id="modal-telefono" value="${(pedido.TELEFONO || "")}"></div> <div><label for="modal-email" class="block text-sm font-medium text-slate-600 mb-1">Email:</label><input type="email" class="modal-input" id="modal-email" value="${pedido.EMAIL || ""}"></div> <div><label for="modal-barrio-localidad" class="block text-sm font-medium text-slate-600 mb-1">Barrio/Localidad:</label><input class="modal-input" id="modal-barrio-localidad" value="${pedido.BARRIO_LOCALIDAD || ""}"></div> <div><label for="modal-departamento" class="block text-sm font-medium text-slate-600 mb-1">Departamento:</label><input class="modal-input" id="modal-departamento" value="${deptoFullName}"></div> </div> <div class="mb-3"><label for="modal-notas" class="block text-sm font-medium text-slate-600 mb-1">Notas:</label><textarea class="modal-input" id="modal-notas" rows="2">${pedido.NOTAS || ""}</textarea></div> <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4"> <div><label for="modal-metodo-envio" class="block text-sm font-medium text-slate-600 mb-1">Método de Envío:</label> <select id="modal-metodo-envio" class="modal-input"> <option value="">Seleccionar</option> <option value="DAC" ${metodoEnvioActualNorm === "DAC" ? " selected" : ""}>DAC</option> <option value="GESTION POS" ${metodoEnvioActualNorm === "GESTION POS" ? " selected" : ""}>GESTION POS</option> <option value="PICK UP" ${metodoEnvioActualNorm === "PICK UP" ? " selected" : ""}>PICK UP</option> </select> </div> <div><label for="modal-estado-pago" class="block text-sm font-medium text-slate-600 mb-1">Estado de Pago:</label> <select id="modal-estado-pago" class="modal-input"> <option value="" ${pedido.ESTADO_PAGO !== "confirmado" ? " selected" : ""}>Seleccionar</option> <option value="confirmado" ${pedido.ESTADO_PAGO === "confirmado" ? " selected" : ""}>Confirmado</option> </select> </div> </div> <div class="mb-4 space-y-2"> <div id="entregado-checkbox-wrapper" class="${metodoEnvioActualNorm === 'PICK UP' ? '' : 'hidden'}"><div class="flex items-center"><input type="checkbox" id="modal-entregado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ENTREGADO ? "checked" : ""}><label for="modal-entregado" class="cursor-pointer">Entregado</label></div></div> <div id="etiqueta-emitida-checkbox-wrapper" class="${(metodoEnvioActualNorm === 'DAC' || metodoEnvioActualNorm === 'GESTION POS') ? '' : 'hidden'}"><div class="flex items-center"><input type="checkbox" id="modal-etiqueta-emitida" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.ETIQUETA_EMITIDA ? "checked" : ""}><label for="modal-etiqueta-emitida" class="cursor-pointer">Etiqueta Emitida</label></div></div> <div class="flex items-center"><input type="checkbox" id="modal-facturado" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.FACTURADO ? "checked" : ""}><label for="modal-facturado" class="cursor-pointer">Facturado</label></div> <div class="flex items-center"><input type="checkbox" id="modal-aviso-cliente" class="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 mr-2 cursor-pointer" ${pedido.AVISO_CLIENTE ? "checked" : ""}><label for="modal-aviso-cliente" class="cursor-pointer">Aviso al cliente</label></div> </div> <div class="flex flex-col sm:flex-row gap-3 mt-4"> <button id="modal-save-venta" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-blue hover:bg-blue-700 focus:ring-custom-blue">Guardar Cambios</button> ${(pedido.FASE === 'COMPLETADO' || pedido.FASE === 'PREPARANDO') ? `<button id="modal-modificar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange">Modificar Pedido</button>` : ''} ${puedeCancelar ? `<button id="modal-cancelar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-red hover:bg-red-700 focus:ring-custom-red">Cancelar Pedido</button>` : ''} ${estaCancelado ? `<button id="modal-activar-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out text-white shadow-md hover:scale-105 active:scale-95 text-sm w-full sm:w-auto bg-custom-green hover:bg-green-700 focus:ring-custom-green">Activar Pedido</button>` : ''} </div> <div class="mt-6 pt-4 border-t border-slate-200"> <h4 class="text-lg font-semibold text-slate-700 mb-2">Historial de Actividad</h4> <div id="modal-historial-actividad" class="bg-slate-50 p-3 rounded-md max-h-48 overflow-y-auto text-sm"> ${(pedido.HISTORIAL && pedido.HISTORIAL.length > 0) ? pedido.HISTORIAL.map(entry => { const formattedTimestamp = formatDateToUTCMinus3(entry.timestamp, true); return `<div class="mb-2 pb-2 border-b border-slate-200 last:border-b-0"><div class="font-medium text-slate-800">${entry.user} - ${formattedTimestamp}</div><ul class="list-disc list-inside text-slate-600 ml-4">${entry.changes.map(change => `<li>${formatChangeEntry(change)}</li>`).join('')}</ul></div>`; }).join('') : '<p class="text-slate-500">No hay historial.</p>'} </div> </div>`; } else { const isVentasUser = usuario && usuario.rol === 'ventas'; content = ` <div class="mb-2"><strong class="text-slate-700">Productos:</strong><div id="productos-display-table" class="bg-slate-50 p-2 rounded text-xs border border-slate-200 max-h-48 overflow-y-auto w-full">${productsTableHtml}</div></div> <div class="space-y-1 text-sm mb-3"> <div><strong class="text-slate-600">Cliente:</strong> ${pedido.CLIENTE || ""}</div> <div><strong class="text-slate-600">Dirección:</strong> ${pedido.DIRECCION || ""}</div> <div><strong class="text-slate-600">Barrio/Localidad:</strong> ${pedido.BARRIO_LOCALIDAD || ""}</div> <div><strong class="text-slate-600">Departamento:</strong> ${deptoFullName}</div> <div><strong class="text-slate-600">Teléfono:</strong> ${pedido.TELEFONO || ""}</div> <div><strong class="text-slate-600">Email:</strong> ${pedido.EMAIL || ""}</div> <div><strong class="text-slate-600">Notas:</strong> ${pedido.NOTAS || ""}</div> <div><strong class="text-slate-600">Método de Envío:</strong> ${metodoEnvioDisplay}</div> </div>`; if (["DAC","GESTION POS"].includes(metodoEnvioActualNorm)) { let opcionesEmpaque = (OPCIONES_EMPAQUE[metodoEnvioActualNorm] || OPCIONES_EMPAQUE[pedido.METODO_ENVIO] || []).map(op => `<option value="${op}"${pedido.EMPAQUE === op ? " selected" : ""}>${op||"Seleccionar"}</option>`).join(""); content += `<div class="mb-4"><label for="modal-tipo-empaque" class="block text-sm font-medium text-slate-600 mb-1">Tipo de Empaque:</label><select id="modal-tipo-empaque" class="modal-input" ${isVentasUser ? 'disabled' : ''}>${opcionesEmpaque}</select></div>`; } if (!isVentasUser) { const printButtonInitialClass = printCount[pedido.ID] ? 'bg-custom-orange hover:bg-orange-700 focus:ring-custom-orange' : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-500'; const printButtonInitialText = printCount[pedido.ID] ? "Reimprimir Ticket" : "Imprimir Ticket"; const isCompleteButtonDisabled = (["DAC","GESTION POS"].includes(metodoEnvioActualNorm) && !pedido.EMPAQUE); content += `<div class="flex flex-col sm:flex-row gap-3 mt-4"><button id="modal-complete-pedido" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 bg-custom-green hover:bg-green-700 focus:ring-custom-green" ${isCompleteButtonDisabled ? "disabled" : ""}>MARCAR COMPLETADO</button><button id="modal-print-ticket" class="font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed text-white shadow-md hover:scale-105 active:scale-95 text-sm flex-1 ${printButtonInitialClass}">${printButtonInitialText}</button></div>`; } else { content += `<p class="mt-4 text-sm text-slate-500 italic">(Modo solo lectura para Ventas)</p>`; } } dom.modalContent.innerHTML = content; dom.modalBg.classList.remove('hidden'); dom.modalBg.classList.add('flex'); if (modulo === 'ventas') { document.getElementById('modal-save-venta')?.addEventListener('click', () => guardarVenta(pedidoActualIdx)); document.getElementById('modal-modificar-pedido')?.addEventListener('click', () => modificarPedidoVentas(pedidoActualIdx)); document.getElementById('modal-cancelar-pedido')?.addEventListener('click', () => cancelarPedido(pedidoActualIdx)); document.getElementById('modal-activar-pedido')?.addEventListener('click', () => activarPedido(pedidoActualIdx)); const metodoEnvioSelect = document.getElementById('modal-metodo-envio'); const entregadoCheckboxWrapper = document.getElementById('entregado-checkbox-wrapper'); const etiquetaEmitidaCheckboxWrapper = document.getElementById('etiqueta-emitida-checkbox-wrapper'); const toggleCheckboxesVisibility = () => { const currentMetodoEnvioSelected = (metodoEnvioSelect.value || "").trim().toUpperCase(); if(entregadoCheckboxWrapper) entregadoCheckboxWrapper.classList.toggle('hidden', currentMetodoEnvioSelected !== 'PICK UP'); if(entregadoCheckboxWrapper?.classList.contains('hidden')) { const cb = document.getElementById('modal-entregado'); if(cb) cb.checked = false;} if(etiquetaEmitidaCheckboxWrapper) etiquetaEmitidaCheckboxWrapper.classList.toggle('hidden', !(currentMetodoEnvioSelected === 'DAC' || currentMetodoEnvioSelected === 'GESTION POS')); if(etiquetaEmitidaCheckboxWrapper?.classList.contains('hidden')) { const cb = document.getElementById('modal-etiqueta-emitida'); if(cb) cb.checked = false;} }; if (metodoEnvioSelect) { metodoEnvioSelect.addEventListener('change', toggleCheckboxesVisibility); toggleCheckboxesVisibility(); } dom.productosDisplayTable = document.getElementById('productos-display-table'); dom.productosEditArea = document.getElementById('modal-productos'); dom.modalEditProductosBtn = document.getElementById('modal-edit-productos-btn'); if (dom.productosDisplayTable && dom.productosEditArea && dom.modalEditProductosBtn) { dom.modalEditProductosBtn.addEventListener('click', () => { dom.productosDisplayTable.classList.add('hidden'); dom.productosEditArea.classList.remove('hidden'); dom.productosEditArea.removeAttribute('readonly'); dom.productosEditArea.focus(); dom.modalEditProductosBtn.classList.add('hidden'); }); dom.productosDisplayTable.classList.remove('hidden'); dom.productosEditArea.classList.add('hidden'); dom.productosEditArea.setAttribute('readonly', 'true'); dom.modalEditProductosBtn.classList.remove('hidden'); } } else { if (!(usuario && usuario.rol === 'ventas')) { document.getElementById('modal-complete-pedido')?.addEventListener('click', () => completarPedido(pedidoActualIdx)); document.getElementById('modal-print-ticket')?.addEventListener('click', () => imprimirTicket(pedidoActualIdx)); const tipoEmpaqueSelect = document.getElementById('modal-tipo-empaque'); if (tipoEmpaqueSelect) { tipoEmpaqueSelect.addEventListener('change', function() { const currentPedido = pedidos[pedidoActualIdx]; if (currentPedido) currentPedido.EMPAQUE = this.value; const btnCompletar = document.getElementById('modal-complete-pedido'); if (btnCompletar) btnCompletar.disabled = !this.value && ["DAC","GESTION POS"].includes((currentPedido.METODO_ENVIO || "").trim().toUpperCase()); }); } } } document.querySelectorAll('#modal-box .modal-input').forEach(el => { el.classList.add('w-full', 'p-2', 'border', 'border-slate-300', 'rounded-md', 'focus:ring-blue-500', 'focus:border-blue-500', 'text-sm'); });}
 function closeModal() { dom.modalBg.classList.add('hidden'); dom.modalBg.classList.remove('flex'); dom.modalContent.innerHTML = ""; pedidoActualIdx = null; originalPedidoState = null; }
 function getChanges(oldObj, newObj, fieldsToTrack) { const changes = []; fieldsToTrack.forEach(field => { let oldValue = oldObj[field] || ''; let newValue = newObj[field] || ''; if (field === 'DEPARTAMENTO') { oldValue = getDepartamentoFullName(oldValue); newValue = getDepartamentoFullName(newValue); } oldValue = typeof oldObj[field] === 'boolean' ? oldObj[field] : oldValue; newValue = typeof newObj[field] === 'boolean' ? newObj[field] : newValue; if (oldValue !== newValue) changes.push({ field: field, old: oldValue, new: newValue }); }); return changes;}
@@ -722,7 +825,12 @@ async function cargarTareas() {
             throw new Error(`HTTP ${response.status} - ${errorData.error || response.statusText}`);
         }
         const data = await response.json();
-        tareas = Array.isArray(data) ? data.map(t => parseTaskJSONFields(t)) : [];
+        let fetchedTareas = Array.isArray(data) ? data.map(t => parseTaskJSONFields(t)) : [];
+        
+        const mapaTareasUnicas = new Map();
+        fetchedTareas.forEach(t => mapaTareasUnicas.set(String(t.ID_TAREA), t));
+        tareas = Array.from(mapaTareasUnicas.values());
+
         console.log("Tareas cargadas desde backend:", tareas);
         renderizarTareas();
         mostrarSyncLog('Tareas sincronizadas.', true);
@@ -734,13 +842,65 @@ async function cargarTareas() {
     }
 }
 
+function aplicarFiltrosTareas(tarea, modulo) {
+    const filtersContainer = document.querySelector(`.task-filters[data-module="${modulo}"]`);
+    if (!filtersContainer) return true; // Si no hay barra de filtros, mostramos todo por seguridad
+
+    const searchInput = filtersContainer.querySelector('.task-search');
+    const statusInput = filtersContainer.querySelector('.task-status');
+    const startDateInput = filtersContainer.querySelector('.task-date-start');
+    const endDateInput = filtersContainer.querySelector('.task-date-end');
+
+    const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const status = statusInput ? statusInput.value : 'ACTIVAS';
+    const startDate = startDateInput ? startDateInput.value : '';
+    const endDate = endDateInput ? endDateInput.value : '';
+
+    // Filtrar por estado
+    if (status === 'ACTIVAS') {
+        if (tarea.ESTADO_TAREA === 'Eliminada') return false; // Por defecto ocultamos las eliminadas
+    } else if (status === 'Eliminada') {
+        if (tarea.ESTADO_TAREA !== 'Eliminada') return false; // Solo eliminadas
+    } else if (status !== '') {
+        // Para "Pendiente", "En curso", "Completada"
+        if (tarea.ESTADO_TAREA !== status) return false;
+    }
+
+    // Filtrar por fecha (usamos fecha de creacion para la busqueda)
+    if (startDate || endDate) {
+        let dateToCompareStr = tarea.FECHA_CREACION;
+        if (!dateToCompareStr) return false;
+        
+        let dateToCompare = new Date(dateToCompareStr);
+        if (isNaN(dateToCompare.getTime())) return false;
+
+        // Resetear la hora a medianoche UTC para comparar solament la fecha
+        dateToCompare = new Date(Date.UTC(dateToCompare.getUTCFullYear(), dateToCompare.getUTCMonth(), dateToCompare.getUTCDate()));
+
+        if (startDate && dateToCompare < new Date(startDate + "T00:00:00Z")) return false;
+        if (endDate && dateToCompare > new Date(endDate + "T00:00:00Z")) return false;
+    }
+
+    // Buscador general (Titulo, ID, Responsables, Descripcion)
+    if (search) {
+        const matchTitle = (tarea.TITULO || '').toLowerCase().includes(search);
+        const matchId = (String(tarea.ID_TAREA) || '').toLowerCase().includes(search);
+        const matchDesc = (tarea.DESCRIPCION || '').toLowerCase().includes(search);
+        const matchResp = (Array.isArray(tarea.RESPONSABLES) ? tarea.RESPONSABLES.join(' ') : String(tarea.RESPONSABLES || '')).toLowerCase().includes(search);
+        
+        if (!matchTitle && !matchId && !matchDesc && !matchResp) return false;
+    }
+
+    return true;
+}
+
 function renderizarTareas() {
     if (!usuario) return;
 
     if (dom.tablaTareasVentasBody) {
         dom.tablaTareasVentasBody.innerHTML = "";
         const tareasVisiblesVentas = tareas.filter(tarea =>
-            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('ventas')
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('ventas') && aplicarFiltrosTareas(tarea, 'ventas')
         );
         tareasVisiblesVentas.forEach(tarea => dom.tablaTareasVentasBody.appendChild(crearFilaTareaHtml(tarea)));
     }
@@ -748,18 +908,27 @@ function renderizarTareas() {
     if (dom.tablaTareasDepositoBody) {
         dom.tablaTareasDepositoBody.innerHTML = "";
         const tareasVisiblesDeposito = tareas.filter(tarea =>
-            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('deposito')
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('deposito') && aplicarFiltrosTareas(tarea, 'deposito')
         );
         tareasVisiblesDeposito.forEach(tarea => dom.tablaTareasDepositoBody.appendChild(crearFilaTareaHtml(tarea)));
     }
 
-    if (dom.tablaTareasAdminBody && usuario.rol === 'admin') {
+    if (dom.tablaTareasAdminBody && (usuario.rol === 'admin' || usuario.rol === 'superadmin')) {
         dom.tablaTareasAdminBody.innerHTML = "";
         const tareasVisiblesAdmin = tareas.filter(tarea =>
-            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('admin')
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('admin') && aplicarFiltrosTareas(tarea, 'admin')
         );
         tareasVisiblesAdmin.forEach(tarea => dom.tablaTareasAdminBody.appendChild(crearFilaTareaHtml(tarea, true)));
     }
+
+    if (dom.tablaTareasSuperadminBody && usuario.rol === 'superadmin') {
+        dom.tablaTareasSuperadminBody.innerHTML = "";
+        const tareasVisiblesSuperadmin = tareas.filter(tarea =>
+            (tarea.RESPONSABLES) && (tarea.RESPONSABLES).includes('superadmin') && aplicarFiltrosTareas(tarea, 'superadmin')
+        );
+        tareasVisiblesSuperadmin.forEach(tarea => dom.tablaTareasSuperadminBody.appendChild(crearFilaTareaHtml(tarea, true)));
+    }
+
     renderNotifications();
 }
 
@@ -774,6 +943,7 @@ function getEstadoTareaClass(estado) {
     if (estado === "Pendiente") return "bg-yellow-400 text-slate-800";
     if (estado === "En curso") return "bg-blue-500 text-white";
     if (estado === "Completada") return "bg-green-500 text-white";
+    if (estado === "Eliminada") return "bg-red-200 text-red-800 line-through";
     return "bg-slate-200 text-slate-700";
 }
 
@@ -785,39 +955,35 @@ function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
 
     let fechaVencimientoDisplay = 'N/A';
     const valFecha = tarea.FECHA_VENCIMIENTO;
-    const valHora = tarea.HORA_VENCIMIENTO; // Puede ser string "HH:MM" o número (serial de hora)
+    const valHora = tarea.HORA_VENCIMIENTO; 
     let fechaObj = null;
     let horaString = '';
 
-    if (typeof valFecha === 'number') { // Fecha es serial numérico
-        const dateTimeParts = excelSerialToDate(valFecha); // Devuelve {year, month, day, hours, minutes}
+    if (typeof valFecha === 'number') { 
+        const dateTimeParts = excelSerialToDate(valFecha); 
         if (dateTimeParts) {
             fechaVencimientoDisplay = formatDateToDisplay(`${dateTimeParts.year}-${(dateTimeParts.month + 1).toString().padStart(2, '0')}-${dateTimeParts.day.toString().padStart(2, '0')}`);
-            // La hora ya está en dateTimeParts.hours y dateTimeParts.minutes
             horaString = `${dateTimeParts.hours.toString().padStart(2, '0')}:${dateTimeParts.minutes.toString().padStart(2, '0')}`;
 
-            // Si valHora también es un serial de hora (fraccional), podría usarse para refinar, pero excelSerialToDate ya debería manejar la parte fraccional de valFecha
             if (typeof valHora === 'number' && valHora > 0 && valHora < 1 && (valFecha % 1 === 0 || Math.abs(valFecha % 1) < 1e-9)) {
-                // Si la fecha era un entero y la hora es un serial fraccional separado
                 const timeSerialDateTime = excelSerialToDate(valHora);
                  if (timeSerialDateTime) {
                    horaString = `${timeSerialDateTime.hours.toString().padStart(2, '0')}:${timeSerialDateTime.minutes.toString().padStart(2, '0')}`;
                 }
             } else if (typeof valHora === 'string' && valHora.match(/^\d{1,2}:\d{2}$/) && (valFecha % 1 === 0 || Math.abs(valFecha % 1) < 1e-9) ) {
-                // Si la fecha era serial entero y la hora es string
                 const parts = valHora.split(':');
                 horaString = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
             }
         } else {
-            fechaVencimientoDisplay = String(valFecha); // Fallback si la conversión falla
+            fechaVencimientoDisplay = String(valFecha);
         }
-    } else if (typeof valFecha === 'string' && valFecha.match(/^\d{4}-\d{2}-\d{2}$/)) { // Fecha es YYYY-MM-DD
+    } else if (typeof valFecha === 'string' && valFecha.match(/^\d{4}-\d{2}-\d{2}$/)) { 
         fechaVencimientoDisplay = formatDateToDisplay(valFecha);
         if (typeof valHora === 'string' && valHora.match(/^\d{1,2}:\d{2}$/)) {
             const parts = valHora.split(':');
             horaString = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
         }
-    } else if (valFecha) { // Otro tipo de valor, intentar mostrarlo
+    } else if (valFecha) { 
         fechaVencimientoDisplay = String(valFecha);
          if (typeof valHora === 'string' && valHora.match(/^\d{1,2}:\d{2}$/)) {
              const parts = valHora.split(':');
@@ -825,19 +991,49 @@ function crearFilaTareaHtml(tarea, esVistaAdmin = false) {
         }
     }
 
-    if (fechaVencimientoDisplay !== 'N/A' && horaString && horaString !== "00:00") { // No mostrar 00:00 si no hay hora real
+    if (fechaVencimientoDisplay !== 'N/A' && horaString && horaString !== "00:00") {
         fechaVencimientoDisplay += ` ${horaString}`;
     }
 
-
     let moduloAsociadoDisplay = tarea.MODULO_ASOCIADO || 'General';
     const idTarea = tarea.ID_TAREA;
-    const puedeEliminarTareaActual = (usuario.rol === 'admin') ||
-                                     (usuario.nombre === tarea.CREADOR && (usuario.rol === 'ventas' || usuario.rol === 'deposito'));
+    
+    // Logica de permisos de eliminación de tarea (solo creadores u admins pueden, pero NO de superadmin)
+    let puedeEliminarTareaActual = (usuario.rol === 'admin' || usuario.rol === 'superadmin') ||
+                                   (usuario.nombre === tarea.CREADOR && (usuario.rol === 'ventas' || usuario.rol === 'deposito'));
+                                   
+    // Nadie (ni siquiera admin normal o su mismo creador si era de otro rol accidentalmente) puede eliminar tareas de super admin, excepto superadmin
+    if (tarea.CREADOR === 'Super Administrador' && usuario.rol !== 'superadmin') {
+        puedeEliminarTareaActual = false;
+    }
 
+    // Ocultar botón eliminar si ya está eliminada, para no re-borrarla
+    if (tarea.ESTADO_TAREA === 'Eliminada') {
+        puedeEliminarTareaActual = false;
+    }
+
+    // LOGICA PUNTO ROJO: Mostrar a quien tiene pendiente de leer, O AL CREADOR si alguien falta de leer
     let unreadIndicatorHtml = '';
-    if (tarea.NOTIFICACIONES_COMENTARIO && tarea.NOTIFICACIONES_COMENTARIO[usuario.rol]) {
-        unreadIndicatorHtml = '<span class="unread-indicator" title="Nuevo comentario"></span>';
+    let tieneSinLeer = false;
+    let tooltipText = "Tarea no leída o actualizada";
+
+    if (tarea.NOTIFICACIONES_COMENTARIO) {
+        if (tarea.NOTIFICACIONES_COMENTARIO[usuario.rol]) {
+            // El usuario actual (ej. ventas) tiene actualizaciones que no ha visto
+            tieneSinLeer = true;
+            tooltipText = "Tienes actualizaciones sin leer";
+        } else if ((usuario.rol === 'admin' || usuario.rol === 'superadmin' || usuario.nombre === tarea.CREADOR) && tarea.RESPONSABLES) {
+            // El usuario es admin, superadmin o el creador: revisamos si ALGÚN responsable asignado aún no la ha visto
+            const alguienSinVer = tarea.RESPONSABLES.some(rolResp => tarea.NOTIFICACIONES_COMENTARIO[rolResp]);
+            if (alguienSinVer) {
+                tieneSinLeer = true;
+                tooltipText = "Esperando que los responsables vean la tarea";
+            }
+        }
+    }
+
+    if (tieneSinLeer) {
+        unreadIndicatorHtml = `<span class="unread-indicator animate-pulse" title="${tooltipText}"></span>`;
     }
 
     const tituloParaMostrar = String(tarea.TITULO || "Tarea sin título").toUpperCase();
@@ -863,7 +1059,7 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     dom.taskId.value = idTarea || `T${Date.now()}`;
     const esNuevaTarea = !esEdicion;
 
-    const tareaExistente = esEdicion && idTarea ? tareas.find(t => t.ID_TAREA === idTarea) : null;
+    const tareaExistente = esEdicion && idTarea ? tareas.find(t => String(t.ID_TAREA) === String(idTarea)) : null;
 
     let moduloDefecto = 'Admin';
     if (esNuevaTarea && !moduloContexto) {
@@ -872,21 +1068,14 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     }
     dom.taskModuloAsociado.value = moduloContexto || (tareaExistente ? tareaExistente.MODULO_ASOCIADO : moduloDefecto);
 
-    let responsablesOptionsHtml = '';
-    if (esNuevaTarea && (usuario.rol === 'deposito')) {
-        responsablesOptionsHtml = Object.values(USERS)
-            .filter(u => u.rol === 'deposito' || u.rol === 'admin')
-            .map(u => `<label class="flex items-center space-x-2"><input type="checkbox" name="task_responsables_opt" value="${u.rol}" class="form-checkbox h-4 w-4 text-custom-purple rounded" ${u.rol === usuario.rol ? 'checked' : ''}><span>${u.nombre}</span></label>`)
-            .join('');
-    } else {
-        responsablesOptionsHtml = Object.values(USERS).map(u =>
-            `<label class="flex items-center space-x-2"><input type="checkbox" name="task_responsables_opt" value="${u.rol}" class="form-checkbox h-4 w-4 text-custom-purple rounded"><span>${u.nombre}</span></label>`
-        ).join('');
-    }
+    let responsablesOptionsHtml = Object.values(USERS).map(u =>
+        `<label class="flex items-center space-x-2"><input type="checkbox" name="task_responsables_opt" value="${u.rol}" class="form-checkbox h-4 w-4 text-custom-purple rounded"><span>${u.nombre}</span></label>`
+    ).join('');
+    
     dom.taskResponsablesOptions.innerHTML = responsablesOptionsHtml;
 
     let tarea = null;
-    const esAdmin = usuario && usuario.rol === 'admin';
+    const esAdmin = usuario && (usuario.rol === 'admin' || usuario.rol === 'superadmin');
     let esResponsableAsignado = false;
 
     if (esEdicion && idTarea) {
@@ -911,9 +1100,9 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
                 const dateTimeParts = excelSerialToDate(valFechaModal);
                 if (dateTimeParts) {
                     fechaParaInput = `${dateTimeParts.year}-${(dateTimeParts.month + 1).toString().padStart(2, '0')}-${dateTimeParts.day.toString().padStart(2, '0')}`;
-                    if (valFechaModal % 1 !== 0 && Math.abs(valFechaModal % 1) > 1e-9) { // Hora en serial de fecha
+                    if (valFechaModal % 1 !== 0 && Math.abs(valFechaModal % 1) > 1e-9) { 
                         horaParaInput = `${dateTimeParts.hours.toString().padStart(2, '0')}:${dateTimeParts.minutes.toString().padStart(2, '0')}`;
-                    } else if (typeof valHoraModal === 'number' && valHoraModal > 0 && valHoraModal < 1) { // Hora como serial separado
+                    } else if (typeof valHoraModal === 'number' && valHoraModal > 0 && valHoraModal < 1) { 
                         const timeSerialDateTime = excelSerialToDate(valHoraModal);
                         if(timeSerialDateTime) horaParaInput = `${timeSerialDateTime.hours.toString().padStart(2, '0')}:${timeSerialDateTime.minutes.toString().padStart(2, '0')}`;
                     } else if (typeof valHoraModal === 'string' && valHoraModal.match(/^\d{1,2}:\d{2}$/)) {
@@ -945,7 +1134,7 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
 
             if (tarea.NOTIFICACIONES_COMENTARIO && tarea.NOTIFICACIONES_COMENTARIO[usuario.rol]) {
                 const updatedNotif = { ...tarea.NOTIFICACIONES_COMENTARIO, [usuario.rol]: false };
-                const taskIndex = tareas.findIndex(t => t.ID_TAREA === idTarea);
+                const taskIndex = tareas.findIndex(t => String(t.ID_TAREA) === String(idTarea));
                 if (taskIndex > -1) {
                     tareas[taskIndex].NOTIFICACIONES_COMENTARIO = updatedNotif;
                 }
@@ -961,6 +1150,7 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
         dom.taskModalTitle.textContent = "Nueva Tarea";
         dom.taskTitulo.value = "";
         dom.taskDescripcion.value = "";
+        dom.taskEstado.value = "Pendiente"; // Resetea a pendiente si se abre vacio
         dom.taskDetailsExtraInfo.classList.add('hidden');
         if (usuario.rol === 'ventas' || usuario.rol === 'deposito') {
             const currentUserCheckbox = dom.taskResponsablesOptions.querySelector(`input[value="${usuario.rol}"]`);
@@ -987,11 +1177,7 @@ function abrirModalTarea(idTarea = null, esEdicion = false, moduloContexto = nul
     dom.taskHoraVencimiento.readOnly = !puedeEditarGeneral;
 
     document.querySelectorAll('input[name="task_responsables_opt"]').forEach(checkbox => {
-        if (esNuevaTarea && usuario.rol === 'deposito') {
-            checkbox.disabled = !(checkbox.value === 'deposito' || checkbox.value === 'admin');
-        } else {
-            checkbox.disabled = !esAdmin && esEdicion;
-        }
+        checkbox.disabled = !esAdmin && esEdicion;
         checkbox.parentElement.classList.toggle('opacity-50', checkbox.disabled);
         checkbox.parentElement.classList.toggle('cursor-not-allowed', checkbox.disabled);
     });
@@ -1038,7 +1224,8 @@ async function actualizarTareaEnBackend(tareaData, idTareaOriginal) {
         }
         const tareaGuardada = await response.json();
 
-        const index = tareas.findIndex(t => (t.ID_TAREA) === idParaEndpoint);
+        // Convertimos los IDs a string forzosamente para evitar fallos de matching
+        const index = tareas.findIndex(t => String(t.ID_TAREA) === String(idParaEndpoint));
         if (index > -1) {
             tareas[index] = parseTaskJSONFields(tareaGuardada);
         } else {
@@ -1062,8 +1249,8 @@ async function guardarTarea(event) {
     const descripcion = dom.taskDescripcion.value.trim();
     const responsablesSeleccionados = Array.from(document.querySelectorAll('input[name="task_responsables_opt"]:checked')).map(cb => cb.value);
     const prioridad = dom.taskPrioridad.value;
-    const fecha_vencimiento = dom.taskFechaVencimiento.value; // YYYY-MM-DD
-    const hora_vencimiento = dom.taskHoraVencimiento.value;   // HH:MM
+    const fecha_vencimiento = dom.taskFechaVencimiento.value; 
+    const hora_vencimiento = dom.taskHoraVencimiento.value;   
     const estado_tarea_nuevo = dom.taskEstado.value;
     let moduloAsociado = dom.taskModuloAsociado.value;
 
@@ -1077,8 +1264,8 @@ async function guardarTarea(event) {
     }
 
     if (!moduloAsociado) {
-        if (responsablesSeleccionados.length === 1 && responsablesSeleccionados[0] === 'admin') {
-            moduloAsociado = 'Admin';
+        if (responsablesSeleccionados.length === 1 && (responsablesSeleccionados[0] === 'admin' || responsablesSeleccionados[0] === 'superadmin')) {
+            moduloAsociado = responsablesSeleccionados[0] === 'admin' ? 'Admin' : 'Superadmin';
         } else if (responsablesSeleccionados.includes('ventas')) {
             moduloAsociado = 'Ventas';
         } else if (responsablesSeleccionados.includes('deposito')) {
@@ -1088,7 +1275,7 @@ async function guardarTarea(event) {
         }
     }
 
-    const existingTaskIndex = tareas.findIndex(t => t.ID_TAREA === id);
+    const existingTaskIndex = tareas.findIndex(t => String(t.ID_TAREA) === String(id));
     let tareaOriginal = null;
     let esNuevaTarea = true;
 
@@ -1139,7 +1326,12 @@ async function guardarTarea(event) {
                 throw new Error(`Error HTTP al crear tarea: ${response.status} - ${errorData.error || response.statusText}`);
             }
             const tareaCreada = await response.json();
-            tareas.push(parseTaskJSONFields(tareaCreada));
+            
+            // Validamos que no se duplique localmente previniendo push si la carga auto ya la insertó
+            if (!tareas.some(t => String(t.ID_TAREA) === String(tareaCreada.ID_TAREA))) {
+                tareas.push(parseTaskJSONFields(tareaCreada));
+            }
+
             showNoti("Tarea agregada exitosamente.", true);
             renderizarTareas();
             cerrarModalTarea();
@@ -1157,6 +1349,15 @@ async function guardarTarea(event) {
                 detalle: changes.map(c => `Campo '${c.field}' cambiado de '${c.old}' a '${c.new}'`).join('; '),
                 timestamp: new Date().toISOString()
             });
+
+            // Marcar como no leída (punto rojo) para los responsables asignados si hubo modificaciones
+            let notificaciones = { ...(tareaData.NOTIFICACIONES_COMENTARIO || {}) };
+            responsablesSeleccionados.forEach(rolResp => {
+                if (rolResp !== usuario.rol) {
+                    notificaciones[rolResp] = true;
+                }
+            });
+            tareaData.NOTIFICACIONES_COMENTARIO = notificaciones;
         }
         const actualizacionExitosa = await actualizarTareaEnBackend(tareaData, id);
         if (actualizacionExitosa) {
@@ -1201,34 +1402,46 @@ function getTaskChanges(oldTask, newTask) {
 
 
 async function eliminarTarea(idTarea) {
-    const tareaAEliminar = tareas.find(t => t.ID_TAREA === idTarea);
+    const tareaAEliminar = tareas.find(t => String(t.ID_TAREA) === String(idTarea));
     if (!tareaAEliminar) {
         showNoti("Error: Tarea no encontrada para eliminar.", false);
         return;
     }
 
-    const puedeEliminar = (usuario.rol === 'admin') ||
+    // Permisos base
+    let puedeEliminar = (usuario.rol === 'admin' || usuario.rol === 'superadmin') ||
                           (usuario.nombre === tareaAEliminar.CREADOR && (usuario.rol === 'ventas' || usuario.rol === 'deposito'));
 
+    // Sobrescritura de protección para Superadmin
+    if (tareaAEliminar.CREADOR === 'Super Administrador' && usuario.rol !== 'superadmin') {
+        puedeEliminar = false;
+    }
+
     if (!puedeEliminar) {
-        showNoti("No tienes permiso para eliminar esta tarea.", false);
+        showNoti("No tienes permiso para eliminar esta tarea. (Tareas de Super Admin solo pueden ser borradas por él mismo)", false);
         return;
     }
 
-    const confirmed = await showConfirmationModal(`¿Seguro que quieres eliminar la tarea "${tareaAEliminar.TITULO || idTarea}"? Esta acción no se puede deshacer.`);
+    const confirmed = await showConfirmationModal(`¿Seguro que quieres eliminar la tarea "${tareaAEliminar.TITULO || idTarea}"? Se enviará a la papelera (Tareas Eliminadas).`);
     if (confirmed) {
-        try {
-            const response = await fetch(`${BACKEND_URL}/tareas/${idTarea}`, { method: 'DELETE' });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Error HTTP al eliminar tarea: ${response.status} - ${errorData.error || response.statusText}`);
-            }
-            tareas = tareas.filter(t => t.ID_TAREA !== idTarea);
-            renderizarTareas();
-            showNoti(`Tarea "${tareaAEliminar.TITULO || idTarea}" eliminada.`, true);
-        } catch (err) {
-            showNoti(`Error al eliminar tarea: ${err.message}`, false);
-            console.error("Error en eliminarTarea:", err);
+        // Borrado Lógico (Soft Delete) cambiando el estado a "Eliminada"
+        const tareaDataParaActualizar = {
+            ...tareaAEliminar,
+            ESTADO_TAREA: 'Eliminada',
+            HISTORIAL_TAREA: [
+                ...(tareaAEliminar.HISTORIAL_TAREA || []),
+                {
+                    usuario: usuario.nombre,
+                    accion: "Eliminación (Soft Delete)",
+                    detalle: "Tarea enviada a la papelera (Estado: Eliminada)",
+                    timestamp: new Date().toISOString()
+                }
+            ]
+        };
+
+        const actualizacionExitosa = await actualizarTareaEnBackend(tareaDataParaActualizar, idTarea);
+        if (actualizacionExitosa) {
+            showNoti(`Tarea "${tareaAEliminar.TITULO || idTarea}" eliminada exitosamente.`, true);
         }
     } else {
         showNoti("Eliminación cancelada.", null);
@@ -1236,7 +1449,7 @@ async function eliminarTarea(idTarea) {
 }
 
 function renderizarComentariosTarea(idTarea) {
-    const tarea = tareas.find(t => t.ID_TAREA === idTarea);
+    const tarea = tareas.find(t => String(t.ID_TAREA) === String(idTarea));
     if (!dom.taskCommentsList || !tarea || !tarea.COMENTARIOS) return;
     const comentarios = tarea.COMENTARIOS;
     dom.taskCommentsList.innerHTML = (comentarios.length > 0)
@@ -1255,7 +1468,7 @@ function renderizarComentariosTarea(idTarea) {
 }
 
 function renderizarHistorialTarea(idTarea) {
-    const tarea = tareas.find(t => t.ID_TAREA === idTarea);
+    const tarea = tareas.find(t => String(t.ID_TAREA) === String(idTarea));
     if (!dom.taskHistoryList || !tarea || !tarea.HISTORIAL_TAREA) return;
     const historial = tarea.HISTORIAL_TAREA;
      dom.taskHistoryList.innerHTML = (historial.length > 0)
@@ -1265,12 +1478,12 @@ function renderizarHistorialTarea(idTarea) {
 
 async function agregarComentarioTarea() {
     if (!tareaActualId || !dom.taskNewComment) return;
-    const tareaIndex = tareas.findIndex(t => t.ID_TAREA === tareaActualId);
+    const tareaIndex = tareas.findIndex(t => String(t.ID_TAREA) === String(tareaActualId));
     if (tareaIndex === -1) { showNoti("Error: Tarea no encontrada.", false); return; }
 
     let tarea = tareas[tareaIndex];
     const responsablesTarea = tarea.RESPONSABLES;
-    const puedeComentar = (responsablesTarea && responsablesTarea.includes(usuario.rol)) || usuario.rol === 'admin';
+    const puedeComentar = (responsablesTarea && responsablesTarea.includes(usuario.rol)) || usuario.rol === 'admin' || usuario.rol === 'superadmin';
 
     if (!puedeComentar) { showNoti("No tienes permiso para agregar comentarios a esta tarea.", false); return; }
 
@@ -1406,16 +1619,12 @@ function setupMultiSelectResponsables() {
     if (!dom.taskResponsablesSelected || !dom.taskResponsablesOptions || !dom.taskResponsablesContainer) return;
     dom.taskResponsablesSelected.addEventListener('click', (e) => {
         e.stopPropagation();
-        const esAdmin = usuario && usuario.rol === 'admin';
-        const tareaExistente = tareaActualId && tareas.find(t => t.ID_TAREA === tareaActualId);
+        const esAdmin = usuario && (usuario.rol === 'admin' || usuario.rol === 'superadmin');
+        const tareaExistente = tareaActualId && tareas.find(t => String(t.ID_TAREA) === String(tareaActualId));
         const esNuevaTareaLocal = !tareaExistente;
         let puedeAbrirDropdown = esAdmin || esNuevaTareaLocal;
 
-        if (esNuevaTareaLocal && (usuario.rol === 'deposito')) {
-             puedeAbrirDropdown = true;
-        } else if (esNuevaTareaLocal && (usuario.rol === 'ventas')) {
-            puedeAbrirDropdown = true;
-        } else if (tareaExistente && !esAdmin) {
+        if (tareaExistente && !esAdmin) {
             puedeAbrirDropdown = false;
         }
 
@@ -1473,10 +1682,33 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.logoutBtn?.addEventListener('click', logout);
     dom.refreshButton?.addEventListener('click', () => { cargarPedidos(); cargarTareas(); });
 
+    // Toggle de visibilidad de contraseña
+    const togglePassBtn = document.getElementById('toggle-pass-btn');
+    const loginPass = document.getElementById('login-pass');
+    if (togglePassBtn && loginPass) {
+        togglePassBtn.addEventListener('click', () => {
+            if (loginPass.type === 'password') {
+                loginPass.type = 'text';
+                // Icono ojo tachado
+                togglePassBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>`;
+            } else {
+                loginPass.type = 'password';
+                // Icono ojo normal
+                togglePassBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+            }
+        });
+    }
+
     [dom.filtroFase, dom.filtroPago, dom.filtroWoo, dom.filtroEnvioVentas, dom.filtroFechaInicioVentas, dom.filtroFechaFinVentas].forEach(el => el?.addEventListener('change', renderizarTodo));
     dom.filtroBuscar?.addEventListener('input', renderizarTodo);
     [dom.filtroFaseDep, dom.filtroEnvioDep, dom.filtroFechaInicioDep, dom.filtroFechaFinDep].forEach(el => el?.addEventListener('change', renderizarTodo));
     dom.filtroBuscarDep?.addEventListener('input', renderizarTodo);
+
+    // Eventos para filtros de TAREAS (todos los modulos)
+    document.querySelectorAll('.task-filters .filter-input').forEach(el => {
+        el.addEventListener('input', renderizarTareas);
+        el.addEventListener('change', renderizarTareas);
+    });
 
     dom.modalClose?.addEventListener('click', closeModal);
     dom.modalBg?.addEventListener('click', (e) => { if (e.target === dom.modalBg) closeModal(); });
@@ -1510,7 +1742,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom.btnAgregarTareaGlobal?.addEventListener('click', () => {
         let moduloDefecto = 'Admin';
-        if (usuario && usuario.rol === 'ventas') moduloDefecto = 'Ventas';
+        if (usuario && usuario.rol === 'superadmin') moduloDefecto = 'Superadmin';
+        else if (usuario && usuario.rol === 'ventas') moduloDefecto = 'Ventas';
         else if (usuario && usuario.rol === 'deposito') moduloDefecto = 'Deposito';
         abrirModalTarea(null, false, moduloDefecto);
     });
@@ -1523,11 +1756,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     dom.taskEstado?.addEventListener('change', async (event) => {
         if (!tareaActualId || !usuario) return;
-        const tarea = tareas.find(t => t.ID_TAREA === tareaActualId);
+        const tarea = tareas.find(t => String(t.ID_TAREA) === String(tareaActualId));
         if (!tarea) return;
 
         const esResponsableAsignado = (tarea.RESPONSABLES && tarea.RESPONSABLES.includes(usuario.rol));
-        const esAdmin = usuario.rol === 'admin';
+        const esAdmin = usuario.rol === 'admin' || usuario.rol === 'superadmin';
 
         if ((esResponsableAsignado || esAdmin) && tarea.ESTADO_TAREA !== event.target.value) {
             console.log(`Cambio de estado detectado por usuario ${usuario.rol}. Guardando...`);
